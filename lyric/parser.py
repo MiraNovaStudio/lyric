@@ -8,7 +8,7 @@ from lyric.lexer import Token
 from lyric.ast import (
     ProgramNode, FunctionNode, ClassNode, IfNode, ElifNode, LoopNode,
     AssignNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode,
-    IdentifierNode, PrintNode
+    IdentifierNode, PrintNode, ReturnNode
 )
 from lyric.errors import ParseError
 
@@ -83,6 +83,8 @@ class Parser:
             return self._parse_if_block()
         elif token.type == 'GIVEN':
             return self._parse_loop_block()
+        elif token.type == 'RETURN':
+            return self._parse_return_stmt()
         elif token.type == 'IDENTIFIER':
             # Could be assignment or expression statement
             return self._parse_assignment_or_expr_stmt()
@@ -418,6 +420,17 @@ class Parser:
                 break
         
         return args
+    
+    def _parse_return_stmt(self) -> 'ReturnNode':
+        """Parse a return statement."""
+        self._consume('RETURN', "Expected 'return'")
+        
+        # Check if there's an expression
+        expr = None
+        if not self._match('NEWLINE', 'END', 'DONE', 'RBRACE', 'CLASS_END'):
+            expr = self._parse_expression()
+        
+        return ReturnNode(expr=expr)
 
 
 def parse(source: str) -> ProgramNode:

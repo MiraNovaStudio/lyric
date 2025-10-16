@@ -5,6 +5,9 @@ Command-line interface for the Lyric interpreter.
 import sys
 import os
 from pathlib import Path
+from lyric.parser import parse
+from lyric.interpreter import interpret
+from lyric.errors import ParseError, RuntimeErrorLyric
 
 
 def main():
@@ -34,7 +37,29 @@ def main():
             print(f"Error: Expected .ly file, got '{file_path}'")
             sys.exit(1)
         
-        print("execution not implemented")
+        # Read and execute the file
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                source = f.read()
+            
+            # Parse the source code
+            program = parse(source)
+            
+            # Execute the program
+            interpret(program)
+            
+        except FileNotFoundError:
+            print(f"Error: File '{file_path}' not found")
+            sys.exit(1)
+        except ParseError as e:
+            print(f"Parse Error: {e}")
+            sys.exit(1)
+        except RuntimeErrorLyric as e:
+            print(f"Runtime Error: {e}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error: {e}")
+            sys.exit(1)
     else:
         print(f"Unknown command: {command}")
         print("Usage: lyric --version | lyric run <file>")
