@@ -45,8 +45,8 @@ class Environment:
             else:
                 type_annotation = 'unknown'
         
-        # Type enforcement if type declaration is provided (but not for class objects)
-        if (type_annotation and type_annotation != 'unknown' and 
+        # Type enforcement if type declaration is provided (but not for class objects or var)
+        if (type_annotation and type_annotation != 'unknown' and type_annotation != 'var' and 
             not self._check_type(value, type_annotation)):
             # Create enhanced error message with context
             error_msg = (f"Type mismatch for parameter '{name}': expected {type_annotation}, "
@@ -175,7 +175,7 @@ class Environment:
         if name in self.variables:
             # Check if this variable has a type declaration and enforce it
             existing_type = self.variable_types.get(name)
-            if existing_type and existing_type != 'unknown':
+            if existing_type and existing_type != 'unknown' and existing_type != 'var':
                 if not self._check_type(value, existing_type):
                     error_msg = (f"Type mismatch for variable '{name}': expected {existing_type}, "
                                f"got {self._get_type_name(value)}")

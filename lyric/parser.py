@@ -108,6 +108,9 @@ class Parser:
             return self._parse_loop_block()
         elif token.type == 'RETURN':
             return self._parse_return_stmt()
+        elif token.type == 'VAR':
+            # var keyword for dynamic typing
+            return self._parse_assignment_or_expr_stmt()
         elif token.type == 'IDENTIFIER' or token.type == 'NONE':
             # Could be assignment or expression statement
             return self._parse_assignment_or_expr_stmt()
@@ -266,6 +269,15 @@ class Parser:
 
     def _parse_assignment_or_expr_stmt(self) -> object:
         """Parse assignment or expression statement."""
+        # Check if this is a var keyword for dynamic typing: var x = value
+        if self._match('VAR'):
+            self._advance()  # consume 'var'
+            var_token = self._consume('IDENTIFIER', "Expected variable name after 'var'")
+            self._consume('ASSIGN', "Expected '=' after variable name")
+            right_expr = self._parse_expression()
+            return AssignNode(name=var_token.value, expr=right_expr, 
+                            type_annotation='var')
+        
         # Check if this is a C-style type-declared variable declaration: int x = value or None x = value
         if self._match('IDENTIFIER') or self._match('NONE'):
             # Peek ahead to see if this is a type declaration followed by variable name

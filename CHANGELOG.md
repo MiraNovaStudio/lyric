@@ -4,9 +4,16 @@
 
 ## Summary
 
-This version completes Sprint 3 (Type System, Value Validation, and Advanced Runtime). The language now supports typed variables, built-in data structures (lists and dictionaries), enhanced error handling, runtime safety, and comprehensive test coverage with 188+ passing tests.
+This version introduces Sprint 4 Task 1 (Dynamic Typing with `var` keyword) and completes Sprint 3 (Type System, Value Validation, and Advanced Runtime). The language now supports both dynamic typing with the `var` keyword and static typing, built-in data structures (lists and dictionaries), enhanced error handling, runtime safety, and comprehensive test coverage with 198+ passing tests.
 
-## Added
+## Added (Sprint 4 - Task 1)
+
+- **Dynamic Typing**: New `var` keyword for dynamically typed variables that can change type at runtime
+- **Type Flexibility**: Variables declared with `var` can be reassigned to different types without type checking
+- **Python-like Behavior**: `var` variables behave like Python variables with full dynamic typing
+- **Enhanced Test Coverage**: 10 new tests specifically for `var` keyword functionality
+
+## Added (Sprint 3)
 
 - **Type System**: Complete type declaration and inference system with int, float, str, bool, and None types
 - **Type Enforcement**: Runtime type checking for function parameters and variable assignments
