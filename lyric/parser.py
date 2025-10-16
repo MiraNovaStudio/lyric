@@ -119,7 +119,9 @@ class Parser:
 
     def _parse_function_def(self) -> FunctionNode:
         """Parse a function definition with C-style type annotations."""
-        self._consume('DEF', "Expected 'def'")
+        def_token = self._consume('DEF', "Expected 'def'")
+        func_line = def_token.line
+        func_col = def_token.col
 
         # Check for optional return type annotation (C-style: def int func(...))
         return_type = None
@@ -152,7 +154,8 @@ class Parser:
 
         return FunctionNode(name=name, params=params, body_statements=body_statements,
                            param_types=param_types if any(param_types) else None,
-                           return_type=return_type)
+                           return_type=return_type,
+                           filename=self.filename, line=func_line, col=func_col)
 
     def _parse_function_body(self) -> List[object]:
         """Parse function body statements until closing brace."""

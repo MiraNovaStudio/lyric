@@ -234,6 +234,7 @@ class Function:
                 self.node.name, 
                 getattr(self.node, 'filename', 'unknown'), 
                 getattr(self.node, 'line', 0),
+                getattr(self.node, 'col', 0),
                 env=env
             )
 

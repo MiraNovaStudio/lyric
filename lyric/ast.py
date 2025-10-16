@@ -44,6 +44,9 @@ class FunctionNode(ASTNode):
     body_statements: List[ASTNode]
     param_types: Optional[List[str]] = None  # Optional type annotations for parameters
     return_type: Optional[str] = None  # Optional return type annotation
+    filename: Optional[str] = None
+    line: int = 0
+    col: int = 0
 
     def __repr__(self):
         param_info = f"params={self.params}"
