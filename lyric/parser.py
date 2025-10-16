@@ -71,6 +71,24 @@ class Parser:
         while self._match('NEWLINE'):
             self._advance()
 
+    def _peek_next(self) -> Optional[object]:
+        """Peek at the next token without advancing."""
+        if self.pos + 1 < len(self.tokens):
+            return self.tokens[self.pos + 1]
+        return None
+
+    def _peek_next_next(self) -> Optional[object]:
+        """Peek at the token after next without advancing."""
+        if self.pos + 2 < len(self.tokens):
+            return self.tokens[self.pos + 2]
+        return None
+
+    def _peek_next_next_next(self) -> Optional[object]:
+        """Peek at the token after next next without advancing."""
+        if self.pos + 3 < len(self.tokens):
+            return self.tokens[self.pos + 3]
+        return None
+
     def _parse_statement(self) -> Optional[object]:
         """Parse a statement."""
         self._skip_newlines()
@@ -109,10 +127,19 @@ class Parser:
         self._consume('LPAREN', "Expected '('")
 
         params = []
+        param_types = []
         if not self._match('RPAREN'):
-            params = self._parse_param_list()
+            params, param_types = self._parse_param_list()
 
         self._consume('RPAREN', "Expected ')'")
+        
+        # Check for return type annotation
+        return_type = None
+        if self._match('COLON'):
+            self._advance()  # consume ':'
+            return_type_token = self._consume('IDENTIFIER', "Expected return type")
+            return_type = return_type_token.value
+            
         self._consume('LBRACE', "Expected '{'")
 
         # Parse body statements until closing brace
@@ -120,7 +147,9 @@ class Parser:
 
         self._consume('RBRACE', "Expected '}'")
 
-        return FunctionNode(name=name, params=params, body_statements=body_statements)
+        return FunctionNode(name=name, params=params, body_statements=body_statements,
+                           param_types=param_types if any(param_types) else None,
+                           return_type=return_type)
 
     def _parse_function_body(self) -> List[object]:
         """Parse function body statements until closing brace."""
@@ -231,6 +260,24 @@ class Parser:
 
     def _parse_assignment_or_expr_stmt(self) -> object:
         """Parse assignment or expression statement."""
+        # Check if this is a type-annotated variable declaration
+        if self._match('IDENTIFIER'):
+            # Peek ahead to see if there's a type annotation
+            current = self._peek()
+            next_token = self._peek_next()
+            
+            if (next_token and next_token.type == 'COLON' and 
+                self._peek_next_next() and self._peek_next_next().type == 'IDENTIFIER' and
+                self._peek_next_next_next() and self._peek_next_next_next().type == 'ASSIGN'):
+                # This is a type-annotated variable: name: type = value
+                var_token = self._consume('IDENTIFIER', "Expected variable name")
+                self._advance()  # consume ':'
+                type_token = self._consume('IDENTIFIER', "Expected type name")
+                self._advance()  # consume '='
+                right_expr = self._parse_expression()
+                return AssignNode(name=var_token.value, expr=right_expr, 
+                                type_annotation=type_token.value)
+        
         # Parse the left side as an expression
         left_expr = self._parse_expression()
 
@@ -265,20 +312,34 @@ class Parser:
 
         return statements
 
-    def _parse_param_list(self) -> List[str]:
-        """Parse parameter list."""
+    def _parse_param_list(self) -> tuple[List[str], List[str]]:
+        """Parse parameter list with optional type annotations.
+        
+        Returns:
+            tuple of (param_names, param_types)
+        """
         params = []
+        param_types = []
 
         while True:
             param_token = self._consume('IDENTIFIER', "Expected parameter name")
-            params.append(param_token.value)
+            param_name = param_token.value
+            params.append(param_name)
+            
+            # Check for type annotation
+            if self._match('COLON'):
+                self._advance()  # consume ':'
+                type_token = self._consume('IDENTIFIER', "Expected type name")
+                param_types.append(type_token.value)
+            else:
+                param_types.append(None)  # No type annotation
 
             if self._match('COMMA'):
                 self._advance()
             else:
                 break
 
-        return params
+        return params, param_types
 
     def _parse_expression(self) -> object:
         """Parse an expression."""

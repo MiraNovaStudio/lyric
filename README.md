@@ -66,7 +66,7 @@ Development requires Python 3.8 or newer.
 
 ### Development Commands
 
-- `pytest` runs the comprehensive test suite (56 tests covering all components)
+- `pytest` runs the comprehensive test suite (88 tests covering all components)
 - `flake8` enforces coding style and identifies potential issues
 - `python -m lyric.cli run tests/examples/hello.ly` runs the interpreter directly if the project hasn't been installed as a package
 
@@ -86,10 +86,15 @@ lyric/
 │   ├── examples/            # Sample Lyric programs
 │   │   ├── hello.ly         # Basic hello world program
 │   │   ├── if_demo.ly       # Conditional logic demonstration
-│   │   └── loop.ly          # Iterator loop demonstration
-│   ├── test_lexer.py        # Lexer test suite (18 tests)
+│   │   ├── loop.ly          # Iterator loop demonstration
+│   │   ├── class_test.ly    # Class definition and instantiation
+│   │   ├── nested_flow.ly   # Nested control flow structures
+│   │   ├── boolean_test.ly  # Boolean and comparison operations
+│   │   └── runtime_test.ly  # Runtime enhancements demonstration
+│   ├── test_lexer.py        # Lexer test suite (22 tests)
 │   ├── test_parser.py       # Parser test suite (28 tests)
-│   └── test_interpreter.py  # Interpreter test suite (10 tests)
+│   ├── test_interpreter.py  # Interpreter test suite (26 tests)
+│   └── test_cli_integration.py # CLI integration test suite (12 tests)
 ├── examples/                # Additional example programs
 │   ├── hello.ly
 │   ├── if_demo.ly
@@ -189,6 +194,6 @@ The project is currently **pre-release** and version **0.0.3** corresponds to th
 
 ## Contributing
 
-This project is part of an ongoing development sprint. Future versions will include enhanced error handling, complete class member execution, and additional language features.
+This project is part of an ongoing development sprint. Future versions will include additional language features, enhanced type system, and extended runtime capabilities.
 
 For development questions or contributions, please refer to the project's development workflow outlined above.

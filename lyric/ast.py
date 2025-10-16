@@ -42,10 +42,16 @@ class FunctionNode(ASTNode):
     name: str
     params: List[str]
     body_statements: List[ASTNode]
+    param_types: Optional[List[str]] = None  # Optional type annotations for parameters
+    return_type: Optional[str] = None  # Optional return type annotation
 
     def __repr__(self):
-        return (f"FunctionNode(name='{self.name}', params={self.params}, "
-                f"body={len(self.body_statements)} statements)")
+        param_info = f"params={self.params}"
+        if self.param_types:
+            param_info = f"params={list(zip(self.params, self.param_types))}"
+        return_type_info = f", return_type={self.return_type}" if self.return_type else ""
+        return (f"FunctionNode(name='{self.name}', {param_info}, "
+                f"body={len(self.body_statements)} statements{return_type_info})")
 
 
 @dataclass
@@ -89,9 +95,11 @@ class AssignNode(ASTNode):
     """Represents a variable assignment."""
     name: Union[str, ASTNode]  # Can be string (simple var) or ASTNode
     expr: ASTNode
+    type_annotation: Optional[str] = None  # Optional type annotation like 'int'
 
     def __repr__(self):
-        return f"AssignNode(name={self.name}, expr={self.expr})"
+        type_info = f", type={self.type_annotation}" if self.type_annotation else ""
+        return f"AssignNode(name={self.name}, expr={self.expr}{type_info})"
 
 
 @dataclass

@@ -18,11 +18,92 @@ class Environment:
 
     def __init__(self, parent: Optional['Environment'] = None):
         self.variables: Dict[str, Any] = {}
+        self.variable_types: Dict[str, str] = {}  # Track variable types
         self.parent = parent
 
-    def define(self, name: str, value: Any) -> None:
-        """Define a variable in this environment."""
+    def define(self, name: str, value: Any, type_annotation: Optional[str] = None) -> None:
+        """Define a variable in this environment with optional type annotation."""
+        # Type inference for literals if no type annotation provided
+        if type_annotation is None:
+            if isinstance(value, int):
+                type_annotation = 'int'
+            elif isinstance(value, float):
+                type_annotation = 'float'
+            elif isinstance(value, str):
+                type_annotation = 'str'
+            elif isinstance(value, bool):
+                type_annotation = 'bool'
+            elif isinstance(value, list):
+                type_annotation = 'list'
+            elif isinstance(value, dict):
+                type_annotation = 'dict'
+            elif value is None:
+                type_annotation = 'None'
+            else:
+                type_annotation = 'unknown'
+        
+        # Type enforcement if type annotation is provided (but not for class objects)
+        if (type_annotation and type_annotation != 'unknown' and 
+            not self._check_type(value, type_annotation)):
+            raise RuntimeErrorLyric(f"Type mismatch: expected {type_annotation}, got {self._get_type_name(value)}")
+        
         self.variables[name] = value
+        self.variable_types[name] = type_annotation
+
+    def _check_type(self, value: Any, expected_type: str) -> bool:
+        """Check if a value matches the expected type."""
+        if expected_type == 'int' and isinstance(value, int):
+            return True
+        elif expected_type == 'float' and isinstance(value, float):
+            return True
+        elif expected_type == 'str' and isinstance(value, str):
+            return True
+        elif expected_type == 'bool' and isinstance(value, bool):
+            return True
+        elif expected_type == 'list' and isinstance(value, list):
+            return True
+        elif expected_type == 'dict' and isinstance(value, dict):
+            return True
+        elif expected_type == 'None' and value is None:
+            return True
+        else:
+            # Check for custom class types
+            from lyric.interpreter import Instance
+            if isinstance(value, Instance) and expected_type == value.class_obj.name:
+                return True
+        return False
+
+    def _get_type_name(self, value: Any) -> str:
+        """Get the type name of a value."""
+        if isinstance(value, int):
+            return 'int'
+        elif isinstance(value, float):
+            return 'float'
+        elif isinstance(value, str):
+            return 'str'
+        elif isinstance(value, bool):
+            return 'bool'
+        elif isinstance(value, list):
+            return 'list'
+        elif isinstance(value, dict):
+            return 'dict'
+        elif value is None:
+            return 'None'
+        else:
+            from lyric.interpreter import Instance
+            if isinstance(value, Instance):
+                return value.class_obj.name
+            return 'unknown'
+
+    def get_type(self, name: str) -> Optional[str]:
+        """Get the type of a variable."""
+        if name in self.variable_types:
+            return self.variable_types[name]
+        
+        if self.parent:
+            return self.parent.get_type(name)
+        
+        return None
 
     def get(self, name: str) -> Any:
         """Get a variable value, looking up the chain of environments."""
@@ -56,12 +137,25 @@ class Function:
         # Create new environment for function execution
         env = Environment(self.closure)
 
-        # Bind parameters to arguments
-        for param, arg in zip(self.node.params, arguments):
-            env.define(param, arg)
+        # Bind parameters to arguments with type checking
+        for i, (param, arg) in enumerate(zip(self.node.params, arguments)):
+            # Get type annotation for this parameter if available
+            param_type = None
+            if self.node.param_types and i < len(self.node.param_types):
+                param_type = self.node.param_types[i]
+            
+            env.define(param, arg, param_type)
 
         # Execute function body
-        return interpreter._execute_block(self.node.body_statements, env)
+        result = interpreter._execute_block(self.node.body_statements, env)
+        
+        # Check return type if specified
+        if self.node.return_type:
+            expected_type = self.node.return_type
+            if not env._check_type(result, expected_type):
+                raise RuntimeErrorLyric(f"Return type mismatch: expected {expected_type}, got {env._get_type_name(result)}")
+        
+        return result
 
 
 class Class:
@@ -321,12 +415,12 @@ class Interpreter:
                 raise RuntimeErrorLyric(f"Cannot assign to member '{stmt.name.member}' on "
                                         f"non-instance object")
         elif isinstance(stmt.name, str):
-            # Regular variable assignment
-            env.define(stmt.name, value)
+            # Regular variable assignment with optional type annotation
+            env.define(stmt.name, value, stmt.type_annotation)
             return value
         elif isinstance(stmt.name, IdentifierNode):
-            # Regular variable assignment from identifier
-            env.define(stmt.name.name, value)
+            # Regular variable assignment from identifier with optional type annotation
+            env.define(stmt.name.name, value, stmt.type_annotation)
             return value
         else:
             raise RuntimeErrorLyric(f"Invalid assignment target: {type(stmt.name)}")
