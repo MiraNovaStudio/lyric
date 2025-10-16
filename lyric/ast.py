@@ -42,8 +42,8 @@ class FunctionNode(ASTNode):
     name: str
     params: List[str]
     body_statements: List[ASTNode]
-    param_types: Optional[List[str]] = None  # Optional type annotations for parameters
-    return_type: Optional[str] = None  # Optional return type annotation
+    param_types: Optional[List[str]] = None  # Optional type declarations for parameters
+    return_type: Optional[str] = None  # Optional return type declaration
     filename: Optional[str] = None
     line: int = 0
     col: int = 0
@@ -98,7 +98,7 @@ class AssignNode(ASTNode):
     """Represents a variable assignment."""
     name: Union[str, ASTNode]  # Can be string (simple var) or ASTNode
     expr: ASTNode
-    type_annotation: Optional[str] = None  # Optional type annotation like 'int'
+    type_annotation: Optional[str] = None  # Optional type declaration like 'int'
 
     def __repr__(self):
         type_info = f", type={self.type_annotation}" if self.type_annotation else ""

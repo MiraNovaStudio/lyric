@@ -43,7 +43,7 @@ The language is implemented in Python and currently supports core programming co
 | Entry Point | `main()` | — | ✅ Implemented | Required start of every program |
 | Lists | `[ ... ]` | `[ ... ]` | ✅ Implemented | Built-in data structures |
 | Dictionaries | `{ ... }` | `{ ... }` | ✅ Implemented | Built-in data structures |
-| Type Annotations | `int name` | — | ✅ Implemented | Optional C-style type declarations |
+| Type Declarations | `int name` | — | ✅ Implemented | Optional C-style type declarations |
 
 ---
 
@@ -177,7 +177,7 @@ def main() {
 }
 ```
 
-### Type Annotations
+### Type Declarations
 
 - Optional type declarations using C-style syntax
 - Runtime type checking and inference
@@ -251,7 +251,7 @@ Lyric is about learning and clarity, not syntax density.
 - Core language constructs (functions, conditionals, loops)
 - Class system with `+++` terminator
 - Built-in data structures (lists, dictionaries)
-- Type annotations and inference
+- Type declarations and inference
 - Return statements and function values
 - Enhanced error handling with stack traces
 - Runtime optimizations (constant folding, caching)

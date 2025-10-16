@@ -32,7 +32,7 @@ class TestTypeSystem:
 
         return captured_output.getvalue()
 
-    def test_type_annotated_variable_assignment(self):
+    def test_type_declared_variable_assignment(self):
         """Test A1: Type declarations work correctly."""
         source = '''
 int x = 5
@@ -60,7 +60,7 @@ int x = "hello"
         with pytest.raises(RuntimeErrorLyric, match="Type mismatch for parameter 'x': expected int, got str"):
             interpret(program)
 
-    def test_type_annotated_function_parameters(self):
+    def test_type_declared_function_parameters(self):
         """Test A3: Functions with typed parameters enforce types."""
         source = '''
 def int add(int a, int b) {
@@ -131,8 +131,8 @@ def main() {
         with pytest.raises(RuntimeErrorLyric, match="Function 'get_string' return type mismatch"):
             interpret(program)
 
-    def test_type_annotated_function_return(self):
-        """Test type-annotated function with correct return type."""
+    def test_type_declared_function_return(self):
+        """Test type-declared function with correct return type."""
         source = '''
 def str get_string() {
     return "hello"
@@ -146,8 +146,8 @@ def main() {
         output = self.capture_output(source)
         assert "result: hello type: str" in output
 
-    def test_mixed_type_annotations(self):
-        """Test mixing type-annotated and non-annotated variables."""
+    def test_mixed_type_declarations(self):
+        """Test mixing type-declared and non-declared variables."""
         source = '''
 int typed_var = 5
 inferred_var = 10

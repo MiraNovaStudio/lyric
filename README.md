@@ -32,6 +32,10 @@ The project includes several example programs that demonstrate core language fea
 - **nested_flow.ly** - Nested control flow structures
 - **boolean_test.ly** - Boolean and comparison operations
 - **runtime_test.ly** - Runtime enhancements (isinstance, type, enhanced print)
+- **type_tests.ly** - Type system demonstrations (declarations, inference, enforcement)
+- **list_dict_tests.ly** - Data structure operations (lists, dictionaries, indexing)
+- **exception_tests.ly** - Exception and error handling demonstrations
+- **class_init_tests.ly** - Class initialization and method testing
 
 ## How to Develop
 
@@ -66,7 +70,7 @@ Development requires Python 3.8 or newer.
 
 ### Development Commands
 
-- `pytest` runs the comprehensive test suite (88 tests covering all components)
+- `pytest` runs the comprehensive test suite (188 tests covering all components)
 - `flake8` enforces coding style and identifies potential issues
 - `python -m lyric.cli run tests/examples/hello.ly` runs the interpreter directly if the project hasn't been installed as a package
 
@@ -90,7 +94,11 @@ lyric/
 │   │   ├── class_test.ly    # Class definition and instantiation
 │   │   ├── nested_flow.ly   # Nested control flow structures
 │   │   ├── boolean_test.ly  # Boolean and comparison operations
-│   │   └── runtime_test.ly  # Runtime enhancements demonstration
+│   │   ├── runtime_test.ly  # Runtime enhancements demonstration
+│   │   ├── type_tests.ly    # Type system demonstrations
+│   │   ├── list_dict_tests.ly # Data structure operations
+│   │   ├── exception_tests.ly # Exception and error handling
+│   │   └── class_init_tests.ly # Class initialization testing
 │   ├── test_lexer.py        # Lexer test suite (22 tests)
 │   ├── test_parser.py       # Parser test suite (28 tests)
 │   ├── test_interpreter.py  # Interpreter test suite (26 tests)
@@ -121,11 +129,13 @@ pip install pytest flake8 setuptools
 
 ### Core Constructs
 
-- **Functions**: `def name(params) { body }`
+- **Functions**: `def name(params) { body }` with optional return statements
 - **Conditionals**: `if condition: ... else: ... end`
 - **Loops**: `given variable in iterable: ... done` or `given condition: ... done`
-- **Classes**: `class Name: ... +++` (full implementation with instantiation and methods)
-- **Variables**: Dynamic typing with assignment `name = value`
+- **Classes**: `class Name: ... +++` (full implementation with instantiation, methods, and init())
+- **Variables**: Type declarations `type name = value` or type inference `name = value`
+- **Data Structures**: `[item1, item2, ...]` for lists, `{"key": value, ...}` for dictionaries
+- **Exception Handling**: `try: ... except: ... finally: ... end`
 - **Comments**: `# comment text` (full-line and inline comments)
 
 ### Built-in Functions
@@ -134,7 +144,10 @@ pip install pytest flake8 setuptools
 - `input(prompt?)` — Read from stdin with optional prompt
 - `int(value)`, `float(value)`, `str(value)` — Type conversions
 - `range(start?, stop, step?)` — Integer sequence generation
-- `len(sequence)` — Length calculation
+- `len(sequence)` — Length calculation for strings, lists, and dictionaries
+- `keys(dict)` — Returns list of dictionary keys
+- `values(dict)` — Returns list of dictionary values
+- `append(list, item)` — Adds item to end of list
 - `open(path)` — File iteration over lines
 - `isinstance(obj, type_name)` — Type checking for objects and class instances
 - `type(obj)` — Type introspection returning string type names
@@ -142,10 +155,34 @@ pip install pytest flake8 setuptools
 ### Example Syntax
 
 ```lyric
-# Class definition with methods and attributes
+# Type declarations and inference
+int age = 25
+float pi = 3.14159
+str name = "Alice"
+bool is_active = true
+None null_value = None
+
+# Type inference
+auto_int = 42          # Automatically inferred as int
+auto_float = 2.718     # Automatically inferred as float
+auto_string = "hello"  # Automatically inferred as str
+
+# Lists and dictionaries
+numbers = [1, 2, 3, 4, 5]
+fruits = ["apple", "banana", "orange"]
+person = {"name": "Bob", "age": 30, "city": "New York"}
+scores = {"math": 95, "science": 87}
+
+# Class definition with init() method
 class Player:
     name = "Guest"
     score = 0
+    
+    def init(self, player_name) {
+        self.name = player_name
+        self.score = 0
+        print("Player", self.name, "initialized!")
+    }
     
     def greet() {
         print("Hello,", self.name)
@@ -159,6 +196,17 @@ class Player:
 def main() {
     print("Hello, Lyric!")
     
+    # Type system demonstration
+    print("Age:", age, "Type:", type(age))
+    print("PI:", pi, "Type:", type(pi))
+    print("Name:", name, "Type:", type(name))
+    
+    # List and dictionary operations
+    print("First number:", numbers[0])
+    print("Person's name:", person["name"])
+    print("List length:", len(numbers))
+    print("Dictionary keys:", keys(person))
+    
     # Conditional logic
     if 5 > 3:
         print("Math works!")
@@ -171,15 +219,24 @@ def main() {
         print("Count:", i)
     done
     
-    # Class instantiation and method calls
-    player = Player()
-    player.name = "Alice"
+    # Class instantiation with init()
+    player = Player("Alice")
     player.greet()
     player.add_score(100)
     
     # Type checking and introspection
     print("Player type:", type(player))
     print("Is Player:", isinstance(player, "Player"))
+    
+    # Try/except/finally error handling
+    try:
+        result = 10 / 0  # This will cause an error
+        print("Result:", result)
+    except:
+        print("Caught division by zero error!")
+    finally:
+        print("Cleanup code always runs")
+    end
     
     # Enhanced print with None handling
     print("Value:", None)
@@ -190,7 +247,7 @@ def main() {
 
 The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
 
-The project is currently **pre-release** and version **0.1.3** corresponds to the partial completion of Sprint 3 (Type System, Data Structures, Error Handling, and Performance). This milestone includes type declarations and inference, built-in data structures (lists and dictionaries), enhanced error handling with stack traces, runtime optimizations, and comprehensive test coverage with 143+ passing tests. Sprint 3 is currently 5/8 tasks complete with 3 additional tasks remaining.
+The project is currently **pre-release** and version **0.1.4** represents the completion of Sprint 3 (Type System, Value Validation, and Advanced Runtime). This milestone includes complete type declarations and inference, built-in data structures (lists and dictionaries), enhanced error handling with try/except/finally, runtime safety improvements, and comprehensive test coverage with 188+ passing tests. Sprint 3 is now complete with all 8 tasks implemented and verified.
 
 ## Contributing
 

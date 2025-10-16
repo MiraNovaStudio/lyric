@@ -1,52 +1,89 @@
-# Type Declaration and Inference Tests
+# Type System Tests for Sprint 3
+# Tests type declarations, inference, and enforcement
 
-# A1: Type declarations work correctly
-int x = 5
-str y = "hello"
-bool z = true
+# Test 1: Basic type declarations
+int age = 25
+float pi = 3.14159
+str name = "Aeonath"
+bool is_active = true
+None null_value = None
 
-# A2: Type enforcement works - this should cause an error if uncommented
-# x: int = "string"  # This should raise a type mismatch error
-
-# A3: Functions with typed parameters enforce types
-def int add(int a, int b) {
-    return a + b
-}
-
-def str greet(str name) {
-    return "Hello, " + name
-}
-
-# A4: Type inference assigns correct default types
+# Test 2: Type inference
 auto_int = 42
-auto_float = 3.14
+auto_float = 2.718
 auto_string = "inferred"
 auto_bool = false
 auto_none = None
 
+# Test 3: Function with type declarations
+def int add_numbers(int a, int b) {
+    return a + b
+}
+
+def str format_greeting(str name, int age) {
+    return "Hello " + name + ", you are " + str(age) + " years old"
+}
+
+def bool is_even(int number) {
+    if number % 2 == 0:
+        return true
+    else:
+        return false
+    end
+}
+
+def None do_nothing() {
+    print("Doing nothing...")
+}
+
+# Test 4: Type enforcement (should cause errors when called with wrong types)
+def int strict_add(int x, int y) {
+    return x + y
+}
+
+def str process_name(str input_name) {
+    return "Processed: " + input_name
+}
+
 def main() {
-    print("=== Type Declaration Tests ===")
-    print("x:", x, "type:", type(x))
-    print("y:", y, "type:", type(y))
-    print("z:", z, "type:", type(z))
+    print("=== Type System Tests ===")
     
-    print("\n=== Type-Annotated Functions ===")
-    result1 = add(10, 20)
-    result2 = greet("World")
-    print("add(10, 20):", result1)
-    print("greet('World'):", result2)
+    # Test basic type declarations
+    print("1. Basic type declarations:")
+    print("age:", age, "type:", type(age))
+    print("pi:", pi, "type:", type(pi))
+    print("name:", name, "type:", type(name))
+    print("is_active:", is_active, "type:", type(is_active))
+    print("null_value:", null_value, "type:", type(null_value))
     
-    print("\n=== Type Inference Tests ===")
+    # Test type inference
+    print("\n2. Type inference:")
     print("auto_int:", auto_int, "type:", type(auto_int))
     print("auto_float:", auto_float, "type:", type(auto_float))
     print("auto_string:", auto_string, "type:", type(auto_string))
     print("auto_bool:", auto_bool, "type:", type(auto_bool))
     print("auto_none:", auto_none, "type:", type(auto_none))
     
-    print("\n=== Type Checking with isinstance ===")
-    print("isinstance(auto_int, 'int'):", isinstance(auto_int, "int"))
-    print("isinstance(auto_string, 'str'):", isinstance(auto_string, "str"))
-    print("isinstance(auto_int, 'str'):", isinstance(auto_int, "str"))
+    # Test function calls with correct types
+    print("\n3. Function calls with correct types:")
+    result1 = add_numbers(10, 20)
+    print("add_numbers(10, 20) =", result1)
     
-    print("\n=== All Type Tests Passed ===")
+    greeting = format_greeting("Alice", 30)
+    print("format_greeting result:", greeting)
+    
+    even_check = is_even(16)
+    print("is_even(16) =", even_check)
+    
+    do_nothing()
+    
+    # Test type enforcement with correct types
+    print("\n4. Type enforcement tests (correct types):")
+    strict_result = strict_add(5, 3)
+    print("strict_add(5, 3) =", strict_result)
+    
+    processed = process_name("Bob")
+    print("process_name result:", processed)
+    
+    print("\n=== Type System Tests Complete ===")
 }

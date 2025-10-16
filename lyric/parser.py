@@ -118,12 +118,12 @@ class Parser:
                              line=current.line, col=current.col, filename=self.filename)
 
     def _parse_function_def(self) -> FunctionNode:
-        """Parse a function definition with C-style type annotations."""
+        """Parse a function definition with C-style type declarations."""
         def_token = self._consume('DEF', "Expected 'def'")
         func_line = def_token.line
         func_col = def_token.col
 
-        # Check for optional return type annotation (C-style: def int func(...))
+        # Check for optional return type declaration (C-style: def int func(...))
         return_type = None
         if ((self._match('IDENTIFIER') or self._match('NONE')) and 
             self._peek_next() and self._peek_next().type == 'IDENTIFIER'):
@@ -266,13 +266,13 @@ class Parser:
 
     def _parse_assignment_or_expr_stmt(self) -> object:
         """Parse assignment or expression statement."""
-        # Check if this is a C-style type-annotated variable declaration: int x = value or None x = value
+        # Check if this is a C-style type-declared variable declaration: int x = value or None x = value
         if self._match('IDENTIFIER') or self._match('NONE'):
-            # Peek ahead to see if this is a type annotation followed by variable name
+            # Peek ahead to see if this is a type declaration followed by variable name
             next_token = self._peek_next()
             if (next_token and next_token.type == 'IDENTIFIER' and 
                 self._peek_next_next() and self._peek_next_next().type == 'ASSIGN'):
-                # This is a C-style type-annotated variable: int x = value or None x = value
+                # This is a C-style type-declared variable: int x = value or None x = value
                 if self._match('IDENTIFIER'):
                     type_token = self._consume('IDENTIFIER', "Expected variable type")
                 else:  # NONE
@@ -326,7 +326,7 @@ class Parser:
         return statements
 
     def _parse_param_list(self) -> tuple[List[str], List[str]]:
-        """Parse parameter list with C-style type annotations.
+        """Parse parameter list with C-style type declarations.
         
         Format: int a, str b, float c
         Returns:
@@ -336,7 +336,7 @@ class Parser:
         param_types = []
 
         while True:
-            # Check for optional type annotation before parameter name
+            # Check for optional type declaration before parameter name
             param_type = None
             if ((self._match('IDENTIFIER') or self._match('NONE')) and 
                 self._peek_next() and self._peek_next().type == 'IDENTIFIER'):

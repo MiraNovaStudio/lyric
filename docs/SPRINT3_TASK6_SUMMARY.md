@@ -81,7 +81,7 @@ class FunctionNode(ASTNode):
 ### Parser Enhancements
 ```python
 def _parse_function_def(self) -> FunctionNode:
-    """Parse a function definition with C-style type annotations."""
+    """Parse a function definition with C-style type declarations."""
     def_token = self._consume('DEF', "Expected 'def'")
     func_line = def_token.line      # Capture line information
     func_col = def_token.col        # Capture column information

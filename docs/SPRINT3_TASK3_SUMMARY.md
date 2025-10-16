@@ -180,7 +180,7 @@ def _builtin_values(args: List[Any]) -> List[Any]:
 ## Integration with Existing Features
 
 ### Type System Integration
-- **Type Annotations**: `numbers: list = [1, 2, 3]` works correctly
+- **Type Declarations**: `numbers: list = [1, 2, 3]` works correctly
 - **Type Inference**: Automatic type detection for lists and dictionaries
 - **Type Safety**: Runtime type checking for built-in functions
 

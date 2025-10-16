@@ -25,8 +25,8 @@ class Environment:
         self._cache_valid = True  # Cache validity flag
 
     def define(self, name: str, value: Any, type_annotation: Optional[str] = None) -> None:
-        """Define a variable in this environment with optional type annotation."""
-        # Type inference for literals if no type annotation provided
+        """Define a variable in this environment with optional type declaration."""
+        # Type inference for literals if no type declaration provided
         if type_annotation is None:
             if isinstance(value, bool):
                 type_annotation = 'bool'
@@ -45,7 +45,7 @@ class Environment:
             else:
                 type_annotation = 'unknown'
         
-        # Type enforcement if type annotation is provided (but not for class objects)
+        # Type enforcement if type declaration is provided (but not for class objects)
         if (type_annotation and type_annotation != 'unknown' and 
             not self._check_type(value, type_annotation)):
             # Create enhanced error message with context
@@ -173,7 +173,7 @@ class Environment:
     def assign(self, name: str, value: Any) -> None:
         """Assign a value to a variable, looking up the chain if needed."""
         if name in self.variables:
-            # Check if this variable has a type annotation and enforce it
+            # Check if this variable has a type declaration and enforce it
             existing_type = self.variable_types.get(name)
             if existing_type and existing_type != 'unknown':
                 if not self._check_type(value, existing_type):
@@ -213,7 +213,7 @@ class Function:
 
             # Bind parameters to arguments with type checking
             for i, (param, arg) in enumerate(zip(self.node.params, arguments)):
-                # Get type annotation for this parameter if available
+                # Get type declaration for this parameter if available
                 param_type = None
                 if self.node.param_types and i < len(self.node.param_types):
                     param_type = self.node.param_types[i]
@@ -627,9 +627,9 @@ class Interpreter:
                 raise RuntimeErrorLyric(f"Cannot assign to member '{stmt.name.member}' on "
                                         f"non-instance object")
         elif isinstance(stmt.name, str):
-            # Regular variable assignment with optional type annotation
+            # Regular variable assignment with optional type declaration
             if stmt.type_annotation:
-                # New variable with type annotation
+                # New variable with type declaration
                 env.define(stmt.name, value, stmt.type_annotation)
             else:
                 # Check if variable exists
@@ -644,13 +644,13 @@ class Interpreter:
                         # Variable doesn't exist anywhere, define it
                         env.define(stmt.name, value)
                 else:
-                    # New variable without type annotation
+                    # New variable without type declaration
                     env.define(stmt.name, value)
             return value
         elif isinstance(stmt.name, IdentifierNode):
-            # Regular variable assignment from identifier with optional type annotation
+            # Regular variable assignment from identifier with optional type declaration
             if stmt.type_annotation:
-                # New variable with type annotation
+                # New variable with type declaration
                 env.define(stmt.name.name, value, stmt.type_annotation)
             else:
                 # Check if variable exists
@@ -665,7 +665,7 @@ class Interpreter:
                         # Variable doesn't exist anywhere, define it
                         env.define(stmt.name.name, value)
                 else:
-                    # New variable without type annotation
+                    # New variable without type declaration
                     env.define(stmt.name.name, value)
             return value
         else:

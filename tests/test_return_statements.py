@@ -206,8 +206,8 @@ def main() {
         assert "string: hello type: str" in output
         assert "bool: True type: bool" in output
 
-    def test_return_with_type_annotations(self):
-        """Test return statements with type annotations (from Task 1)."""
+    def test_return_with_type_declarations(self):
+        """Test return statements with type declarations (from Task 1)."""
         source = '''
 def int get_int() {
     return 42
@@ -237,7 +237,7 @@ def main() {
         assert "z = hello type: str" in output
 
     def test_return_type_enforcement(self):
-        """Test return type enforcement with type annotations."""
+        """Test return type enforcement with type declarations."""
         source = '''
 def str get_string() {
     return 42

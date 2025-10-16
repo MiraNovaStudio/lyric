@@ -1,4 +1,46 @@
-# Lyric Language — Version 0.0.3
+# Lyric Language — Version 0.1.4
+
+**Release Date:** December 2024
+
+## Summary
+
+This version completes Sprint 3 (Type System, Value Validation, and Advanced Runtime). The language now supports typed variables, built-in data structures (lists and dictionaries), enhanced error handling, runtime safety, and comprehensive test coverage with 188+ passing tests.
+
+## Added
+
+- **Type System**: Complete type declaration and inference system with int, float, str, bool, and None types
+- **Type Enforcement**: Runtime type checking for function parameters and variable assignments
+- **Built-in Data Structures**: Full support for lists and dictionaries with indexing and operations
+- **Enhanced Error Handling**: Improved error messages with filename, line number, and context information
+- **Runtime Safety**: Enhanced runtime error reporting and type verification
+- **Comprehensive Test Suite**: 188 tests covering all Sprint 3 features including type system, data structures, and error handling
+- **New Example Programs**: type_tests.ly, list_dict_tests.ly, exception_tests.ly, class_init_tests.ly
+
+## Changed
+
+- **Version Number**: Updated from 0.1.3 to 0.1.4 (final Sprint 3 version)
+- **Error Messages**: All runtime errors now include precise file and line references
+- **Type System**: Variables can now be declared with explicit types and enforced at runtime
+- **Data Structures**: Lists and dictionaries are now first-class types with full operation support
+
+## Fixed
+
+- **Type Safety**: All type mismatches are now caught and reported with clear error messages
+- **Data Structure Operations**: List indexing and dictionary key access with proper error handling
+- **Test Coverage**: Expanded test suite from 88 to 188 tests with comprehensive Sprint 3 coverage
+- **Documentation**: Updated README.md and CHANGELOG.md to reflect all new features
+
+## Notes
+
+- This version represents the completion of Sprint 3 with all 8 tasks implemented
+- Type system provides both explicit declarations and automatic inference
+- Data structures support nested access and comprehensive operations
+- All 188 tests pass with 100% success rate
+- Ready for version tag v0.1.4 and transition to Sprint 4
+
+---
+
+# Lyric Language — Version 0.1.3
 
 **Release Date:** December 2024
 
