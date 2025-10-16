@@ -9,17 +9,18 @@ from lyric.ast import (
     AssignNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode,
     IdentifierNode, PrintNode, ImportNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode
 )
-from lyric.errors import RuntimeErrorLyric
+from lyric.errors import RuntimeErrorLyric, StackFrame
 from lyric.runtime import register_builtins, BuiltinFunction
 
 
 class Environment:
     """Represents a local environment (scope) for variable storage."""
 
-    def __init__(self, parent: Optional['Environment'] = None):
+    def __init__(self, parent: Optional['Environment'] = None, interpreter: Optional['Interpreter'] = None):
         self.variables: Dict[str, Any] = {}
         self.variable_types: Dict[str, str] = {}  # Track variable types
         self.parent = parent
+        self.interpreter = interpreter
 
     def define(self, name: str, value: Any, type_annotation: Optional[str] = None) -> None:
         """Define a variable in this environment with optional type annotation."""
@@ -113,7 +114,11 @@ class Environment:
         if self.parent:
             return self.parent.get(name)
 
-        raise RuntimeErrorLyric(f"Undefined variable: {name}")
+        # Use enhanced error if interpreter is available
+        if self.interpreter:
+            raise self.interpreter._create_runtime_error(f"Undefined variable: {name}")
+        else:
+            raise RuntimeErrorLyric(f"Undefined variable: {name}")
 
     def assign(self, name: str, value: Any) -> None:
         """Assign a value to a variable, looking up the chain if needed."""
@@ -135,27 +140,44 @@ class Function:
     def call(self, interpreter: 'Interpreter', arguments: List[Any]) -> Any:
         """Call this function with the given arguments."""
         # Create new environment for function execution
-        env = Environment(self.closure)
+        env = Environment(self.closure, interpreter)
 
-        # Bind parameters to arguments with type checking
-        for i, (param, arg) in enumerate(zip(self.node.params, arguments)):
-            # Get type annotation for this parameter if available
-            param_type = None
-            if self.node.param_types and i < len(self.node.param_types):
-                param_type = self.node.param_types[i]
+        try:
+            # Add environment to call stack
+            interpreter.call_stack.append(env)
+
+            # Bind parameters to arguments with type checking
+            for i, (param, arg) in enumerate(zip(self.node.params, arguments)):
+                # Get type annotation for this parameter if available
+                param_type = None
+                if self.node.param_types and i < len(self.node.param_types):
+                    param_type = self.node.param_types[i]
+                
+                env.define(param, arg, param_type)
+
+            # Push stack frame for this function call (after parameters are bound)
+            interpreter._push_stack_frame(
+                self.node.name, 
+                getattr(self.node, 'filename', 'unknown'), 
+                getattr(self.node, 'line', 0),
+                env=env
+            )
+
+            # Execute function body
+            result = interpreter._execute_block(self.node.body_statements, env)
             
-            env.define(param, arg, param_type)
-
-        # Execute function body
-        result = interpreter._execute_block(self.node.body_statements, env)
+            # Check return type if specified
+            if self.node.return_type:
+                expected_type = self.node.return_type
+                if not env._check_type(result, expected_type):
+                    raise interpreter._create_runtime_error(f"Return type mismatch: expected {expected_type}, got {env._get_type_name(result)}")
+            
+            return result
         
-        # Check return type if specified
-        if self.node.return_type:
-            expected_type = self.node.return_type
-            if not env._check_type(result, expected_type):
-                raise RuntimeErrorLyric(f"Return type mismatch: expected {expected_type}, got {env._get_type_name(result)}")
-        
-        return result
+        finally:
+            # Pop stack frame and environment
+            interpreter._pop_stack_frame()
+            interpreter.call_stack.pop()
 
 
 class Class:
@@ -298,10 +320,12 @@ class BoundMethod:
 class Interpreter:
     """Interpreter for executing Lyric AST nodes."""
 
-    def __init__(self):
-        self.global_env = Environment()
+    def __init__(self, debug_mode: bool = False):
+        self.global_env = Environment(interpreter=self)
         self.functions: Dict[str, Function] = {}
         self.call_stack: List[Environment] = []
+        self.stack_frames: List[StackFrame] = []  # For stack trace tracking
+        self.debug_mode = debug_mode
 
         # Initialize built-in functions
         self._init_builtins()
@@ -310,6 +334,54 @@ class Interpreter:
         """Initialize built-in functions."""
         # Register built-in functions in the global environment
         register_builtins(self.global_env.variables)
+    
+    def _push_stack_frame(self, function_name: str, filename: str, line: int, col: int = None, env: Environment = None):
+        """Push a new frame onto the call stack."""
+        local_vars = {}
+        if env:
+            # Get local variables from the function's environment
+            local_vars = env.variables.copy()
+        
+        frame = StackFrame(function_name, filename, line, col, local_vars)
+        self.stack_frames.append(frame)
+    
+    def _pop_stack_frame(self):
+        """Pop the top frame from the call stack."""
+        if self.stack_frames:
+            self.stack_frames.pop()
+    
+    def _create_runtime_error(self, message: str, line: int = None, col: int = None, filename: str = None):
+        """Create a RuntimeErrorLyric with stack trace information."""
+        # Capture current stack state before any cleanup
+        current_stack_frames = self.stack_frames.copy()
+        current_call_stack = self.call_stack.copy()
+        
+        # Update stack frames with current variable states
+        updated_frames = []
+        for i, frame in enumerate(current_stack_frames):
+            # Get current environment for this frame level
+            if i < len(current_call_stack):
+                current_env = current_call_stack[i]
+                updated_local_vars = current_env.variables.copy()
+            else:
+                updated_local_vars = frame.local_vars.copy()
+            
+            updated_frame = StackFrame(
+                frame.function_name, 
+                frame.filename, 
+                frame.line, 
+                frame.col, 
+                updated_local_vars
+            )
+            updated_frames.append(updated_frame)
+        
+        return RuntimeErrorLyric(
+            message, 
+            line=line, 
+            col=col, 
+            filename=filename, 
+            stack_trace=updated_frames
+        )
 
     def interpret(self, program: ProgramNode) -> None:
         """Interpret a complete program."""
@@ -459,7 +531,7 @@ class Interpreter:
             func = self.functions[stmt.func_name]
             return func.call(self, arguments)
 
-        raise RuntimeErrorLyric(f"Undefined function: {stmt.func_name}")
+        raise self._create_runtime_error(f"Undefined function: {stmt.func_name}")
 
     def _execute_print(self, stmt: PrintNode, env: Environment) -> None:
         """Execute a print statement."""
