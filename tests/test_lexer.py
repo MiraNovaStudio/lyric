@@ -267,3 +267,80 @@ line3'''
         tokens = tokenize('# This is just a comment')
         # Should have no tokens
         assert len(tokens) == 0
+    
+    def test_full_line_comments(self):
+        """Test that full-line comments are ignored."""
+        source = '''# this is a comment
+def main() {
+    print("hello")
+}'''
+        tokens = tokenize(source)
+        # Should not contain any COMMENT tokens
+        comment_tokens = [t for t in tokens if t.type == 'COMMENT']
+        assert len(comment_tokens) == 0
+        
+        # Should contain the actual code tokens
+        token_types = [t.type for t in tokens]
+        assert 'DEF' in token_types
+        assert 'IDENTIFIER' in token_types
+        assert 'LBRACE' in token_types
+    
+    def test_inline_comments(self):
+        """Test that inline comments after statements are ignored."""
+        source = 'print("hello") # this is an inline comment'
+        tokens = tokenize(source)
+        
+        # Should not contain any COMMENT tokens
+        comment_tokens = [t for t in tokens if t.type == 'COMMENT']
+        assert len(comment_tokens) == 0
+        
+        # Should contain the actual code tokens
+        token_types = [t.type for t in tokens]
+        assert 'IDENTIFIER' in token_types  # print
+        assert 'LPAREN' in token_types
+        assert 'STRING' in token_types
+        assert 'RPAREN' in token_types
+    
+    def test_multi_line_comments(self):
+        """Test multi-line comment sequences."""
+        source = '''# this is a comment
+# this is another comment
+# and one more
+def main() {
+    print("test")
+}'''
+        tokens = tokenize(source)
+        
+        # Should not contain any COMMENT tokens
+        comment_tokens = [t for t in tokens if t.type == 'COMMENT']
+        assert len(comment_tokens) == 0
+        
+        # Should contain the actual code tokens
+        token_types = [t.type for t in tokens]
+        assert 'DEF' in token_types
+        assert 'IDENTIFIER' in token_types
+        assert 'STRING' in token_types
+    
+    def test_comment_line_numbers(self):
+        """Test that line numbers remain correct when comment lines are skipped."""
+        source = '''# line 1 comment
+def main() {
+    # line 3 comment
+    print("test") # line 4 inline comment
+}'''
+        tokens = tokenize(source)
+        
+        # Find the def token and verify its line number
+        def_tokens = [t for t in tokens if t.type == 'DEF']
+        assert len(def_tokens) == 1
+        assert def_tokens[0].line == 2  # Should be on line 2, not line 1
+        
+        # Find the print token and verify its line number
+        print_tokens = [t for t in tokens if t.type == 'IDENTIFIER' and t.value == 'print']
+        assert len(print_tokens) == 1
+        assert print_tokens[0].line == 4  # Should be on line 4
+        
+        # Find the closing brace and verify its line number
+        brace_tokens = [t for t in tokens if t.type == 'RBRACE']
+        assert len(brace_tokens) == 1
+        assert brace_tokens[0].line == 5  # Should be on line 5

@@ -33,7 +33,6 @@ class Lexer:
         ('CLASS_END', r'\+\+\+'),                    # Class terminator
         ('NEWLINE', r'\n'),                          # Newline
         ('WHITESPACE', r'[ \t]+'),                   # Whitespace (ignored)
-        ('COMMENT', r'#.*'),                         # Comments (ignored)
         
         # Identifiers and keywords
         ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),

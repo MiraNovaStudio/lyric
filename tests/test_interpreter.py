@@ -314,3 +314,16 @@ Can drive: True"""
         output = self.capture_output(source)
         expected = "Error reporting test"
         assert output == expected
+    
+    def test_comment_handling(self):
+        """Test that comments are properly ignored during execution."""
+        source = '''def main() {
+	# This is a comment
+	print("Hello") # Inline comment
+	# Another comment
+	x = 5 # Assignment comment
+	print("x =", x) # Print comment
+}'''
+        output = self.capture_output(source)
+        expected = "Hello\nx = 5"
+        assert output == expected
