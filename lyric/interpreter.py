@@ -10,6 +10,7 @@ from lyric.ast import (
     IdentifierNode, PrintNode, ImportNode, ReturnNode
 )
 from lyric.errors import RuntimeErrorLyric
+from lyric.runtime import register_builtins, BuiltinFunction
 
 
 class Environment:
@@ -76,8 +77,8 @@ class Interpreter:
     
     def _init_builtins(self):
         """Initialize built-in functions."""
-        # We'll implement print() in the runtime module
-        pass
+        # Register built-in functions in the global environment
+        register_builtins(self.global_env.variables)
     
     def interpret(self, program: ProgramNode) -> None:
         """Interpret a complete program."""
@@ -153,17 +154,17 @@ class Interpreter:
             arguments.append(self._evaluate_expression(arg, env))
         
         # Check if it's a built-in function
-        if stmt.func_name == 'print':
-            return self._execute_print_builtin(arguments)
-        elif stmt.func_name == 'range':
-            return self._execute_range_builtin(arguments)
-        else:
-            # User-defined function
-            if stmt.func_name not in self.functions:
-                raise RuntimeErrorLyric(f"Undefined function: {stmt.func_name}")
-            
+        if stmt.func_name in self.global_env.variables:
+            builtin = self.global_env.variables[stmt.func_name]
+            if isinstance(builtin, BuiltinFunction):
+                return builtin.call(arguments)
+        
+        # Check user-defined functions
+        if stmt.func_name in self.functions:
             func = self.functions[stmt.func_name]
             return func.call(self, arguments)
+        
+        raise RuntimeErrorLyric(f"Undefined function: {stmt.func_name}")
     
     def _execute_print(self, stmt: PrintNode, env: Environment) -> None:
         """Execute a print statement."""
@@ -171,36 +172,9 @@ class Interpreter:
         for arg in stmt.args:
             arguments.append(self._evaluate_expression(arg, env))
         
-        self._execute_print_builtin(arguments)
-    
-    def _execute_print_builtin(self, arguments: List[Any]) -> None:
-        """Execute the built-in print function."""
-        # Convert all arguments to strings and print them
-        values = []
-        for arg in arguments:
-            values.append(str(arg))
-        
-        print(' '.join(values))
-    
-    def _execute_range_builtin(self, arguments: List[Any]) -> List[int]:
-        """Execute the built-in range function."""
-        if len(arguments) == 1:
-            # range(stop)
-            stop = int(arguments[0])
-            return list(range(stop))
-        elif len(arguments) == 2:
-            # range(start, stop)
-            start = int(arguments[0])
-            stop = int(arguments[1])
-            return list(range(start, stop))
-        elif len(arguments) == 3:
-            # range(start, stop, step)
-            start = int(arguments[0])
-            stop = int(arguments[1])
-            step = int(arguments[2])
-            return list(range(start, stop, step))
-        else:
-            raise RuntimeErrorLyric(f"range() takes 1-3 arguments, got {len(arguments)}")
+        # Use the built-in print function
+        print_builtin = self.global_env.variables['print']
+        print_builtin.call(arguments)
     
     def _execute_if(self, stmt: IfNode, env: Environment) -> Any:
         """Execute an if statement."""
