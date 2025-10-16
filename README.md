@@ -188,9 +188,9 @@ def main() {
 
 ## License and Credits
 
-The Lyric language is developed by **Michael Stone** and **ChatGPT** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
+The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
 
-The project is currently **pre-release** and version **0.0.3** corresponds to the completion of Sprint 2 (Control Flow, Error Handling, and Class Support). This milestone includes nested control flow, comprehensive error reporting, class instantiation and methods, runtime enhancements, and extensive test coverage with 88 passing tests.
+The project is currently **pre-release** and version **0.1.3** corresponds to the partial completion of Sprint 3 (Type System, Data Structures, Error Handling, and Performance). This milestone includes type declarations and inference, built-in data structures (lists and dictionaries), enhanced error handling with stack traces, runtime optimizations, and comprehensive test coverage with 143+ passing tests. Sprint 3 is currently 5/8 tasks complete with 3 additional tasks remaining.
 
 ## Contributing
 

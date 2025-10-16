@@ -52,6 +52,7 @@ class Lexer:
         ('ASSIGN', r'='),                            # Assignment
         ('LT', r'<'),                                # Less than
         ('GT', r'>'),                                # Greater than
+        ('NOT', r'!'),                               # Logical not
         ('PLUS', r'\+'),                             # Addition
         ('MINUS', r'-'),                             # Subtraction
         ('MULTIPLY', r'\*'),                         # Multiplication

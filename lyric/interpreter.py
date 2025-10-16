@@ -21,6 +21,8 @@ class Environment:
         self.variable_types: Dict[str, str] = {}  # Track variable types
         self.parent = parent
         self.interpreter = interpreter
+        self._cache: Dict[str, Any] = {}  # Cache for variable lookups
+        self._cache_valid = True  # Cache validity flag
 
     def define(self, name: str, value: Any, type_annotation: Optional[str] = None) -> None:
         """Define a variable in this environment with optional type annotation."""
@@ -50,6 +52,14 @@ class Environment:
         
         self.variables[name] = value
         self.variable_types[name] = type_annotation
+        self._cache[name] = value  # Update cache
+        self._invalidate_parent_cache()  # Invalidate parent caches
+    
+    def _invalidate_parent_cache(self):
+        """Invalidate cache for all parent environments."""
+        if self.parent:
+            self.parent._cache_valid = False
+            self.parent._invalidate_parent_cache()
 
     def _check_type(self, value: Any, expected_type: str) -> bool:
         """Check if a value matches the expected type."""
@@ -107,12 +117,26 @@ class Environment:
         return None
 
     def get(self, name: str) -> Any:
-        """Get a variable value, looking up the chain of environments."""
+        """Get a variable value, looking up the chain of environments with caching."""
+        # Record variable lookup for performance monitoring
+        if self.interpreter:
+            self.interpreter._record_variable_lookup()
+        
+        # Check local variables first
         if name in self.variables:
             return self.variables[name]
+        
+        # Check cache if valid
+        if self._cache_valid and name in self._cache:
+            return self._cache[name]
 
+        # Look up in parent environments
         if self.parent:
-            return self.parent.get(name)
+            value = self.parent.get(name)
+            # Cache the result for future lookups
+            if self._cache_valid:
+                self._cache[name] = value
+            return value
 
         # Use enhanced error if interpreter is available
         if self.interpreter:
@@ -124,6 +148,7 @@ class Environment:
         """Assign a value to a variable, looking up the chain if needed."""
         if name in self.variables:
             self.variables[name] = value
+            self._cache[name] = value  # Update cache
         elif self.parent:
             self.parent.assign(name, value)
         else:
@@ -139,6 +164,9 @@ class Function:
 
     def call(self, interpreter: 'Interpreter', arguments: List[Any]) -> Any:
         """Call this function with the given arguments."""
+        # Record function call for performance monitoring
+        interpreter._record_function_call(self.node.name)
+        
         # Create new environment for function execution
         env = Environment(self.closure, interpreter)
 
@@ -320,15 +348,64 @@ class BoundMethod:
 class Interpreter:
     """Interpreter for executing Lyric AST nodes."""
 
-    def __init__(self, debug_mode: bool = False):
+    def __init__(self, debug_mode: bool = False, performance_monitoring: bool = False):
         self.global_env = Environment(interpreter=self)
         self.functions: Dict[str, Function] = {}
         self.call_stack: List[Environment] = []
         self.stack_frames: List[StackFrame] = []  # For stack trace tracking
         self.debug_mode = debug_mode
+        self.performance_monitoring = performance_monitoring
+        
+        # Performance monitoring data
+        self._operation_counts: Dict[str, int] = {}
+        self._function_call_counts: Dict[str, int] = {}
+        self._variable_lookup_counts: int = 0
+        self._constant_fold_count: int = 0
 
         # Initialize built-in functions
         self._init_builtins()
+    
+    def _record_operation(self, operation: str):
+        """Record an operation for performance monitoring."""
+        if self.performance_monitoring:
+            self._operation_counts[operation] = self._operation_counts.get(operation, 0) + 1
+    
+    def _record_function_call(self, function_name: str):
+        """Record a function call for performance monitoring."""
+        if self.performance_monitoring:
+            self._function_call_counts[function_name] = self._function_call_counts.get(function_name, 0) + 1
+    
+    def _record_variable_lookup(self):
+        """Record a variable lookup for performance monitoring."""
+        if self.performance_monitoring:
+            self._variable_lookup_counts += 1
+    
+    def _record_constant_fold(self):
+        """Record a constant folding optimization for performance monitoring."""
+        if self.performance_monitoring:
+            self._constant_fold_count += 1
+    
+    def get_performance_stats(self) -> Dict[str, Any]:
+        """Get performance monitoring statistics."""
+        if not self.performance_monitoring:
+            return {"performance_monitoring": False}
+        
+        return {
+            "performance_monitoring": True,
+            "operation_counts": self._operation_counts.copy(),
+            "function_call_counts": self._function_call_counts.copy(),
+            "variable_lookup_count": self._variable_lookup_counts,
+            "constant_fold_count": self._constant_fold_count,
+            "total_operations": sum(self._operation_counts.values()),
+            "total_function_calls": sum(self._function_call_counts.values())
+        }
+    
+    def reset_performance_stats(self):
+        """Reset performance monitoring statistics."""
+        self._operation_counts.clear()
+        self._function_call_counts.clear()
+        self._variable_lookup_counts = 0
+        self._constant_fold_count = 0
 
     def _init_builtins(self):
         """Initialize built-in functions."""
@@ -733,7 +810,17 @@ class Interpreter:
             raise RuntimeErrorLyric(f"Cannot index object of type {type(obj).__name__}")
 
     def _evaluate_binary_op(self, expr: BinaryOpNode, env: Environment) -> Any:
-        """Evaluate a binary operation."""
+        """Evaluate a binary operation with constant folding optimization."""
+        # Record operation for performance monitoring
+        self._record_operation(f"binary_{expr.op}")
+        
+        # Constant folding: if both operands are literals, evaluate at compile time
+        if (isinstance(expr.left, LiteralNode) and isinstance(expr.right, LiteralNode) and
+            not isinstance(expr.left.value, (list, dict)) and not isinstance(expr.right.value, (list, dict))):
+            self._record_constant_fold()
+            return self._fold_constant_binary_op(expr.op, expr.left.value, expr.right.value)
+        
+        # Evaluate operands normally
         left = self._evaluate_expression(expr.left, env)
         right = self._evaluate_expression(expr.right, env)
 
@@ -771,9 +858,59 @@ class Interpreter:
             return right.__contains__(left)
         else:
             raise RuntimeErrorLyric(f"Unknown binary operator: {expr.op}")
+    
+    def _fold_constant_binary_op(self, op: str, left: Any, right: Any) -> Any:
+        """Fold constant binary operations at compile time for performance optimization."""
+        try:
+            if op == '+':
+                return left + right
+            elif op == '-':
+                return left - right
+            elif op == '*':
+                return left * right
+            elif op == '/':
+                if right == 0:
+                    raise RuntimeErrorLyric("Division by zero")
+                return left / right
+            elif op == '%':
+                if right == 0:
+                    raise RuntimeErrorLyric("Modulo by zero")
+                return left % right
+            elif op == '==':
+                return left == right
+            elif op == '!=':
+                return left != right
+            elif op == '<':
+                return left < right
+            elif op == '<=':
+                return left <= right
+            elif op == '>':
+                return left > right
+            elif op == '>=':
+                return left >= right
+            elif op == 'and':
+                return self._is_truthy(left) and self._is_truthy(right)
+            elif op == 'or':
+                return self._is_truthy(left) or self._is_truthy(right)
+            elif op == 'in':
+                return right.__contains__(left)
+            else:
+                raise RuntimeErrorLyric(f"Unknown binary operator: {op}")
+        except (TypeError, ValueError) as e:
+            # If constant folding fails, fall back to runtime evaluation
+            raise RuntimeErrorLyric(f"Invalid operation {left} {op} {right}: {e}")
 
     def _evaluate_unary_op(self, expr: UnaryOpNode, env: Environment) -> Any:
-        """Evaluate a unary operation."""
+        """Evaluate a unary operation with constant folding optimization."""
+        # Record operation for performance monitoring
+        self._record_operation(f"unary_{expr.op}")
+        
+        # Constant folding: if operand is a literal, evaluate at compile time
+        if isinstance(expr.operand, LiteralNode) and not isinstance(expr.operand.value, (list, dict)):
+            self._record_constant_fold()
+            return self._fold_constant_unary_op(expr.op, expr.operand.value)
+        
+        # Evaluate operand normally
         operand = self._evaluate_expression(expr.operand, env)
 
         if expr.op == '-':
@@ -784,6 +921,21 @@ class Interpreter:
             return not self._is_truthy(operand)
         else:
             raise RuntimeErrorLyric(f"Unknown unary operator: {expr.op}")
+    
+    def _fold_constant_unary_op(self, op: str, operand: Any) -> Any:
+        """Fold constant unary operations at compile time for performance optimization."""
+        try:
+            if op == '-':
+                return -operand
+            elif op == '+':
+                return +operand
+            elif op == '!' or op == 'not':
+                return not self._is_truthy(operand)
+            else:
+                raise RuntimeErrorLyric(f"Unknown unary operator: {op}")
+        except (TypeError, ValueError) as e:
+            # If constant folding fails, fall back to runtime evaluation
+            raise RuntimeErrorLyric(f"Invalid operation {op}{operand}: {e}")
 
     def _is_truthy(self, value: Any) -> bool:
         """Determine if a value is truthy."""

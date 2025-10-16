@@ -1,16 +1,20 @@
-# Lyric Language Specification  
-**Version:** 0.1  
-**Author:** Michael Stone & ChatGPT  
-**Date:** October 2025  
+# Lyric Language Specification
+
+**Version:** 0.1.3  
+**Authors:** Michael (Aeonath), ChatGPT, and Claude  
+**Project:** MiraNova Studios Initiative  
+**Date:** December 2024  
 
 ---
 
 ## 🌙 Overview
 
 **Lyric** is a modern, beginner-friendly programming language designed for simplicity, readability, and elegance.  
-It blends Python’s clean structure with a touch of natural language rhythm — code that reads like thought and feels like poetry.  
+It blends Python's clean structure with a touch of natural language rhythm — code that reads like thought and feels like poetry.  
 
-Lyric minimizes syntax noise, avoids redundant symbols, and introduces symbolic elegance (`+++`, `done`, `end`) to clarify program flow.  
+Lyric minimizes syntax noise, avoids redundant symbols, and introduces symbolic elegance (`+++`, `done`, `end`) to clarify program flow.
+
+The language is implemented in Python and currently supports core programming constructs including functions, conditionals, loops, classes, and built-in data structures with comprehensive error handling and performance optimizations.  
 
 ---
 
@@ -28,15 +32,18 @@ Lyric minimizes syntax noise, avoids redundant symbols, and introduces symbolic 
 
 ## 🧩 Syntax Summary
 
-| Construct | Open | Close | Notes |
-|------------|-------|--------|-------|
-| Conditional | `if`, `else if`, `else` | `end` | Replaces `elif` with `else if` |
-| Loop | `given` | `done` | Unifies `for` and `while` |
-| Function | `def` | `{ ... }` | Only construct using braces |
-| Class | `class` | `+++` | Symbolic closure (adds class to program) |
-| Try/Except | `try`, `except`, `finally` | implicit | Structured inside `{}` |
-| Import | `import` | — | Simplified single-line import |
-| Entry Point | `main()` | — | Required start of every program |
+| Construct | Open | Close | Status | Notes |
+|------------|-------|--------|--------|-------|
+| Conditional | `if`, `else if`, `else` | `end` | ✅ Implemented | Replaces `elif` with `else if` |
+| Loop | `given` | `done` | ✅ Implemented | Unifies `for` and `while` |
+| Function | `def` | `{ ... }` | ✅ Implemented | Only construct using braces |
+| Class | `class` | `+++` | ✅ Implemented | Symbolic closure (adds class to program) |
+| Try/Except | `try`, `except`, `finally` | implicit | 🚧 Planned | Structured inside `{}` |
+| Import | `import` | — | 🚧 Planned | Simplified single-line import |
+| Entry Point | `main()` | — | ✅ Implemented | Required start of every program |
+| Lists | `[ ... ]` | `[ ... ]` | ✅ Implemented | Built-in data structures |
+| Dictionaries | `{ ... }` | `{ ... }` | ✅ Implemented | Built-in data structures |
+| Type Annotations | `name: type` | — | ✅ Implemented | Optional type declarations |
 
 ---
 
@@ -47,7 +54,7 @@ There is no `__name__` or hidden runtime boilerplate.
 
 ```lyric
 def main() {
-	print("Hello, world!")
+    print("Hello, world!")
 }
 
 
@@ -55,154 +62,232 @@ def main() {
 
 ### Conditionals
 
-- Uses else if instead of elif
-- Block introduced by : and closed by end
+- Uses `else if` instead of `elif`
+- Block introduced by `:` and closed by `end`
 
 ```lyric
 if x > 0:
-	print("positive")
+    print("positive")
 else if x < 0:
-	print("negative")
+    print("negative")
 else:
-	print("zero")
+    print("zero")
 end
+```
 
 ### Loops
-- given replaces both for and while
-- Ends with done
 
+- `given` replaces both `for` and `while`
+- Ends with `done`
+
+```lyric
+# Iterator loop
 given i in range(5):
-	print(i)
+    print(i)
 done
 
+# While loop
 given n > 0:
-	print(n)
-	n -= 1
+    print(n)
+    n -= 1
 done
+```
 
 
 ### Functions
-- Braces used only for functions
--Indentation purely stylistic, not structural
 
+- Braces used only for functions
+- Indentation purely stylistic, not structural
+
+```lyric
 def greet(name) {
-	print("Hello,", name)
+    print("Hello,", name)
 }
+```
 
 ### Classes
-- +++ closes a class, symbolizing addition of a structure to the program
+
+- `+++` closes a class, symbolizing addition of a structure to the program
 - Classes are lightweight containers for variables and functions
 
+```lyric
 class Player:
-	name = "Guest"
+    name = "Guest"
 
-	def greet() {
-		print("Hello,", self.name)
-	}
+    def greet() {
+        print("Hello,", self.name)
+    }
 +++
+```
 
-### Importing
-- from … import … replaced with direct or semicolon syntax
+### Data Structures
 
+- Lists and dictionaries with indexing support
+- Built-in functions for manipulation
+
+```lyric
+def main() {
+    # Lists
+    numbers = [1, 2, 3, 4, 5]
+    print("First number:", numbers[0])
+    
+    # Dictionaries
+    person = {"name": "Alice", "age": 30}
+    print("Name:", person["name"])
+}
+```
+
+### Importing (Planned)
+- `from … import …` replaced with direct or semicolon syntax
+
+```lyric
 import math
 import random.randint
 import random; randint, randrange
 import os as system
+```
 
-### FIle I/o
-- given reads naturally with iterables
+### File I/O (Planned)
+- `given` reads naturally with iterables
 - Explicit and readable file handling
 
+```lyric
 def main() {
-	total = 0
-	given line in open("numbers.txt"):
-		total += int(line.strip())
-	done
-	print("Total:", total)
+    total = 0
+    given line in open("numbers.txt"):
+        total += int(line.strip())
+    done
+    print("Total:", total)
 }
+```
 
-### Error Handling
+### Error Handling (Planned)
 - Uses familiar Python-style exception handling
-- Syntax simplified: except: ErrorType:
+- Syntax simplified: `except: ErrorType:`
 
+```lyric
 def main() {
-	try:
-		n = int(input("Enter a number: "))
-		print("Half:", n / 2)
-	except: ValueError:
-		print("Invalid input")
-	finally:
-		print("Done")
+    try:
+        n = int(input("Enter a number: "))
+        print("Half:", n / 2)
+    except: ValueError:
+        print("Invalid input")
+    finally:
+        print("Done")
+}
+```
+
+### Type Annotations
+
+- Optional type declarations for variables and function parameters
+- Runtime type checking and inference
+
+```lyric
+def add_numbers(a: int, b: int) -> int {
+    return a + b
 }
 
-### Class
+def main() {
+    x: int = 5
+    y = 10  # Type inferred as int
+    result = add_numbers(x, y)
+    print("Result:", result)
+}
+```
 
+### Advanced Class Example
+
+```lyric
 class Counter:
-	value = 0
+    value = 0
 
-	def Counter(start) {
-		self.value = start
-	}
+    def Counter(start) {
+        self.value = start
+    }
 
-	def increment() {
-		self.value += 1
-	}
+    def increment() {
+        self.value += 1
+    }
 
-	def get_string() {
-		return str(self.value)
-	}
+    def get_string() {
+        return str(self.value)
+    }
 +++
 
 def main() {
-	c = Counter()
-	given i in range(3):
-		c.increment()
-	done
-	print("Count:", c)
+    c = Counter()
+    given i in range(3):
+        c.increment()
+    done
+    print("Count:", c)
 }
+```
 
-## NOTES
-🚫 Omitted in v0.1
+## 🚫 Features Omitted in v0.1.3
 
-To maintain simplicity:
+To maintain simplicity and focus on core concepts:
 
-No comprehensions ([x for x in y])
-
-No lambdas
-
-No decorators
-
-No context managers (with)
-
-No async/await
-
-No type hints
+- **No comprehensions** (`[x for x in y]`)
+- **No lambdas** (anonymous functions)
+- **No decorators** (function modifiers)
+- **No context managers** (`with` statements)
+- **No async/await** (asynchronous programming)
+- **No complex imports** (module system)
+- **No exception handling** (try/catch blocks)
 
 Lyric is about learning and clarity, not syntax density.
 
-## Example Program
+## 📋 Current Implementation Status
 
-import math
+### ✅ Implemented Features (v0.1.3)
+- Core language constructs (functions, conditionals, loops)
+- Class system with `+++` terminator
+- Built-in data structures (lists, dictionaries)
+- Type annotations and inference
+- Return statements and function values
+- Enhanced error handling with stack traces
+- Runtime optimizations (constant folding, caching)
+- Performance monitoring
+- Comprehensive test suite (143+ tests)
 
-def area(radius) {
-	return math.pi * radius * radius
+### 🚧 Planned Features
+- Import system
+- Exception handling (try/catch/finally)
+- File I/O operations
+- Advanced type system features
+- Module system
+- Standard library expansion
+
+## 💡 Example Program
+
+```lyric
+def calculate_area(radius: float) -> float {
+    return 3.14159 * radius * radius
 }
 
 def main() {
-	r = 5
-	print("Area:", area(r))
+    r: float = 5.0
+    area = calculate_area(r)
+    print("Area of circle with radius", r, "is:", area)
 }
+```
 
 ### Output
+```
+Area of circle with radius 5.0 is: 78.53975
+```
 
-Area: 78.5398
+## 🎵 Closing Thoughts
 
+Lyric is designed to teach, inspire, and simplify.  
+It's a bridge between thought and execution — a language that emphasizes intent, not ceremony.
 
-### Closing Thoughts
+> *"Code should not only work — it should sing."* 🎵
 
-Lyric is designed to teach, inspire, and simplify.
-It’s a bridge between thought and execution — a language that emphasizes intent, not ceremony.
+---
 
-“Code should not only work — it should sing.” 🎵
+**Current Version:** 0.1.3 (Sprint 3 - Type System & Performance - 5/8 Tasks Complete)  
+**Development Team:** Michael (Aeonath), ChatGPT, Claude  
+**Project:** MiraNova Studios Initiative
 
 
