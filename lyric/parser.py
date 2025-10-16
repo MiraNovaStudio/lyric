@@ -108,7 +108,7 @@ class Parser:
             return self._parse_loop_block()
         elif token.type == 'RETURN':
             return self._parse_return_stmt()
-        elif token.type == 'IDENTIFIER':
+        elif token.type == 'IDENTIFIER' or token.type == 'NONE':
             # Could be assignment or expression statement
             return self._parse_assignment_or_expr_stmt()
         else:
@@ -118,8 +118,19 @@ class Parser:
                              line=current.line, col=current.col, filename=self.filename)
 
     def _parse_function_def(self) -> FunctionNode:
-        """Parse a function definition."""
+        """Parse a function definition with C-style type annotations."""
         self._consume('DEF', "Expected 'def'")
+
+        # Check for optional return type annotation (C-style: def int func(...))
+        return_type = None
+        if ((self._match('IDENTIFIER') or self._match('NONE')) and 
+            self._peek_next() and self._peek_next().type == 'IDENTIFIER'):
+            # This looks like a return type followed by function name
+            if self._match('IDENTIFIER'):
+                return_type_token = self._consume('IDENTIFIER', "Expected return type")
+            else:  # NONE
+                return_type_token = self._consume('NONE', "Expected return type")
+            return_type = return_type_token.value
 
         name_token = self._consume('IDENTIFIER', "Expected function name")
         name = name_token.value
@@ -132,14 +143,6 @@ class Parser:
             params, param_types = self._parse_param_list()
 
         self._consume('RPAREN', "Expected ')'")
-        
-        # Check for return type annotation
-        return_type = None
-        if self._match('COLON'):
-            self._advance()  # consume ':'
-            return_type_token = self._consume('IDENTIFIER', "Expected return type")
-            return_type = return_type_token.value
-            
         self._consume('LBRACE', "Expected '{'")
 
         # Parse body statements until closing brace
@@ -260,19 +263,18 @@ class Parser:
 
     def _parse_assignment_or_expr_stmt(self) -> object:
         """Parse assignment or expression statement."""
-        # Check if this is a type-annotated variable declaration
-        if self._match('IDENTIFIER'):
-            # Peek ahead to see if there's a type annotation
-            current = self._peek()
+        # Check if this is a C-style type-annotated variable declaration: int x = value or None x = value
+        if self._match('IDENTIFIER') or self._match('NONE'):
+            # Peek ahead to see if this is a type annotation followed by variable name
             next_token = self._peek_next()
-            
-            if (next_token and next_token.type == 'COLON' and 
-                self._peek_next_next() and self._peek_next_next().type == 'IDENTIFIER' and
-                self._peek_next_next_next() and self._peek_next_next_next().type == 'ASSIGN'):
-                # This is a type-annotated variable: name: type = value
+            if (next_token and next_token.type == 'IDENTIFIER' and 
+                self._peek_next_next() and self._peek_next_next().type == 'ASSIGN'):
+                # This is a C-style type-annotated variable: int x = value or None x = value
+                if self._match('IDENTIFIER'):
+                    type_token = self._consume('IDENTIFIER', "Expected variable type")
+                else:  # NONE
+                    type_token = self._consume('NONE', "Expected variable type")
                 var_token = self._consume('IDENTIFIER', "Expected variable name")
-                self._advance()  # consume ':'
-                type_token = self._consume('IDENTIFIER', "Expected type name")
                 self._advance()  # consume '='
                 right_expr = self._parse_expression()
                 return AssignNode(name=var_token.value, expr=right_expr, 
@@ -285,7 +287,15 @@ class Parser:
         if self._match('ASSIGN'):
             self._advance()  # consume '='
             right_expr = self._parse_expression()
-            return AssignNode(name=left_expr, expr=right_expr)
+            # Handle different types of assignment targets
+            if isinstance(left_expr, IdentifierNode):
+                # Simple variable assignment: x = value
+                return AssignNode(name=left_expr.name, expr=right_expr)
+            elif isinstance(left_expr, MemberAccessNode):
+                # Member access assignment: self.name = value
+                return AssignNode(name=left_expr, expr=right_expr)
+            else:
+                raise ParseError(f"Invalid assignment target: {left_expr}", filename=self.filename)
         else:
             # This is an expression statement
             return left_expr
@@ -313,8 +323,9 @@ class Parser:
         return statements
 
     def _parse_param_list(self) -> tuple[List[str], List[str]]:
-        """Parse parameter list with optional type annotations.
+        """Parse parameter list with C-style type annotations.
         
+        Format: int a, str b, float c
         Returns:
             tuple of (param_names, param_types)
         """
@@ -322,17 +333,21 @@ class Parser:
         param_types = []
 
         while True:
+            # Check for optional type annotation before parameter name
+            param_type = None
+            if ((self._match('IDENTIFIER') or self._match('NONE')) and 
+                self._peek_next() and self._peek_next().type == 'IDENTIFIER'):
+                # This looks like a type followed by parameter name
+                if self._match('IDENTIFIER'):
+                    type_token = self._consume('IDENTIFIER', "Expected parameter type")
+                else:  # NONE
+                    type_token = self._consume('NONE', "Expected parameter type")
+                param_type = type_token.value
+            
             param_token = self._consume('IDENTIFIER', "Expected parameter name")
             param_name = param_token.value
             params.append(param_name)
-            
-            # Check for type annotation
-            if self._match('COLON'):
-                self._advance()  # consume ':'
-                type_token = self._consume('IDENTIFIER', "Expected type name")
-                param_types.append(type_token.value)
-            else:
-                param_types.append(None)  # No type annotation
+            param_types.append(param_type)
 
             if self._match('COMMA'):
                 self._advance()

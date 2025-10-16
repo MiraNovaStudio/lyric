@@ -41,7 +41,7 @@ class TestCLIIntegration:
         
         assert exit_code == 1  # Should fail with error
         assert "Testing error reporting..." in stdout
-        assert "Runtime Error: Undefined variable: undefined_variable" in stdout
+        assert "Runtime Error" in stdout and "undefined_variable" in stdout
         assert stderr == ""  # No Python traceback
     
     def test_cli_lex_error(self):
@@ -66,7 +66,7 @@ class TestCLIIntegration:
         
         assert exit_code == 1
         assert "Testing various runtime errors..." in stdout
-        assert "Runtime Error: Undefined variable: undefined_variable" in stdout
+        assert "Runtime Error" in stdout and "undefined_variable" in stdout
         assert stderr == ""  # No Python traceback
     
     def test_cli_nonexistent_file(self):

@@ -119,7 +119,7 @@ def main() {
 '''
         program = parse(source, "test")
         
-        with pytest.raises(RuntimeErrorLyric, match="Key 'age' not found in dictionary"):
+        with pytest.raises(RuntimeErrorLyric, match="Dictionary key 'age' not found"):
             interpret(program)
 
     def test_append_function(self):

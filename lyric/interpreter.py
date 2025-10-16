@@ -28,14 +28,14 @@ class Environment:
         """Define a variable in this environment with optional type annotation."""
         # Type inference for literals if no type annotation provided
         if type_annotation is None:
-            if isinstance(value, int):
+            if isinstance(value, bool):
+                type_annotation = 'bool'
+            elif isinstance(value, int):
                 type_annotation = 'int'
             elif isinstance(value, float):
                 type_annotation = 'float'
             elif isinstance(value, str):
                 type_annotation = 'str'
-            elif isinstance(value, bool):
-                type_annotation = 'bool'
             elif isinstance(value, list):
                 type_annotation = 'list'
             elif isinstance(value, dict):
@@ -48,7 +48,13 @@ class Environment:
         # Type enforcement if type annotation is provided (but not for class objects)
         if (type_annotation and type_annotation != 'unknown' and 
             not self._check_type(value, type_annotation)):
-            raise RuntimeErrorLyric(f"Type mismatch: expected {type_annotation}, got {self._get_type_name(value)}")
+            # Create enhanced error message with context
+            error_msg = (f"Type mismatch for parameter '{name}': expected {type_annotation}, "
+                        f"got {self._get_type_name(value)}")
+            if self.interpreter:
+                raise self.interpreter._create_runtime_error(error_msg)
+            else:
+                raise RuntimeErrorLyric(error_msg)
         
         self.variables[name] = value
         self.variable_types[name] = type_annotation
@@ -60,16 +66,36 @@ class Environment:
         if self.parent:
             self.parent._cache_valid = False
             self.parent._invalidate_parent_cache()
+    
+    
+    def _get_type_name(self, value: Any) -> str:
+        """Get the type name of a value."""
+        if isinstance(value, bool):
+            return 'bool'
+        elif isinstance(value, int):
+            return 'int'
+        elif isinstance(value, float):
+            return 'float'
+        elif isinstance(value, str):
+            return 'str'
+        elif isinstance(value, list):
+            return 'list'
+        elif isinstance(value, dict):
+            return 'dict'
+        elif value is None:
+            return 'None'
+        else:
+            return type(value).__name__
 
     def _check_type(self, value: Any, expected_type: str) -> bool:
         """Check if a value matches the expected type."""
-        if expected_type == 'int' and isinstance(value, int):
+        if expected_type == 'bool' and isinstance(value, bool):
+            return True
+        elif expected_type == 'int' and isinstance(value, int) and not isinstance(value, bool):
             return True
         elif expected_type == 'float' and isinstance(value, float):
             return True
         elif expected_type == 'str' and isinstance(value, str):
-            return True
-        elif expected_type == 'bool' and isinstance(value, bool):
             return True
         elif expected_type == 'list' and isinstance(value, list):
             return True
@@ -86,14 +112,14 @@ class Environment:
 
     def _get_type_name(self, value: Any) -> str:
         """Get the type name of a value."""
-        if isinstance(value, int):
+        if isinstance(value, bool):
+            return 'bool'
+        elif isinstance(value, int):
             return 'int'
         elif isinstance(value, float):
             return 'float'
         elif isinstance(value, str):
             return 'str'
-        elif isinstance(value, bool):
-            return 'bool'
         elif isinstance(value, list):
             return 'list'
         elif isinstance(value, dict):
@@ -147,6 +173,17 @@ class Environment:
     def assign(self, name: str, value: Any) -> None:
         """Assign a value to a variable, looking up the chain if needed."""
         if name in self.variables:
+            # Check if this variable has a type annotation and enforce it
+            existing_type = self.variable_types.get(name)
+            if existing_type and existing_type != 'unknown':
+                if not self._check_type(value, existing_type):
+                    error_msg = (f"Type mismatch for variable '{name}': expected {existing_type}, "
+                               f"got {self._get_type_name(value)}")
+                    if self.interpreter:
+                        raise self.interpreter._create_runtime_error(error_msg)
+                    else:
+                        raise RuntimeErrorLyric(error_msg)
+            
             self.variables[name] = value
             self._cache[name] = value  # Update cache
         elif self.parent:
@@ -181,7 +218,16 @@ class Function:
                 if self.node.param_types and i < len(self.node.param_types):
                     param_type = self.node.param_types[i]
                 
-                env.define(param, arg, param_type)
+                try:
+                    env.define(param, arg, param_type)
+                except RuntimeErrorLyric as e:
+                    # Enhance error with function call context
+                    enhanced_msg = (f"In function '{self.node.name}': {str(e)}. "
+                                  f"Called with argument {i+1} ({param}) = {repr(arg)}")
+                    if interpreter:
+                        raise interpreter._create_runtime_error(enhanced_msg)
+                    else:
+                        raise RuntimeErrorLyric(enhanced_msg)
 
             # Push stack frame for this function call (after parameters are bound)
             interpreter._push_stack_frame(
@@ -198,7 +244,10 @@ class Function:
             if self.node.return_type:
                 expected_type = self.node.return_type
                 if not env._check_type(result, expected_type):
-                    raise interpreter._create_runtime_error(f"Return type mismatch: expected {expected_type}, got {env._get_type_name(result)}")
+                    error_msg = (f"Function '{self.node.name}' return type mismatch: "
+                               f"expected {expected_type}, got {env._get_type_name(result)} "
+                               f"(returned value: {repr(result)})")
+                    raise interpreter._create_runtime_error(error_msg)
             
             return result
         
@@ -452,6 +501,12 @@ class Interpreter:
             )
             updated_frames.append(updated_frame)
         
+        # Use filename and line from current stack frame if not provided
+        if filename is None and updated_frames:
+            filename = updated_frames[-1].filename
+        if line is None and updated_frames:
+            line = updated_frames[-1].line
+        
         return RuntimeErrorLyric(
             message, 
             line=line, 
@@ -496,6 +551,13 @@ class Interpreter:
         else:
             # Try to evaluate as expression
             return self._evaluate_expression(stmt, env)
+    
+    def _execute_block(self, statements: List[Any], env: Environment) -> Any:
+        """Execute a block of statements."""
+        result = None
+        for stmt in statements:
+            result = self._execute_statement(stmt, env)
+        return result
 
     def _execute_function_def(self, stmt: FunctionNode, env: Environment) -> None:
         """Execute a function definition."""
@@ -565,11 +627,45 @@ class Interpreter:
                                         f"non-instance object")
         elif isinstance(stmt.name, str):
             # Regular variable assignment with optional type annotation
-            env.define(stmt.name, value, stmt.type_annotation)
+            if stmt.type_annotation:
+                # New variable with type annotation
+                env.define(stmt.name, value, stmt.type_annotation)
+            else:
+                # Check if variable exists
+                if stmt.name in env.variables:
+                    # Reassign existing variable (with type checking)
+                    env.assign(stmt.name, value)
+                elif env.parent:
+                    # Try to find in parent scope
+                    try:
+                        env.parent.assign(stmt.name, value)
+                    except:
+                        # Variable doesn't exist anywhere, define it
+                        env.define(stmt.name, value)
+                else:
+                    # New variable without type annotation
+                    env.define(stmt.name, value)
             return value
         elif isinstance(stmt.name, IdentifierNode):
             # Regular variable assignment from identifier with optional type annotation
-            env.define(stmt.name.name, value, stmt.type_annotation)
+            if stmt.type_annotation:
+                # New variable with type annotation
+                env.define(stmt.name.name, value, stmt.type_annotation)
+            else:
+                # Check if variable exists
+                if stmt.name.name in env.variables:
+                    # Reassign existing variable (with type checking)
+                    env.assign(stmt.name.name, value)
+                elif env.parent:
+                    # Try to find in parent scope
+                    try:
+                        env.parent.assign(stmt.name.name, value)
+                    except:
+                        # Variable doesn't exist anywhere, define it
+                        env.define(stmt.name.name, value)
+                else:
+                    # New variable without type annotation
+                    env.define(stmt.name.name, value)
             return value
         else:
             raise RuntimeErrorLyric(f"Invalid assignment target: {type(stmt.name)}")
@@ -787,27 +883,27 @@ class Interpreter:
         # Handle list indexing
         if isinstance(obj, list):
             if not isinstance(index, int):
-                raise RuntimeErrorLyric(f"List index must be an integer, got {type(index).__name__}")
+                raise RuntimeErrorLyric(f"List indexing error: index must be an integer, got {type(index).__name__} (value: {repr(index)})")
             if index < 0 or index >= len(obj):
-                raise RuntimeErrorLyric(f"List index {index} out of range (list has {len(obj)} elements)")
+                raise RuntimeErrorLyric(f"List index {index} out of range (list has {len(obj)} elements, valid indices: 0 to {len(obj)-1})")
             return obj[index]
         
         # Handle dictionary indexing
         elif isinstance(obj, dict):
             if index not in obj:
-                raise RuntimeErrorLyric(f"Key '{index}' not found in dictionary")
+                raise RuntimeErrorLyric(f"Dictionary key '{index}' not found (available keys: {list(obj.keys())})")
             return obj[index]
         
         # Handle string indexing (for convenience)
         elif isinstance(obj, str):
             if not isinstance(index, int):
-                raise RuntimeErrorLyric(f"String index must be an integer, got {type(index).__name__}")
+                raise RuntimeErrorLyric(f"String indexing error: index must be an integer, got {type(index).__name__} (value: {repr(index)})")
             if index < 0 or index >= len(obj):
-                raise RuntimeErrorLyric(f"String index {index} out of range (string has {len(obj)} characters)")
+                raise RuntimeErrorLyric(f"String index {index} out of range (string has {len(obj)} characters, valid indices: 0 to {len(obj)-1})")
             return obj[index]
         
         else:
-            raise RuntimeErrorLyric(f"Cannot index object of type {type(obj).__name__}")
+            raise RuntimeErrorLyric(f"Cannot index object of type {type(obj).__name__} (only lists, dictionaries, and strings support indexing)")
 
     def _evaluate_binary_op(self, expr: BinaryOpNode, env: Environment) -> Any:
         """Evaluate a binary operation with constant folding optimization."""
@@ -832,11 +928,11 @@ class Interpreter:
             return left * right
         elif expr.op == '/':
             if right == 0:
-                raise RuntimeErrorLyric("Division by zero")
+                raise RuntimeErrorLyric("Arithmetic error: division by zero")
             return left / right
         elif expr.op == '%':
             if right == 0:
-                raise RuntimeErrorLyric("Modulo by zero")
+                raise RuntimeErrorLyric("Arithmetic error: modulo by zero")
             return left % right
         elif expr.op == '==':
             return left == right
@@ -870,11 +966,11 @@ class Interpreter:
                 return left * right
             elif op == '/':
                 if right == 0:
-                    raise RuntimeErrorLyric("Division by zero")
+                    raise RuntimeErrorLyric("Arithmetic error: division by zero")
                 return left / right
             elif op == '%':
                 if right == 0:
-                    raise RuntimeErrorLyric("Modulo by zero")
+                    raise RuntimeErrorLyric("Arithmetic error: modulo by zero")
                 return left % right
             elif op == '==':
                 return left == right

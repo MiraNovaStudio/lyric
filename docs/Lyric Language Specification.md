@@ -43,7 +43,7 @@ The language is implemented in Python and currently supports core programming co
 | Entry Point | `main()` | — | ✅ Implemented | Required start of every program |
 | Lists | `[ ... ]` | `[ ... ]` | ✅ Implemented | Built-in data structures |
 | Dictionaries | `{ ... }` | `{ ... }` | ✅ Implemented | Built-in data structures |
-| Type Annotations | `name: type` | — | ✅ Implemented | Optional type declarations |
+| Type Annotations | `int name` | — | ✅ Implemented | Optional C-style type declarations |
 
 ---
 
@@ -179,19 +179,27 @@ def main() {
 
 ### Type Annotations
 
-- Optional type declarations for variables and function parameters
+- Optional type declarations using C-style syntax
 - Runtime type checking and inference
+- Types are optional and can be omitted
 
 ```lyric
-def add_numbers(a: int, b: int) -> int {
+# Typed version
+def int add_numbers(int a, int b) {
     return a + b
 }
 
+# Untyped version (also valid)
+def greet(name) {
+    print("Hello", name)
+}
+
 def main() {
-    x: int = 5
-    y = 10  # Type inferred as int
+    int x = 5          # Explicit type
+    y = 10             # Type inferred as int
+    str name = "Alice" # Explicit type
     result = add_numbers(x, y)
-    print("Result:", result)
+    greet(name)
 }
 ```
 
@@ -261,12 +269,12 @@ Lyric is about learning and clarity, not syntax density.
 ## 💡 Example Program
 
 ```lyric
-def calculate_area(radius: float) -> float {
+def float calculate_area(float radius) {
     return 3.14159 * radius * radius
 }
 
 def main() {
-    r: float = 5.0
+    float r = 5.0
     area = calculate_area(r)
     print("Area of circle with radius", r, "is:", area)
 }

@@ -18,8 +18,8 @@ class BuiltinFunction:
     def call(self, args: List[Any]) -> Any:
         """Call the built-in function with arguments."""
         if self.arity is not None and len(args) != self.arity:
-            raise RuntimeErrorLyric(f"{self.name}() takes {self.arity} argument(s), "
-                                    f"got {len(args)}")
+            raise RuntimeErrorLyric(f"Function '{self.name}()' argument error: takes {self.arity} argument(s), "
+                                  f"got {len(args)} (arguments: {[repr(arg) for arg in args]})")
         return self.func(args)
 
 
@@ -69,7 +69,7 @@ def _builtin_input(args: List[Any]) -> str:
     elif len(args) == 1:
         prompt = str(args[0])
     else:
-        raise RuntimeErrorLyric(f"input() takes 0-1 arguments, got {len(args)}")
+        raise RuntimeErrorLyric(f"Function 'input()' argument error: takes 0-1 arguments, got {len(args)} (arguments: {[repr(arg) for arg in args]})")
 
     return input(prompt)
 
@@ -77,23 +77,23 @@ def _builtin_input(args: List[Any]) -> str:
 def _builtin_int(args: List[Any]) -> int:
     """Built-in int conversion function."""
     if len(args) != 1:
-        raise RuntimeErrorLyric(f"int() takes 1 argument, got {len(args)}")
+        raise RuntimeErrorLyric(f"Function 'int()' argument error: takes 1 argument, got {len(args)} (arguments: {[repr(arg) for arg in args]})")
 
     try:
         return int(args[0])
     except (ValueError, TypeError) as e:
-        raise RuntimeErrorLyric(f"int() conversion failed: {e}")
+        raise RuntimeErrorLyric(f"Type conversion error: int() failed for value {repr(args[0])} - {e}")
 
 
 def _builtin_float(args: List[Any]) -> float:
     """Built-in float conversion function."""
     if len(args) != 1:
-        raise RuntimeErrorLyric(f"float() takes 1 argument, got {len(args)}")
+        raise RuntimeErrorLyric(f"Function 'float()' argument error: takes 1 argument, got {len(args)} (arguments: {[repr(arg) for arg in args]})")
 
     try:
         return float(args[0])
     except (ValueError, TypeError) as e:
-        raise RuntimeErrorLyric(f"float() conversion failed: {e}")
+        raise RuntimeErrorLyric(f"Type conversion error: float() failed for value {repr(args[0])} - {e}")
 
 
 def _builtin_str(args: List[Any]) -> str:

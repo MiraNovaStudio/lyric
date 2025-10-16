@@ -1,19 +1,19 @@
 # Type Declaration and Inference Tests
 
 # A1: Type declarations work correctly
-x: int = 5
-y: str = "hello"
-z: bool = true
+int x = 5
+str y = "hello"
+bool z = true
 
 # A2: Type enforcement works - this should cause an error if uncommented
 # x: int = "string"  # This should raise a type mismatch error
 
 # A3: Functions with typed parameters enforce types
-def add(a: int, b: int): int {
+def int add(int a, int b) {
     return a + b
 }
 
-def greet(name: str): str {
+def str greet(str name) {
     return "Hello, " + name
 }
 

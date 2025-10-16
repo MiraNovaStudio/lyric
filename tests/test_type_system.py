@@ -35,9 +35,9 @@ class TestTypeSystem:
     def test_type_annotated_variable_assignment(self):
         """Test A1: Type declarations work correctly."""
         source = '''
-x: int = 5
-y: str = "hello"
-z: bool = true
+int x = 5
+str y = "hello"
+bool z = true
 
 def main() {
     print("x:", x, "type:", type(x))
@@ -53,17 +53,17 @@ def main() {
     def test_type_enforcement_variable(self):
         """Test A2: Assigning a string to a variable declared as int raises a runtime error."""
         source = '''
-x: int = "hello"
+int x = "hello"
 '''
         program = parse(source, "test")
-        
-        with pytest.raises(RuntimeErrorLyric, match="Type mismatch: expected int, got str"):
+
+        with pytest.raises(RuntimeErrorLyric, match="Type mismatch for parameter 'x': expected int, got str"):
             interpret(program)
 
     def test_type_annotated_function_parameters(self):
         """Test A3: Functions with typed parameters enforce types."""
         source = '''
-def add(a: int, b: int): int {
+def int add(int a, int b) {
     return a + b
 }
 
@@ -78,7 +78,7 @@ def main() {
     def test_type_enforcement_function_parameters(self):
         """Test A3: Functions with typed parameters enforce types when called with wrong types."""
         source = '''
-def add(a: int, b: int): int {
+def int add(int a, int b) {
     return a + b
 }
 
@@ -87,8 +87,8 @@ def main() {
 }
 '''
         program = parse(source, "test")
-        
-        with pytest.raises(RuntimeErrorLyric, match="Type mismatch: expected int, got str"):
+
+        with pytest.raises(RuntimeErrorLyric, match="In function 'add': .*Type mismatch for parameter 'a': expected int, got str"):
             interpret(program)
 
     def test_type_inference_literals(self):
@@ -118,7 +118,7 @@ def main() {
     def test_return_type_enforcement(self):
         """Test return type enforcement."""
         source = '''
-def get_string(): str {
+def str get_string() {
     return 42
 }
 
@@ -127,14 +127,14 @@ def main() {
 }
 '''
         program = parse(source, "test")
-        
-        with pytest.raises(RuntimeErrorLyric, match="Return type mismatch: expected str, got int"):
+
+        with pytest.raises(RuntimeErrorLyric, match="Function 'get_string' return type mismatch"):
             interpret(program)
 
     def test_type_annotated_function_return(self):
         """Test type-annotated function with correct return type."""
         source = '''
-def get_string(): str {
+def str get_string() {
     return "hello"
 }
 
@@ -149,10 +149,10 @@ def main() {
     def test_mixed_type_annotations(self):
         """Test mixing type-annotated and non-annotated variables."""
         source = '''
-typed_var: int = 5
+int typed_var = 5
 inferred_var = 10
 
-def typed_func(x: int): int {
+def int typed_func(int x) {
     return x * 2
 }
 
@@ -177,23 +177,23 @@ def main() {
         """Test comprehensive type system functionality."""
         source = '''
 # Type-annotated variables
-counter: int = 0
-message: str = "Type system working"
-enabled: bool = true
+int counter = 0
+str message = "Type system working"
+bool enabled = true
 
     # Type-inferred variables
     auto_number = 100
 
 # Type-annotated functions
-def increment(x: int): int {
+def int increment(int x) {
     return x + 1
 }
 
-def format_message(name: str): str {
+def str format_message(str name) {
     return message + ": " + name
 }
 
-def check_status(): bool {
+def bool check_status() {
     return enabled
 }
 

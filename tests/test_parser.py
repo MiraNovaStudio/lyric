@@ -427,8 +427,8 @@ done'''
         # Verify first member (assignment)
         name_assign = class_def.members_statements[0]
         assert isinstance(name_assign, AssignNode)
-        assert isinstance(name_assign.name, IdentifierNode)
-        assert name_assign.name.name == "name"
+        assert isinstance(name_assign.name, str)
+        assert name_assign.name == "name"
         assert isinstance(name_assign.expr, LiteralNode)
         assert name_assign.expr.value == "Guest"
         
@@ -462,8 +462,8 @@ done'''
         
         assign = program.statements[0]
         assert isinstance(assign, AssignNode)
-        assert isinstance(assign.name, IdentifierNode)
-        assert assign.name.name == "x"
+        assert isinstance(assign.name, str)
+        assert assign.name == "x"
         assert isinstance(assign.expr, LiteralNode)
         assert assign.expr.value == 42
     

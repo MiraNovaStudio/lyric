@@ -209,15 +209,15 @@ def main() {
     def test_return_with_type_annotations(self):
         """Test return statements with type annotations (from Task 1)."""
         source = '''
-def get_int(): int {
+def int get_int() {
     return 42
 }
 
-def add(a: int, b: int): int {
+def int add(int a, int b) {
     return a + b
 }
 
-def get_string(): str {
+def str get_string() {
     return "hello"
 }
 
@@ -239,7 +239,7 @@ def main() {
     def test_return_type_enforcement(self):
         """Test return type enforcement with type annotations."""
         source = '''
-def get_string(): str {
+def str get_string() {
     return 42
 }
 
@@ -249,7 +249,7 @@ def main() {
 '''
         program = parse(source, "test")
         
-        with pytest.raises(RuntimeErrorLyric, match="Return type mismatch: expected str, got int"):
+        with pytest.raises(RuntimeErrorLyric, match="Function 'get_string' return type mismatch"):
             interpret(program)
 
     def test_comprehensive_return_statements(self):
