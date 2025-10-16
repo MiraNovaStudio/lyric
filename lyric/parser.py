@@ -59,7 +59,10 @@ class Parser:
             return self._advance()
         
         current = self._peek()
-        raise ParseError(f"{message} at line {current.line}, col {current.col}")
+        if current is None:
+            raise ParseError(f"{message} at end of file")
+        else:
+            raise ParseError(f"{message} at line {current.line}, col {current.col}")
     
     def _skip_newlines(self):
         """Skip newline tokens."""

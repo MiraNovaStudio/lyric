@@ -5,9 +5,10 @@ Command-line interface for the Lyric interpreter.
 import sys
 import os
 from pathlib import Path
+from lyric.lexer import tokenize
 from lyric.parser import parse
 from lyric.interpreter import interpret
-from lyric.errors import ParseError, RuntimeErrorLyric
+from lyric.errors import LexError, ParseError, RuntimeErrorLyric
 
 
 def main():
@@ -42,6 +43,9 @@ def main():
             with open(file_path, 'r', encoding='utf-8') as f:
                 source = f.read()
             
+            # Tokenize the source code
+            tokens = tokenize(source)
+            
             # Parse the source code
             program = parse(source)
             
@@ -51,14 +55,17 @@ def main():
         except FileNotFoundError:
             print(f"Error: File '{file_path}' not found")
             sys.exit(1)
+        except LexError as e:
+            print(f"Lexical Error in '{file_path}': {e}")
+            sys.exit(1)
         except ParseError as e:
-            print(f"Parse Error: {e}")
+            print(f"Parse Error in '{file_path}': {e}")
             sys.exit(1)
         except RuntimeErrorLyric as e:
-            print(f"Runtime Error: {e}")
+            print(f"Runtime Error in '{file_path}': {e}")
             sys.exit(1)
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error in '{file_path}': {e}")
             sys.exit(1)
     else:
         print(f"Unknown command: {command}")
