@@ -6,7 +6,7 @@ import pytest
 from lyric.ast import (
     ProgramNode, FunctionNode, IfNode, ElifNode, LoopNode, AssignNode,
     CallNode, BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode,
-    ClassNode, PrintNode, ImportNode, ReturnNode, TryNode, ExceptNode
+    ClassNode, PrintNode, ImportNode, ReturnNode, TryNode, ExceptNode, MemberAccessNode
 )
 
 
@@ -101,7 +101,7 @@ class TestASTNodes:
             name="x",
             expr=LiteralNode(42)
         )
-        assert repr(node) == "AssignNode(name='x', expr=LiteralNode(value=42))"
+        assert repr(node) == "AssignNode(name=x, expr=LiteralNode(value=42))"
         assert node.name == "x"
         assert node.expr == LiteralNode(42)
     
@@ -427,7 +427,8 @@ done'''
         # Verify first member (assignment)
         name_assign = class_def.members_statements[0]
         assert isinstance(name_assign, AssignNode)
-        assert name_assign.name == "name"
+        assert isinstance(name_assign.name, IdentifierNode)
+        assert name_assign.name.name == "name"
         assert isinstance(name_assign.expr, LiteralNode)
         assert name_assign.expr.value == "Guest"
         
@@ -444,8 +445,10 @@ done'''
         assert print_call.func_name == "print"
         assert len(print_call.args) == 2
         assert print_call.args[0].value == "Hello,"
-        assert isinstance(print_call.args[1], IdentifierNode)
-        assert print_call.args[1].name == "self.name"
+        assert isinstance(print_call.args[1], MemberAccessNode)
+        assert isinstance(print_call.args[1].object, IdentifierNode)
+        assert print_call.args[1].object.name == "self"
+        assert print_call.args[1].member == "name"
     
     def test_parse_assignment(self):
         """Test parsing assignment statements."""
@@ -459,7 +462,8 @@ done'''
         
         assign = program.statements[0]
         assert isinstance(assign, AssignNode)
-        assert assign.name == "x"
+        assert isinstance(assign.name, IdentifierNode)
+        assert assign.name.name == "x"
         assert isinstance(assign.expr, LiteralNode)
         assert assign.expr.value == 42
     

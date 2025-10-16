@@ -23,11 +23,15 @@ lyric --version
 
 ### Example Programs
 
-The project includes three example programs that demonstrate core language features:
+The project includes several example programs that demonstrate core language features:
 
 - **hello.ly** - Basic function definition and print statement
 - **if_demo.ly** - Conditional logic with if/else statements  
 - **loop.ly** - Iterator loops using the given/done construct
+- **class_test.ly** - Class definition and instantiation
+- **nested_flow.ly** - Nested control flow structures
+- **boolean_test.ly** - Boolean and comparison operations
+- **runtime_test.ly** - Runtime enhancements (isinstance, type, enhanced print)
 
 ## How to Develop
 
@@ -115,33 +119,65 @@ pip install pytest flake8 setuptools
 - **Functions**: `def name(params) { body }`
 - **Conditionals**: `if condition: ... else: ... end`
 - **Loops**: `given variable in iterable: ... done` or `given condition: ... done`
-- **Classes**: `class Name: ... +++` (parsing implemented, execution in Sprint 2)
+- **Classes**: `class Name: ... +++` (full implementation with instantiation and methods)
 - **Variables**: Dynamic typing with assignment `name = value`
+- **Comments**: `# comment text` (full-line and inline comments)
 
 ### Built-in Functions
 
-- `print(*args)` — Multi-argument printing with space separation
+- `print(*args)` — Multi-argument printing with space separation and None handling
 - `input(prompt?)` — Read from stdin with optional prompt
 - `int(value)`, `float(value)`, `str(value)` — Type conversions
 - `range(start?, stop, step?)` — Integer sequence generation
 - `len(sequence)` — Length calculation
 - `open(path)` — File iteration over lines
+- `isinstance(obj, type_name)` — Type checking for objects and class instances
+- `type(obj)` — Type introspection returning string type names
 
 ### Example Syntax
 
 ```lyric
+# Class definition with methods and attributes
+class Player:
+    name = "Guest"
+    score = 0
+    
+    def greet() {
+        print("Hello,", self.name)
+    }
+    
+    def add_score(points) {
+        self.score = self.score + points
+    }
++++
+
 def main() {
     print("Hello, Lyric!")
     
+    # Conditional logic
     if 5 > 3:
         print("Math works!")
     else:
         print("Something's wrong")
     end
     
+    # Iterator loops
     given i in range(3):
         print("Count:", i)
     done
+    
+    # Class instantiation and method calls
+    player = Player()
+    player.name = "Alice"
+    player.greet()
+    player.add_score(100)
+    
+    # Type checking and introspection
+    print("Player type:", type(player))
+    print("Is Player:", isinstance(player, "Player"))
+    
+    # Enhanced print with None handling
+    print("Value:", None)
 }
 ```
 
@@ -149,7 +185,7 @@ def main() {
 
 The Lyric language is developed by **Michael Stone** and **ChatGPT** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
 
-The project is currently **pre-release** and version **0.0.2** corresponds to the completion of Sprint 1 (Lyric Core Foundations). This milestone includes a fully functional lexer, parser, interpreter, runtime system, and CLI with comprehensive test coverage.
+The project is currently **pre-release** and version **0.0.3** corresponds to the completion of Sprint 2 (Control Flow, Error Handling, and Class Support). This milestone includes nested control flow, comprehensive error reporting, class instantiation and methods, runtime enhancements, and extensive test coverage with 88 passing tests.
 
 ## Contributing
 

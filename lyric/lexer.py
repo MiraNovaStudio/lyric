@@ -5,7 +5,7 @@ Tokenizes source code into tokens.
 
 import re
 from dataclasses import dataclass
-from typing import List, Iterator, Optional
+from typing import List, Optional
 from lyric.errors import LexError
 
 
@@ -20,30 +20,30 @@ class Token:
 
 class Lexer:
     """Lexical analyzer for the Lyric language."""
-    
+
     # Keywords
     KEYWORDS = {
-        'def', 'class', 'if', 'else', 'given', 'done', 'end', 
+        'def', 'class', 'if', 'else', 'given', 'done', 'end',
         'try', 'except', 'finally', 'import', 'from', 'as', 'return',
-        'true', 'false', 'and', 'or', 'not', 'in'
+        'true', 'false', 'and', 'or', 'not', 'in', 'None'
     }
-    
+
     # Token patterns
     TOKEN_PATTERNS = [
         ('CLASS_END', r'\+\+\+'),                    # Class terminator
         ('NEWLINE', r'\n'),                          # Newline
         ('WHITESPACE', r'[ \t]+'),                   # Whitespace (ignored)
-        
+
         # Identifiers and keywords
         ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),
-        
+
         # Numbers
         ('FLOAT', r'\d+\.\d+'),
         ('INTEGER', r'\d+'),
-        
+
         # Strings
         ('STRING', r'"[^"]*"'),
-        
+
         # Operators
         ('EQ', r'=='),                               # Equality
         ('NE', r'!='),                               # Not equal
@@ -57,7 +57,7 @@ class Lexer:
         ('MULTIPLY', r'\*'),                         # Multiplication
         ('DIVIDE', r'/'),                            # Division
         ('MODULO', r'%'),                            # Modulo
-        
+
         # Delimiters
         ('LPAREN', r'\('),                           # Left parenthesis
         ('RPAREN', r'\)'),                           # Right parenthesis
@@ -68,7 +68,7 @@ class Lexer:
         ('SEMICOLON', r';'),                         # Semicolon
         ('DOT', r'\.'),                              # Dot
     ]
-    
+
     def __init__(self, source: str, filename: str = None):
         self.source = source
         self.filename = filename
@@ -76,25 +76,25 @@ class Lexer:
         self.line = 1
         self.col = 1
         self.pos = 0
-    
+
     def tokenize(self) -> List[Token]:
         """Tokenize the source code and return a list of tokens."""
         self.tokens = []
         self.line = 1
         self.col = 1
         self.pos = 0
-        
+
         while self.pos < len(self.source):
             self._skip_whitespace_and_comments()
             if self.pos >= len(self.source):
                 break
-            
+
             token = self._get_next_token()
             if token:
                 self.tokens.append(token)
-        
+
         return self.tokens
-    
+
     def _skip_whitespace_and_comments(self):
         """Skip whitespace and comments."""
         while self.pos < len(self.source):
@@ -110,17 +110,17 @@ class Lexer:
                     self.col += 1
             else:
                 break
-    
+
     def _get_next_token(self) -> Optional[Token]:
         """Get the next token from the source."""
         remaining_source = self.source[self.pos:]
-        
+
         for token_type, pattern in self.TOKEN_PATTERNS:
             match = re.match(pattern, remaining_source)
             if match:
                 value = match.group(0)
                 token = Token(token_type, value, self.line, self.col)
-                
+
                 # Update position
                 if token_type == 'NEWLINE':
                     self.line += 1
@@ -128,25 +128,25 @@ class Lexer:
                 else:
                     self.col += len(value)
                 self.pos += len(value)
-                
+
                 # Convert identifier to keyword if it matches
                 if token_type == 'IDENTIFIER' and value in self.KEYWORDS:
                     token.type = value.upper()
-                
+
                 return token
-        
+
         # If no pattern matches, it's an error
-        raise LexError(f"Unexpected character '{self.source[self.pos]}'", 
-                      line=self.line, col=self.col, filename=self.filename)
+        raise LexError(f"Unexpected character '{self.source[self.pos]}'",
+                       line=self.line, col=self.col, filename=self.filename)
 
 
 def tokenize(source: str, filename: str = None) -> List[Token]:
     """Tokenize source code and return a list of tokens.
-    
+
     Args:
         source: The source code to tokenize
         filename: Optional filename for error reporting
-        
+
     Returns:
         List of Token objects
     """

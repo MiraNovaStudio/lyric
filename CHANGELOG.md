@@ -1,3 +1,48 @@
+# Lyric Language — Version 0.0.3
+
+**Release Date:** December 2024
+
+## Summary
+
+This version completes Sprint 2 (Control Flow, Error Handling, and Class Support). The language now supports nested control flow, comprehensive error reporting, class instantiation and methods, runtime enhancements, and extensive test coverage.
+
+## Added
+
+- **Nested Control Flow**: Full support for nested if/else/end and given/done blocks
+- **Boolean and Comparison Operations**: Complete implementation of ==, !=, <, <=, >, >=, and, or, not operators
+- **Error Reporting System**: Enhanced error handling with SyntaxErrorLyric, RuntimeErrorLyric, NameErrorLyric including line numbers and filenames
+- **Comment Syntax**: Full-line and inline comment support using # symbol
+- **Class Parsing and Structure**: Complete class definition parsing with +++ terminator
+- **Class Interpretation**: Full runtime support for class instantiation, method calls, and attribute access
+- **Runtime Enhancements**: Added isinstance() and type() built-in functions for type checking and introspection
+- **Enhanced Print Function**: Improved handling of None values and compound types
+- **Comprehensive Test Suite**: 88 tests covering all features including CLI integration tests
+- **New Example Programs**: class_test.ly, nested_flow.ly, boolean_test.ly, runtime_test.ly, and error demonstration files
+
+## Changed
+
+- **Enhanced Error Messages**: All errors now include filename, line number, and column information
+- **Improved Print Function**: Better formatting for None values and compound data types
+- **Extended Range Function**: Confirmed support for range(start, stop) parameters
+- **Class System**: Full object-oriented programming support with instances and bound methods
+
+## Fixed
+
+- **Code Quality**: Resolved all flake8 warnings and style issues
+- **Documentation**: Added comprehensive docstrings to all new classes and functions
+- **Test Coverage**: Expanded test suite from 56 to 88 tests with CLI integration testing
+- **Error Handling**: Eliminated Python tracebacks in favor of user-friendly error messages
+
+## Notes
+
+- This version represents a major milestone with full object-oriented programming support
+- All Sprint 2 features are fully implemented and tested
+- Ready for version tag v0.0.3 and transition to Sprint 3
+- 88 tests passing with 100% success rate
+- CLI integration tests ensure user-facing functionality works correctly
+
+---
+
 # Lyric Language — Version 0.0.2
 
 **Release Date:** December 15, 2024

@@ -6,13 +6,13 @@ Defines custom exceptions for different phases of execution.
 
 class LexError(Exception):
     """Exception raised during lexing/tokenization."""
-    
+
     def __init__(self, message: str, line: int = None, col: int = None, filename: str = None):
         self.message = message
         self.line = line
         self.col = col
         self.filename = filename
-        
+
         # Format error message with location information
         if filename and line is not None:
             if col is not None:
@@ -25,13 +25,13 @@ class LexError(Exception):
 
 class ParseError(Exception):
     """Exception raised during parsing."""
-    
+
     def __init__(self, message: str, line: int = None, col: int = None, filename: str = None):
         self.message = message
         self.line = line
         self.col = col
         self.filename = filename
-        
+
         # Format error message with location information
         if filename and line is not None:
             if col is not None:
@@ -49,17 +49,18 @@ class SyntaxErrorLyric(ParseError):
 
 class RuntimeErrorLyric(Exception):
     """Exception raised during runtime execution."""
-    
+
     def __init__(self, message: str, line: int = None, col: int = None, filename: str = None):
         self.message = message
         self.line = line
         self.col = col
         self.filename = filename
-        
+
         # Format error message with location information
         if filename and line is not None:
             if col is not None:
-                super().__init__(f"Runtime Error in '{filename}' [line {line}, col {col}]: {message}")
+                super().__init__(f"Runtime Error in '{filename}' [line {line}, col {col}]: "
+                                 f"{message}")
             else:
                 super().__init__(f"Runtime Error in '{filename}' [line {line}]: {message}")
         else:
