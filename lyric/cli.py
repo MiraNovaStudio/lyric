@@ -44,10 +44,10 @@ def main():
                 source = f.read()
             
             # Tokenize the source code
-            tokens = tokenize(source)
+            tokens = tokenize(source, file_path)
             
             # Parse the source code
-            program = parse(source)
+            program = parse(source, file_path)
             
             # Execute the program
             interpret(program)
@@ -56,13 +56,13 @@ def main():
             print(f"Error: File '{file_path}' not found")
             sys.exit(1)
         except LexError as e:
-            print(f"Lexical Error in '{file_path}': {e}")
+            print(str(e))
             sys.exit(1)
         except ParseError as e:
-            print(f"Parse Error in '{file_path}': {e}")
+            print(str(e))
             sys.exit(1)
         except RuntimeErrorLyric as e:
-            print(f"Runtime Error in '{file_path}': {e}")
+            print(str(e))
             sys.exit(1)
         except Exception as e:
             print(f"Error in '{file_path}': {e}")

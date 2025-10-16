@@ -6,6 +6,7 @@ Tokenizes source code into tokens.
 import re
 from dataclasses import dataclass
 from typing import List, Iterator, Optional
+from lyric.errors import LexError
 
 
 @dataclass
@@ -69,8 +70,9 @@ class Lexer:
         ('DOT', r'\.'),                              # Dot
     ]
     
-    def __init__(self, source: str):
+    def __init__(self, source: str, filename: str = None):
         self.source = source
+        self.filename = filename
         self.tokens = []
         self.line = 1
         self.col = 1
@@ -135,17 +137,19 @@ class Lexer:
                 return token
         
         # If no pattern matches, it's an error
-        raise ValueError(f"Unexpected character '{self.source[self.pos]}' at line {self.line}, col {self.col}")
+        raise LexError(f"Unexpected character '{self.source[self.pos]}'", 
+                      line=self.line, col=self.col, filename=self.filename)
 
 
-def tokenize(source: str) -> List[Token]:
+def tokenize(source: str, filename: str = None) -> List[Token]:
     """Tokenize source code and return a list of tokens.
     
     Args:
         source: The source code to tokenize
+        filename: Optional filename for error reporting
         
     Returns:
         List of Token objects
     """
-    lexer = Lexer(source)
+    lexer = Lexer(source, filename)
     return lexer.tokenize()

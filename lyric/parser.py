@@ -16,9 +16,10 @@ from lyric.errors import ParseError
 class Parser:
     """Recursive descent parser for the Lyric language."""
     
-    def __init__(self, tokens: List[Token]):
+    def __init__(self, tokens: List[Token], filename: str = None):
         self.tokens = tokens
         self.pos = 0
+        self.filename = filename
     
     def parse(self) -> ProgramNode:
         """Parse tokens into a ProgramNode."""
@@ -60,9 +61,9 @@ class Parser:
         
         current = self._peek()
         if current is None:
-            raise ParseError(f"{message} at end of file")
+            raise ParseError(f"{message} at end of file", filename=self.filename)
         else:
-            raise ParseError(f"{message} at line {current.line}, col {current.col}")
+            raise ParseError(f"{message}", line=current.line, col=current.col, filename=self.filename)
     
     def _skip_newlines(self):
         """Skip newline tokens."""
@@ -94,7 +95,8 @@ class Parser:
         else:
             # This should not happen in well-formed code
             current = self._peek()
-            raise ParseError(f"Unexpected token '{current.value}' at line {current.line}, col {current.col}")
+            raise ParseError(f"Unexpected token '{current.value}'", 
+                           line=current.line, col=current.col, filename=self.filename)
     
     def _parse_function_def(self) -> FunctionNode:
         """Parse a function definition."""
@@ -436,16 +438,17 @@ class Parser:
         return ReturnNode(expr=expr)
 
 
-def parse(source: str) -> ProgramNode:
+def parse(source: str, filename: str = None) -> ProgramNode:
     """Parse source code into a ProgramNode.
     
     Args:
         source: The source code to parse
+        filename: Optional filename for error reporting
         
     Returns:
         ProgramNode representing the parsed program
     """
     from lyric.lexer import tokenize
-    tokens = tokenize(source)
-    parser = Parser(tokens)
+    tokens = tokenize(source, filename)
+    parser = Parser(tokens, filename)
     return parser.parse()

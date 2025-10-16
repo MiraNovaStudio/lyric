@@ -302,7 +302,7 @@ class Interpreter:
             return -operand
         elif expr.op == '+':
             return +operand
-        elif expr.op == '!':
+        elif expr.op == '!' or expr.op == 'not':
             return not self._is_truthy(operand)
         else:
             raise RuntimeErrorLyric(f"Unknown unary operator: {expr.op}")

@@ -4,6 +4,7 @@ Tests for the lexer module.
 
 import pytest
 from lyric.lexer import tokenize, Token, Lexer
+from lyric.errors import LexError
 
 
 class TestLexer:
@@ -244,7 +245,7 @@ line3'''
         """Test error handling for invalid characters."""
         source = 'x @ y'  # @ is not a valid token
         
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(LexError) as exc_info:
             tokenize(source)
         
         assert "Unexpected character '@'" in str(exc_info.value)
