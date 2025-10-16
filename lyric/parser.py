@@ -3,12 +3,12 @@ Parser module for the Lyric language.
 Parses tokens into an Abstract Syntax Tree (AST).
 """
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 from lyric.lexer import Token
 from lyric.ast import (
     ProgramNode, FunctionNode, ClassNode, IfNode, ElifNode, LoopNode,
     AssignNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode,
-    IdentifierNode, ReturnNode, MemberAccessNode, MethodCallNode
+    IdentifierNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode
 )
 from lyric.errors import ParseError
 
@@ -439,8 +439,16 @@ class Parser:
             return LiteralNode(float(token.value))
         elif self._match('STRING'):
             token = self._advance()
-            # Remove quotes from string
-            return LiteralNode(token.value[1:-1])
+            # Remove quotes from string and unescape
+            string_content = token.value[1:-1]
+            unescaped = self._unescape_string(string_content)
+            return LiteralNode(unescaped)
+        elif self._match('LBRACKET'):
+            # Parse list literal
+            return self._parse_list_literal()
+        elif self._match('LBRACE'):
+            # Parse dictionary literal
+            return self._parse_dict_literal()
         elif self._match('IDENTIFIER'):
             token = self._advance()
 
@@ -449,22 +457,17 @@ class Parser:
                 return self._parse_call(token.value)
             else:
                 expr = IdentifierNode(token.value)
-                # Handle member access (e.g., self.name)
-                while self._match('DOT'):
-                    self._advance()  # consume '.'
-                    member_token = self._consume('IDENTIFIER', "Expected member name after '.'")
-                    expr = MemberAccessNode(object=expr, member=member_token.value)
-
-                # Check if this is a method call (e.g., object.method())
-                if self._match('LPAREN'):
-                    # This is a function call on the expression
-                    return self._parse_call_on_expression(expr)
-
+                # Handle postfix operations (indexing, member access, function calls)
+                expr = self._parse_postfix_operations(expr)
                 return expr
         elif self._match('LPAREN'):
             self._advance()  # consume '('
             expr = self._parse_expression()
             self._consume('RPAREN', "Expected ')' after expression")
+            
+            # Handle postfix operations after parentheses
+            expr = self._parse_postfix_operations(expr)
+            
             return expr
         else:
             current = self._peek()
@@ -525,6 +528,132 @@ class Parser:
             expr = self._parse_expression()
 
         return ReturnNode(expr=expr)
+
+    def _parse_list_literal(self) -> LiteralNode:
+        """Parse a list literal [item1, item2, ...]."""
+        self._consume('LBRACKET', "Expected '['")
+        
+        element_nodes = []
+        if not self._match('RBRACKET'):
+            element_nodes = self._parse_list_elements()
+        
+        self._consume('RBRACKET', "Expected ']'")
+        
+        # For now, we'll keep the AST nodes and evaluate them at runtime
+        # This allows for more complex expressions in list literals
+        return LiteralNode(element_nodes)
+
+    def _parse_list_elements(self) -> List[object]:
+        """Parse list elements separated by commas."""
+        elements = []
+        
+        while True:
+            element = self._parse_expression()
+            elements.append(element)
+            
+            if self._match('COMMA'):
+                self._advance()
+            else:
+                break
+        
+        return elements
+
+    def _parse_dict_literal(self) -> LiteralNode:
+        """Parse a dictionary literal {key1: value1, key2: value2, ...}."""
+        self._consume('LBRACE', "Expected '{'")
+        
+        pairs = {}
+        if not self._match('RBRACE'):
+            pairs = self._parse_dict_pairs()
+        
+        self._consume('RBRACE', "Expected '}'")
+        return LiteralNode(pairs)
+
+    def _parse_dict_pairs(self) -> Dict[Any, Any]:
+        """Parse dictionary key-value pairs separated by commas."""
+        pairs = {}
+        
+        while True:
+            # Parse key
+            key = self._parse_expression()
+            
+            # Parse colon
+            self._consume('COLON', "Expected ':' after dictionary key")
+            
+            # Parse value
+            value = self._parse_expression()
+            
+            # Store the pair
+            # For now, we'll evaluate the key at parse time if it's a literal
+            if isinstance(key, LiteralNode):
+                pairs[key.value] = value
+            else:
+                # For non-literal keys, we'll need runtime evaluation
+                # This is a simplified implementation
+                raise ParseError("Dictionary keys must be literal values", filename=self.filename)
+            
+            if self._match('COMMA'):
+                self._advance()
+            else:
+                break
+        
+        return pairs
+
+    def _parse_indexing(self, expr: object) -> 'IndexNode':
+        """Parse indexing operation (e.g., list[0], dict["key"])."""
+        self._consume('LBRACKET', "Expected '['")
+        
+        index = self._parse_expression()
+        
+        self._consume('RBRACKET', "Expected ']'")
+        
+        return IndexNode(object=expr, index=index)
+
+    def _parse_postfix_operations(self, expr: object) -> object:
+        """Parse postfix operations like indexing, member access, and function calls."""
+        while True:
+            if self._match('LBRACKET'):
+                # Indexing operation
+                expr = self._parse_indexing(expr)
+            elif self._match('DOT'):
+                # Member access
+                self._advance()  # consume '.'
+                member_token = self._consume('IDENTIFIER', "Expected member name after '.'")
+                expr = MemberAccessNode(object=expr, member=member_token.value)
+            elif self._match('LPAREN'):
+                # Function call
+                expr = self._parse_call_on_expression(expr)
+            else:
+                break
+        
+        return expr
+
+    def _unescape_string(self, s: str) -> str:
+        """Unescape string content."""
+        result = []
+        i = 0
+        while i < len(s):
+            if s[i] == '\\' and i + 1 < len(s):
+                next_char = s[i + 1]
+                if next_char == 'n':
+                    result.append('\n')
+                elif next_char == 't':
+                    result.append('\t')
+                elif next_char == 'r':
+                    result.append('\r')
+                elif next_char == '\\':
+                    result.append('\\')
+                elif next_char == '"':
+                    result.append('"')
+                else:
+                    # Unknown escape sequence, keep as is
+                    result.append(s[i])
+                    result.append(next_char)
+                i += 2
+            else:
+                result.append(s[i])
+                i += 1
+        return ''.join(result)
 
 
 def parse(source: str, filename: str = None) -> ProgramNode:

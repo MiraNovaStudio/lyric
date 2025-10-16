@@ -7,7 +7,7 @@ from typing import Dict, List, Any, Optional
 from lyric.ast import (
     ProgramNode, FunctionNode, ClassNode, IfNode, LoopNode,
     AssignNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode,
-    IdentifierNode, PrintNode, ImportNode, ReturnNode, MemberAccessNode, MethodCallNode
+    IdentifierNode, PrintNode, ImportNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins, BuiltinFunction
@@ -538,11 +538,25 @@ class Interpreter:
     def _evaluate_expression(self, expr: Any, env: Environment) -> Any:
         """Evaluate an expression."""
         if isinstance(expr, LiteralNode):
-            return expr.value
+            # Handle list and dictionary literals that contain AST nodes
+            if isinstance(expr.value, list):
+                # Evaluate list elements
+                return [self._evaluate_expression(element, env) for element in expr.value]
+            elif isinstance(expr.value, dict):
+                # Evaluate dictionary values (keys are already evaluated at parse time)
+                evaluated_dict = {}
+                for key, value_node in expr.value.items():
+                    evaluated_dict[key] = self._evaluate_expression(value_node, env)
+                return evaluated_dict
+            else:
+                # Regular literal value
+                return expr.value
         elif isinstance(expr, IdentifierNode):
             return env.get(expr.name)
         elif isinstance(expr, MemberAccessNode):
             return self._evaluate_member_access(expr, env)
+        elif isinstance(expr, IndexNode):
+            return self._evaluate_indexing(expr, env)
         elif isinstance(expr, BinaryOpNode):
             return self._evaluate_binary_op(expr, env)
         elif isinstance(expr, UnaryOpNode):
@@ -604,6 +618,47 @@ class Interpreter:
             return obj.get_attribute(expr.member)
         else:
             raise RuntimeErrorLyric(f"Cannot access member '{expr.member}' on non-instance object")
+
+    def _evaluate_indexing(self, expr: IndexNode, env: Environment) -> Any:
+        """Evaluate indexing operation (object[index]).
+        
+        Args:
+            expr: The IndexNode to evaluate
+            env: The environment to evaluate in
+            
+        Returns:
+            The value at the specified index
+            
+        Raises:
+            RuntimeErrorLyric: If indexing is invalid or index is out of bounds
+        """
+        obj = self._evaluate_expression(expr.object, env)
+        index = self._evaluate_expression(expr.index, env)
+        
+        # Handle list indexing
+        if isinstance(obj, list):
+            if not isinstance(index, int):
+                raise RuntimeErrorLyric(f"List index must be an integer, got {type(index).__name__}")
+            if index < 0 or index >= len(obj):
+                raise RuntimeErrorLyric(f"List index {index} out of range (list has {len(obj)} elements)")
+            return obj[index]
+        
+        # Handle dictionary indexing
+        elif isinstance(obj, dict):
+            if index not in obj:
+                raise RuntimeErrorLyric(f"Key '{index}' not found in dictionary")
+            return obj[index]
+        
+        # Handle string indexing (for convenience)
+        elif isinstance(obj, str):
+            if not isinstance(index, int):
+                raise RuntimeErrorLyric(f"String index must be an integer, got {type(index).__name__}")
+            if index < 0 or index >= len(obj):
+                raise RuntimeErrorLyric(f"String index {index} out of range (string has {len(obj)} characters)")
+            return obj[index]
+        
+        else:
+            raise RuntimeErrorLyric(f"Cannot index object of type {type(obj).__name__}")
 
     def _evaluate_binary_op(self, expr: BinaryOpNode, env: Environment) -> Any:
         """Evaluate a binary operation."""

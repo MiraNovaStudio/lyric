@@ -41,8 +41,8 @@ class Lexer:
         ('FLOAT', r'\d+\.\d+'),
         ('INTEGER', r'\d+'),
 
-        # Strings
-        ('STRING', r'"[^"]*"'),
+        # Strings (with escaped quotes support)
+        ('STRING', r'"([^"\\]|\\.)*"'),
 
         # Operators
         ('EQ', r'=='),                               # Equality
@@ -63,6 +63,8 @@ class Lexer:
         ('RPAREN', r'\)'),                           # Right parenthesis
         ('LBRACE', r'\{'),                           # Left brace
         ('RBRACE', r'\}'),                           # Right brace
+        ('LBRACKET', r'\['),                         # Left bracket (for lists)
+        ('RBRACKET', r'\]'),                         # Right bracket (for lists)
         ('COLON', r':'),                             # Colon
         ('COMMA', r','),                             # Comma
         ('SEMICOLON', r';'),                         # Semicolon

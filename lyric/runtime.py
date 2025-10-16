@@ -262,6 +262,58 @@ def _builtin_type(args: List[Any]) -> str:
         return type(obj).__name__
 
 
+def _builtin_append(args: List[Any]) -> None:
+    """Built-in append function for lists.
+    
+    Args:
+        args: List containing [list_object, item_to_append]
+    """
+    if len(args) != 2:
+        raise RuntimeErrorLyric("append() takes exactly 2 arguments (list, item)")
+    
+    lst, item = args
+    
+    if not isinstance(lst, list):
+        raise RuntimeErrorLyric(f"append() first argument must be a list, got {type(lst).__name__}")
+    
+    lst.append(item)
+    return None
+
+
+def _builtin_keys(args: List[Any]) -> List[Any]:
+    """Built-in keys function for dictionaries.
+    
+    Args:
+        args: List containing [dictionary_object]
+    """
+    if len(args) != 1:
+        raise RuntimeErrorLyric("keys() takes exactly 1 argument (dict)")
+    
+    dct = args[0]
+    
+    if not isinstance(dct, dict):
+        raise RuntimeErrorLyric(f"keys() argument must be a dictionary, got {type(dct).__name__}")
+    
+    return list(dct.keys())
+
+
+def _builtin_values(args: List[Any]) -> List[Any]:
+    """Built-in values function for dictionaries.
+    
+    Args:
+        args: List containing [dictionary_object]
+    """
+    if len(args) != 1:
+        raise RuntimeErrorLyric("values() takes exactly 1 argument (dict)")
+    
+    dct = args[0]
+    
+    if not isinstance(dct, dict):
+        raise RuntimeErrorLyric(f"values() argument must be a dictionary, got {type(dct).__name__}")
+    
+    return list(dct.values())
+
+
 def register_builtins(env: dict) -> None:
     """Register all built-in functions in the given environment.
 
@@ -279,6 +331,9 @@ def register_builtins(env: dict) -> None:
         BuiltinFunction("open", _builtin_open, 1),
         BuiltinFunction("isinstance", _builtin_isinstance, 2),
         BuiltinFunction("type", _builtin_type, 1),
+        BuiltinFunction("append", _builtin_append, 2),  # For lists
+        BuiltinFunction("keys", _builtin_keys, 1),      # For dictionaries
+        BuiltinFunction("values", _builtin_values, 1),  # For dictionaries
     ]
 
     for builtin in builtins:

@@ -174,6 +174,16 @@ class MemberAccessNode(ASTNode):
 
 
 @dataclass
+class IndexNode(ASTNode):
+    """Represents indexing operation (object[index])."""
+    object: ASTNode
+    index: ASTNode
+
+    def __repr__(self):
+        return f"IndexNode(object={self.object}, index={self.index})"
+
+
+@dataclass
 class ClassNode(ASTNode):
     """Represents a class definition."""
     name: str
