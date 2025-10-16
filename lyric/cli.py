@@ -29,9 +29,9 @@ def main():
             print(f"Error: File '{file_path}' not found")
             sys.exit(1)
         
-        # Check if it's a .lyr file
-        if not file_path.endswith('.lyr'):
-            print(f"Error: Expected .lyr file, got '{file_path}'")
+        # Check if it's a .ly file
+        if not file_path.endswith('.ly'):
+            print(f"Error: Expected .ly file, got '{file_path}'")
             sys.exit(1)
         
         print("execution not implemented")

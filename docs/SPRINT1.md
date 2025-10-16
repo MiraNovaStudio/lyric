@@ -1,7 +1,7 @@
 SPRINT 1 — LYRIC CORE FOUNDATIONS (PLAINTEXT SPEC FOR CLAUDE)
 
 OBJECTIVE
-Establish a minimal working Lyric interpreter that can read a .lyr file, tokenize it, parse it into an AST, and execute a program that contains def, if/else end, given done, and print(), invoked via a CLI command.
+Establish a minimal working Lyric interpreter that can read a .ly file, tokenize it, parse it into an AST, and execute a program that contains def, if/else end, given done, and print(), invoked via a CLI command.
 
 SCOPE
 Implement lexer, AST definitions, parser, interpreter core, minimal runtime, CLI entrypoint, and baseline tests and example programs.
@@ -22,9 +22,9 @@ test_lexer.py
 test_parser.py
 test_interpreter.py
 examples/
-hello.lyr
-if_demo.lyr
-loop.lyr
+hello.ly
+if_demo.ly
+loop.ly
 pyproject.toml or setup.py (choose one; prefer pyproject.toml with a console_script entry for "lyric")
 
 TASK 1 — PROJECT SCAFFOLD
@@ -45,7 +45,7 @@ Add errors.py defining simple exception classes: LexError, ParseError, RuntimeEr
 
 Acceptance Criteria:
 A1) Running "lyric --version" prints "Lyric 0.1".
-A2) Running "lyric run tests/examples/hello.lyr" prints an error like "execution not implemented" (placeholder ok).
+A2) Running "lyric run tests/examples/hello.ly" prints an error like "execution not implemented" (placeholder ok).
 A3) All modules import without error: python -c "import lyric, lyric.lexer, lyric.parser, lyric.ast, lyric.interpreter, lyric.runtime, lyric.errors, lyric.cli".
 
 TASK 2 — LEXER
@@ -185,7 +185,7 @@ print() as a built-in call routed via runtime
 After loading a ProgramNode, automatically call main() if defined when invoked via CLI.
 
 Acceptance Criteria:
-A9) Running tests/examples/hello.lyr produces "Hello, Lyric!" exactly.
+A9) Running tests/examples/hello.ly produces "Hello, Lyric!" exactly.
 A10) If/else demo prints "positive" when x=5.
 A11) Loop demo prints 0, 1, 2 on separate lines.
 
@@ -215,23 +215,23 @@ Parse argv
 
 Handle "--version"
 
-Handle "run <file.lyr>": read file, tokenize, parse, interpret, auto-call main()
+Handle "run <file.ly>": read file, tokenize, parse, interpret, auto-call main()
 
 Add helpful error messages with file name and line number on LexError, ParseError, RuntimeErrorLyric.
 
 Acceptance Criteria:
-A14) "lyric run tests/examples/hello.lyr" runs end-to-end without Python tracebacks (unless a bug is present), printing user-friendly messages on errors.
+A14) "lyric run tests/examples/hello.ly" runs end-to-end without Python tracebacks (unless a bug is present), printing user-friendly messages on errors.
 A15) "--version" prints "Lyric 0.1".
 
 TASK 8 — TESTS AND EXAMPLES
 Work:
 
-Populate tests/examples/hello.lyr:
+Populate tests/examples/hello.ly:
 def main() {
 print("Hello, Lyric!")
 }
 
-Populate tests/examples/if_demo.lyr:
+Populate tests/examples/if_demo.ly:
 def main() {
 x = 5
 if x > 0:
@@ -241,7 +241,7 @@ print("non-positive")
 end
 }
 
-Populate tests/examples/loop.lyr:
+Populate tests/examples/loop.ly:
 def main() {
 given i in range(3):
 print(i)
@@ -262,7 +262,7 @@ A17) No flake8 or ruff critical errors (basic style clean).
 
 DEFINITION OF DONE (SPRINT)
 
-CLI "lyric run <file.lyr>" executes a Lyric program that uses def, if/else end, given done, and print().
+CLI "lyric run <file.ly>" executes a Lyric program that uses def, if/else end, given done, and print().
 
 Lexer, Parser, Interpreter, Runtime, and CLI implemented and covered by baseline tests.
 

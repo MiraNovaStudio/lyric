@@ -282,3 +282,301 @@ class TestASTNodes:
         print(f"Program: {repr(program)}")
         print(f"Main function: {repr(main_func)}")
         print(f"If statement: {repr(if_stmt)}")
+
+
+class TestParser:
+    """Test cases for the Lyric parser."""
+    
+    def test_parse_function_def(self):
+        """Test parsing function definition."""
+        source = 'def main() { print("Hello, Lyric!") }'
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        # Verify program structure
+        assert isinstance(program, ProgramNode)
+        assert len(program.statements) == 1
+        
+        # Verify function
+        func = program.statements[0]
+        assert isinstance(func, FunctionNode)
+        assert func.name == "main"
+        assert func.params == []
+        assert len(func.body_statements) == 1
+        
+        # Verify print call
+        print_call = func.body_statements[0]
+        assert isinstance(print_call, CallNode)
+        assert print_call.func_name == "print"
+        assert len(print_call.args) == 1
+        assert isinstance(print_call.args[0], LiteralNode)
+        assert print_call.args[0].value == "Hello, Lyric!"
+    
+    def test_parse_if_else_example(self):
+        """Test parsing if/else example from spec."""
+        source = '''if x > 0:
+    print("positive")
+else if x < 0:
+    print("negative")
+else:
+    print("zero")
+end'''
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        # Verify program structure
+        assert isinstance(program, ProgramNode)
+        assert len(program.statements) == 1
+        
+        # Verify if statement
+        if_stmt = program.statements[0]
+        assert isinstance(if_stmt, IfNode)
+        
+        # Verify condition
+        assert isinstance(if_stmt.condition, BinaryOpNode)
+        assert if_stmt.condition.op == ">"
+        assert isinstance(if_stmt.condition.left, IdentifierNode)
+        assert if_stmt.condition.left.name == "x"
+        assert isinstance(if_stmt.condition.right, LiteralNode)
+        assert if_stmt.condition.right.value == 0
+        
+        # Verify then body
+        assert len(if_stmt.then_body) == 1
+        print_call = if_stmt.then_body[0]
+        assert isinstance(print_call, CallNode)
+        assert print_call.func_name == "print"
+        assert print_call.args[0].value == "positive"
+        
+        # Verify elif
+        assert len(if_stmt.elifs) == 1
+        elif_stmt = if_stmt.elifs[0]
+        assert isinstance(elif_stmt.condition, BinaryOpNode)
+        assert elif_stmt.condition.op == "<"
+        assert len(elif_stmt.body) == 1
+        
+        # Verify else
+        assert if_stmt.else_body is not None
+        assert len(if_stmt.else_body) == 1
+        else_print = if_stmt.else_body[0]
+        assert isinstance(else_print, CallNode)
+        assert else_print.args[0].value == "zero"
+    
+    def test_parse_loop_example(self):
+        """Test parsing given/done loop example."""
+        source = '''given i in range(3):
+    print(i)
+done'''
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        # Verify program structure
+        assert isinstance(program, ProgramNode)
+        assert len(program.statements) == 1
+        
+        # Verify loop
+        loop = program.statements[0]
+        assert isinstance(loop, LoopNode)
+        assert loop.loop_kind == "iterator"
+        
+        # Verify iterator expression
+        iter_expr = loop.condition_or_iter
+        assert isinstance(iter_expr, BinaryOpNode)
+        assert iter_expr.op == "in"
+        assert isinstance(iter_expr.left, IdentifierNode)
+        assert iter_expr.left.name == "i"
+        assert isinstance(iter_expr.right, CallNode)
+        assert iter_expr.right.func_name == "range"
+        assert len(iter_expr.right.args) == 1
+        assert isinstance(iter_expr.right.args[0], LiteralNode)
+        assert iter_expr.right.args[0].value == 3
+        
+        # Verify loop body
+        assert len(loop.body) == 1
+        print_call = loop.body[0]
+        assert isinstance(print_call, CallNode)
+        assert print_call.func_name == "print"
+        assert len(print_call.args) == 1
+        assert isinstance(print_call.args[0], IdentifierNode)
+        assert print_call.args[0].name == "i"
+    
+    def test_parse_class_example(self):
+        """Test parsing class definition example."""
+        source = '''class Player:
+    name = "Guest"
+    def greet() {
+        print("Hello,", self.name)
+    }
++++'''
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        # Verify program structure
+        assert isinstance(program, ProgramNode)
+        assert len(program.statements) == 1
+        
+        # Verify class
+        class_def = program.statements[0]
+        assert isinstance(class_def, ClassNode)
+        assert class_def.name == "Player"
+        assert len(class_def.members_statements) == 2
+        
+        # Verify first member (assignment)
+        name_assign = class_def.members_statements[0]
+        assert isinstance(name_assign, AssignNode)
+        assert name_assign.name == "name"
+        assert isinstance(name_assign.expr, LiteralNode)
+        assert name_assign.expr.value == "Guest"
+        
+        # Verify second member (function)
+        greet_func = class_def.members_statements[1]
+        assert isinstance(greet_func, FunctionNode)
+        assert greet_func.name == "greet"
+        assert greet_func.params == []
+        assert len(greet_func.body_statements) == 1
+        
+        # Verify print call in function
+        print_call = greet_func.body_statements[0]
+        assert isinstance(print_call, CallNode)
+        assert print_call.func_name == "print"
+        assert len(print_call.args) == 2
+        assert print_call.args[0].value == "Hello,"
+        assert isinstance(print_call.args[1], IdentifierNode)
+        assert print_call.args[1].name == "self.name"
+    
+    def test_parse_assignment(self):
+        """Test parsing assignment statements."""
+        source = 'x = 42'
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        assert isinstance(program, ProgramNode)
+        assert len(program.statements) == 1
+        
+        assign = program.statements[0]
+        assert isinstance(assign, AssignNode)
+        assert assign.name == "x"
+        assert isinstance(assign.expr, LiteralNode)
+        assert assign.expr.value == 42
+    
+    def test_parse_expression_precedence(self):
+        """Test operator precedence in expressions."""
+        source = 'x = 1 + 2 * 3'
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        assign = program.statements[0]
+        expr = assign.expr
+        
+        # Should be parsed as 1 + (2 * 3), not (1 + 2) * 3
+        assert isinstance(expr, BinaryOpNode)
+        assert expr.op == "+"
+        assert isinstance(expr.left, LiteralNode)
+        assert expr.left.value == 1
+        
+        right_mult = expr.right
+        assert isinstance(right_mult, BinaryOpNode)
+        assert right_mult.op == "*"
+        assert right_mult.left.value == 2
+        assert right_mult.right.value == 3
+    
+    def test_parse_function_call(self):
+        """Test parsing function calls."""
+        source = 'print("hello", "world")'
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        call = program.statements[0]
+        assert isinstance(call, CallNode)
+        assert call.func_name == "print"
+        assert len(call.args) == 2
+        assert call.args[0].value == "hello"
+        assert call.args[1].value == "world"
+    
+    def test_parse_comparison_operators(self):
+        """Test parsing comparison operators."""
+        source = 'x = a > b and c == d'
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        assign = program.statements[0]
+        expr = assign.expr
+        
+        # Should be parsed as (a > b) and (c == d)
+        assert isinstance(expr, BinaryOpNode)
+        assert expr.op == "and"
+        
+        left_comp = expr.left
+        assert isinstance(left_comp, BinaryOpNode)
+        assert left_comp.op == ">"
+        
+        right_comp = expr.right
+        assert isinstance(right_comp, BinaryOpNode)
+        assert right_comp.op == "=="
+    
+    def test_parse_while_loop(self):
+        """Test parsing while-like loop."""
+        source = '''given x > 0:
+    print(x)
+    x = x - 1
+done'''
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        loop = program.statements[0]
+        assert isinstance(loop, LoopNode)
+        assert loop.loop_kind == "while"
+        
+        # Verify condition
+        condition = loop.condition_or_iter
+        assert isinstance(condition, BinaryOpNode)
+        assert condition.op == ">"
+        
+        # Verify body
+        assert len(loop.body) == 2
+        assert isinstance(loop.body[0], CallNode)
+        assert isinstance(loop.body[1], AssignNode)
+    
+    def test_parse_multiple_elif(self):
+        """Test parsing multiple elif clauses."""
+        source = '''if x == 1:
+    print("one")
+else if x == 2:
+    print("two")
+else if x == 3:
+    print("three")
+else:
+    print("other")
+end'''
+        
+        from lyric.parser import parse
+        program = parse(source)
+        
+        if_stmt = program.statements[0]
+        assert isinstance(if_stmt, IfNode)
+        
+        # Should have 2 elifs
+        assert len(if_stmt.elifs) == 2
+        
+        # Verify first elif
+        elif1 = if_stmt.elifs[0]
+        assert isinstance(elif1.condition, BinaryOpNode)
+        assert elif1.condition.op == "=="
+        assert elif1.condition.right.value == 2
+        
+        # Verify second elif
+        elif2 = if_stmt.elifs[1]
+        assert isinstance(elif2.condition, BinaryOpNode)
+        assert elif2.condition.right.value == 3
+        
+        # Verify else
+        assert if_stmt.else_body is not None
+        assert len(if_stmt.else_body) == 1

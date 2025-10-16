@@ -23,7 +23,8 @@ class Lexer:
     # Keywords
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'given', 'done', 'end', 
-        'try', 'except', 'finally', 'import', 'from', 'as', 'return'
+        'try', 'except', 'finally', 'import', 'from', 'as', 'return',
+        'true', 'false', 'and', 'or', 'not', 'in'
     }
     
     # Token patterns
