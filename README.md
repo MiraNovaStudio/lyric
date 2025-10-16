@@ -133,7 +133,7 @@ pip install pytest flake8 setuptools
 - **Conditionals**: `if condition: ... else: ... end`
 - **Loops**: `given variable in iterable: ... done` or `given condition: ... done`
 - **Classes**: `class Name: ... +++` (full implementation with instantiation, methods, and init())
-- **Variables**: Dynamic typing `var name = value` or static type declarations `type name = value` or type inference `name = value`
+- **Variables**: Dynamic typing `var name = value` or static type declarations `type name = value` (all variables must be declared before use)
 - **Data Structures**: `[item1, item2, ...]` for lists, `{"key": value, ...}` for dictionaries
 - **Exception Handling**: `try: ... except: ... finally: ... end`
 - **Comments**: `# comment text` (full-line and inline comments)
@@ -247,7 +247,7 @@ def main() {
 
 The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
 
-The project is currently **pre-release** and version **0.1.4** introduces Sprint 4 Task 1 (Dynamic Typing) and completes Sprint 3 (Type System, Value Validation, and Advanced Runtime). This milestone includes dynamic typing with the `var` keyword, complete type declarations and inference, built-in data structures (lists and dictionaries), enhanced error handling with try/except/finally, runtime safety improvements, and comprehensive test coverage with 198+ passing tests. Sprint 3 is complete and Sprint 4 is in progress.
+The project is currently **pre-release** and version **0.1.4** introduces Sprint 4 Tasks 1-2 (Dynamic Typing and Declaration Enforcement) and completes Sprint 3 (Type System, Value Validation, and Advanced Runtime). This milestone includes dynamic typing with the `var` keyword, strict variable declaration enforcement, complete type declarations and inference, built-in data structures (lists and dictionaries), enhanced error handling with try/except/finally, runtime safety improvements, and comprehensive test coverage with 212+ passing tests. Sprint 3 is complete and Sprint 4 is in progress.
 
 ## Contributing
 

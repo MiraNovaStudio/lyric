@@ -13,6 +13,13 @@ This version introduces Sprint 4 Task 1 (Dynamic Typing with `var` keyword) and 
 - **Python-like Behavior**: `var` variables behave like Python variables with full dynamic typing
 - **Enhanced Test Coverage**: 10 new tests specifically for `var` keyword functionality
 
+## Added (Sprint 4 - Task 2)
+
+- **Declaration Enforcement**: All variables must now be explicitly declared before use (`var`, `int`, `str`, etc.)
+- **Strict Variable Management**: Prevents implicit variable creation and improves code safety
+- **Clear Error Messages**: Specific error messages for undeclared and uninitialized variables
+- **Enhanced Test Coverage**: 14 new tests for declaration enforcement scenarios
+
 ## Added (Sprint 3)
 
 - **Type System**: Complete type declaration and inference system with int, float, str, bool, and None types

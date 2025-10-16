@@ -9,11 +9,11 @@ bool is_active = true
 None null_value = None
 
 # Test 2: Type inference
-auto_int = 42
-auto_float = 2.718
-auto_string = "inferred"
-auto_bool = false
-auto_none = None
+var auto_int = 42
+var auto_float = 2.718
+var auto_string = "inferred"
+var auto_bool = false
+var auto_none = None
 
 # Test 3: Function with type declarations
 def int add_numbers(int a, int b) {
@@ -66,23 +66,23 @@ def main() {
     
     # Test function calls with correct types
     print("\n3. Function calls with correct types:")
-    result1 = add_numbers(10, 20)
+    var result1 = add_numbers(10, 20)
     print("add_numbers(10, 20) =", result1)
     
-    greeting = format_greeting("Alice", 30)
+    var greeting = format_greeting("Alice", 30)
     print("format_greeting result:", greeting)
     
-    even_check = is_even(16)
+    var even_check = is_even(16)
     print("is_even(16) =", even_check)
     
     do_nothing()
     
     # Test type enforcement with correct types
     print("\n4. Type enforcement tests (correct types):")
-    strict_result = strict_add(5, 3)
+    var strict_result = strict_add(5, 3)
     print("strict_add(5, 3) =", strict_result)
     
-    processed = process_name("Bob")
+    var processed = process_name("Bob")
     print("process_name result:", processed)
     
     print("\n=== Type System Tests Complete ===")

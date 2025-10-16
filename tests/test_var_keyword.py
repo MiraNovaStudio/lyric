@@ -127,7 +127,7 @@ class TestVarKeyword:
             var global_var = "global"
             print("global_var before function:", global_var)
             
-            result = test_function()
+            var result = test_function()
             print("function returned:", result)
             
             global_var = 999
@@ -163,20 +163,21 @@ class TestVarKeyword:
         assert output == expected
 
     def test_var_undeclared_assignment_error(self):
-        """Test that undeclared variables still throw errors (Task 2 preview)."""
+        """Test that undeclared variables throw errors (Task 2 implementation)."""
         source = '''
         def main() {
-            # This should cause an error when Task 2 is implemented
-            # For now, it should work (backward compatibility)
+            # This should cause an error with Task 2 declaration enforcement
             x = 10
             print("x =", x)
         }
         '''
         
-        # Currently this should work due to backward compatibility
-        # In Task 2, this will be changed to throw an error
-        output = self.capture_output(source)
-        assert output == "x = 10"
+        # Task 2 now enforces declarations - this should throw an error
+        program = parse(source, 'test')
+        interpreter = Interpreter()
+        
+        with pytest.raises(RuntimeErrorLyric, match="Variable 'x' used before declaration"):
+            interpreter.interpret(program)
 
     def test_var_with_complex_expressions(self):
         """Test var variables with complex expressions."""

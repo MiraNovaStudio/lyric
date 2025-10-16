@@ -19,6 +19,7 @@ class Environment:
     def __init__(self, parent: Optional['Environment'] = None, interpreter: Optional['Interpreter'] = None):
         self.variables: Dict[str, Any] = {}
         self.variable_types: Dict[str, str] = {}  # Track variable types
+        self.declared_variables: Dict[str, bool] = {}  # Track which variables are explicitly declared
         self.parent = parent
         self.interpreter = interpreter
         self._cache: Dict[str, Any] = {}  # Cache for variable lookups
@@ -58,6 +59,7 @@ class Environment:
         
         self.variables[name] = value
         self.variable_types[name] = type_annotation
+        self.declared_variables[name] = True  # Mark as explicitly declared
         self._cache[name] = value  # Update cache
         self._invalidate_parent_cache()  # Invalidate parent caches
     
@@ -66,6 +68,14 @@ class Environment:
         if self.parent:
             self.parent._cache_valid = False
             self.parent._invalidate_parent_cache()
+    
+    def is_declared(self, name: str) -> bool:
+        """Check if a variable is declared in this environment or parent environments."""
+        if name in self.declared_variables:
+            return True
+        elif self.parent:
+            return self.parent.is_declared(name)
+        return False
     
     
     def _get_type_name(self, value: Any) -> str:
@@ -164,11 +174,20 @@ class Environment:
                 self._cache[name] = value
             return value
 
-        # Use enhanced error if interpreter is available
+        # Check if variable is declared but uninitialized
+        if self.is_declared(name):
+            error_msg = f"Variable '{name}' referenced before assignment"
+            if self.interpreter:
+                raise self.interpreter._create_runtime_error(error_msg)
+            else:
+                raise RuntimeErrorLyric(error_msg)
+
+        # Variable is not declared at all
+        error_msg = f"Variable '{name}' used before declaration"
         if self.interpreter:
-            raise self.interpreter._create_runtime_error(f"Undefined variable: {name}")
+            raise self.interpreter._create_runtime_error(error_msg)
         else:
-            raise RuntimeErrorLyric(f"Undefined variable: {name}")
+            raise RuntimeErrorLyric(error_msg)
 
     def assign(self, name: str, value: Any) -> None:
         """Assign a value to a variable, looking up the chain if needed."""
@@ -189,7 +208,12 @@ class Environment:
         elif self.parent:
             self.parent.assign(name, value)
         else:
-            raise RuntimeErrorLyric(f"Undefined variable: {name}")
+            # Variable is not declared - this should be an error
+            error_msg = f"Variable '{name}' used before declaration"
+            if self.interpreter:
+                raise self.interpreter._create_runtime_error(error_msg)
+            else:
+                raise RuntimeErrorLyric(error_msg)
 
 
 class Function:
@@ -641,11 +665,13 @@ class Interpreter:
                     try:
                         env.parent.assign(stmt.name, value)
                     except:
-                        # Variable doesn't exist anywhere, define it
-                        env.define(stmt.name, value)
+                        # Variable doesn't exist anywhere - this should be an error
+                        error_msg = f"Variable '{stmt.name}' used before declaration"
+                        raise self._create_runtime_error(error_msg)
                 else:
-                    # New variable without type declaration
-                    env.define(stmt.name, value)
+                    # Variable doesn't exist and no parent - this should be an error
+                    error_msg = f"Variable '{stmt.name}' used before declaration"
+                    raise self._create_runtime_error(error_msg)
             return value
         elif isinstance(stmt.name, IdentifierNode):
             # Regular variable assignment from identifier with optional type declaration
