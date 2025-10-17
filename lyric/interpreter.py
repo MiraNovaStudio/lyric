@@ -37,6 +37,8 @@ class Environment:
             elif isinstance(value, float):
                 type_annotation = 'float'
             elif isinstance(value, str):
+                # Check if this is a regex literal (starts and ends with /)
+                # This is a simple heuristic - in practice, regex literals should be marked explicitly
                 type_annotation = 'str'
             elif isinstance(value, list):
                 type_annotation = 'list'
@@ -123,6 +125,8 @@ class Environment:
         elif expected_type == 'dict' and isinstance(value, dict):
             return True
         elif expected_type == 'None' and value is None:
+            return True
+        elif expected_type == 'rex' and isinstance(value, str):
             return True
         else:
             # Check for custom class types

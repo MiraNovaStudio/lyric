@@ -26,7 +26,7 @@ class Lexer:
         'def', 'class', 'if', 'else', 'given', 'done', 'end',
         'try', 'except', 'finally', 'import', 'from', 'as', 'return',
         'true', 'false', 'and', 'or', 'not', 'in', 'None', 'raise',
-        'var'
+        'var', 'rex'
     }
 
     # Token patterns
@@ -44,6 +44,9 @@ class Lexer:
 
         # Strings (with escaped quotes support)
         ('STRING', r'"([^"\\]|\\.)*"'),
+
+        # Regex literals (must come before DIVIDE to avoid conflicts)
+        ('REGEX', r'/(?:[^/\\]|\\.)*/'),
 
         # Operators
         ('EQ', r'=='),                               # Equality
