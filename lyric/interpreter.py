@@ -63,6 +63,15 @@ class RexObject:
         
         return self.compiled_pattern.sub(replacement, source)
     
+    # TODO: Consider adding .search() method in future sprint
+    # The .search() method would provide mid-string pattern matching functionality
+    # using Python's re.search() to find patterns anywhere in the string (not just at the beginning)
+    # This was deferred for Sprint 5 to focus on core .match() and .replace() functionality
+    # Example usage: pattern.search("hello world") -> returns match object or None
+    # def search(self, text: str) -> Optional[Match]:
+    #     """Search for pattern anywhere in text, not just at the beginning."""
+    #     return self.compiled_pattern.search(text)
+    
     def __str__(self) -> str:
         """String representation of the regex object."""
         return self.pattern
