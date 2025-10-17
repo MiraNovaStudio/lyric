@@ -295,6 +295,11 @@ def main() {
 
 ## Bug Fixes
 
+### ⚠️ Nova Event — Sprint 6 Task 1
+During initial implementation of nested scope resolution, the interpreter entered a hang state during pytest execution (infinite loop condition). 
+Task was reattempted successfully after identifying and removing duplicate `_execute_block` method, producing recoverable test failures that were resolved by updating test files with proper `var` declarations. 
+Root cause was duplicate method definitions causing incorrect scope behavior. No data loss or corruption occurred. Resolved in dev-0.2.1.
+
 ### Issue 1: Duplicate `_execute_block` Method
 
 **Problem:** Two `_execute_block` methods in interpreter.py (lines 725 and 954)
