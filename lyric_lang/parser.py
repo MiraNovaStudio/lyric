@@ -243,6 +243,14 @@ class Parser:
                 self._consume('COLON', "Expected ':' after elif condition")
                 elif_body = self._parse_statement_list()
                 elifs.append(ElifNode(condition=elif_condition, body=elif_body))
+            elif self._match('ELSE') and self._peek_next() and self._peek_next().type == 'IF':
+                # This is an 'else if' (old syntax) - treat as elif
+                self._advance()  # consume 'else'
+                self._advance()  # consume 'if'
+                elif_condition = self._parse_expression()
+                self._consume('COLON', "Expected ':' after else if condition")
+                elif_body = self._parse_statement_list()
+                elifs.append(ElifNode(condition=elif_condition, body=elif_body))
             else:
                 # This is an else
                 self._advance()  # consume 'else'
