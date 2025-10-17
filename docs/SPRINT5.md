@@ -92,6 +92,36 @@ ACCEPTANCE CRITERIA:
 • Both “lyric run file.ly” and “lyric file.ly” execute correctly.
 • Help and version flags work as expected.
 
+
+TASK 7 — ADD GOD TYPE (BOOLEAN TYPE)
+Introduce a new built-in type named god, representing logical true/false values.
+This replaces the planned bool type. The name honors the logician Kurt Gödel, whose work on formal logic inspired the concept of truth values in computation.
+
+Implementation requirements:
+• god behaves as a boolean type.
+• Literal values true and false are recognized by the interpreter.
+• god variables can be used in conditional statements (if, while, etc.).
+• god can be returned from functions and compared using logical operators (and, or, not).
+• Internally it maps to a Python bool for now.
+• Update documentation to include the origin of the name (referencing Gödel).
+
+Example usage:
+god ready = true
+if ready {
+ print("System ready.")
+} else {
+ print("System not ready.")
+}
+
+ACCEPTANCE CRITERIA:
+• god is recognized as a native type keyword.
+• true and false literals function correctly in conditionals.
+• Logical operations and comparisons behave as expected.
+• Documentation updated with a short note:
+ “The god type (named in honor of logician Kurt Gödel) represents truth values.”
+• README.md and CHANGELOG.md updated accordingly.
+
+
 DEFINITION OF DONE
 • rex type implemented with .match() and .replace() fully working.
 • Parser correctly handles /…/ syntax.
