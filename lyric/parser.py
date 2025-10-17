@@ -544,7 +544,8 @@ class Parser:
             # Remove slashes from regex and unescape
             regex_content = token.value[1:-1]
             unescaped = self._unescape_string(regex_content)
-            return LiteralNode(unescaped)
+            from lyric.ast import RegexLiteralNode
+            return RegexLiteralNode(unescaped)
         elif self._match('LBRACKET'):
             # Parse list literal
             return self._parse_list_literal()

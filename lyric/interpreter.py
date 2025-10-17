@@ -4,13 +4,52 @@ Executes AST nodes to run programs.
 """
 
 from typing import Dict, List, Any, Optional
+import re
 from lyric.ast import (
     ProgramNode, FunctionNode, ClassNode, IfNode, LoopNode,
-    AssignNode, MultiDeclareNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode,
+    AssignNode, MultiDeclareNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode, RegexLiteralNode,
     IdentifierNode, PrintNode, ImportNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode
 )
 from lyric.errors import RuntimeErrorLyric, StackFrame
 from lyric.runtime import register_builtins, BuiltinFunction
+
+
+class RexObject:
+    """Represents a regex pattern object with methods like .match()."""
+    
+    def __init__(self, pattern: str):
+        """Initialize a regex object with a pattern string."""
+        self.pattern = pattern
+        try:
+            # Compile the regex pattern to validate it
+            self.compiled_pattern = re.compile(pattern)
+        except re.error as e:
+            raise RuntimeErrorLyric(f"Invalid regex pattern '{pattern}': {e}")
+    
+    def match(self, text: str) -> bool:
+        """Check if the text matches the regex pattern from the beginning.
+        
+        Args:
+            text: The string to match against the pattern
+            
+        Returns:
+            True if the text matches the pattern from the beginning, False otherwise
+            
+        Raises:
+            RuntimeErrorLyric: If text is not a string
+        """
+        if not isinstance(text, str):
+            raise RuntimeErrorLyric(f"RexObject.match() expects a string, got {type(text).__name__}")
+        
+        return self.compiled_pattern.match(text) is not None
+    
+    def __str__(self) -> str:
+        """String representation of the regex object."""
+        return self.pattern
+    
+    def __repr__(self) -> str:
+        """Debug representation of the regex object."""
+        return f"RexObject('{self.pattern}')"
 
 
 class Environment:
@@ -40,6 +79,8 @@ class Environment:
                 # Check if this is a regex literal (starts and ends with /)
                 # This is a simple heuristic - in practice, regex literals should be marked explicitly
                 type_annotation = 'str'
+            elif isinstance(value, RexObject):
+                type_annotation = 'rex'
             elif isinstance(value, list):
                 type_annotation = 'list'
             elif isinstance(value, dict):
@@ -126,7 +167,7 @@ class Environment:
             return True
         elif expected_type == 'None' and value is None:
             return True
-        elif expected_type == 'rex' and isinstance(value, str):
+        elif expected_type == 'rex' and isinstance(value, (str, RexObject)):
             return True
         else:
             # Check for custom class types
@@ -151,6 +192,8 @@ class Environment:
             return 'dict'
         elif value is None:
             return 'None'
+        elif isinstance(value, RexObject):
+            return 'rex'
         else:
             from lyric.interpreter import Instance
             if isinstance(value, Instance):
@@ -875,6 +918,9 @@ class Interpreter:
             else:
                 # Regular literal value
                 return expr.value
+        elif isinstance(expr, RegexLiteralNode):
+            # Create a RexObject for regex literals
+            return RexObject(expr.value)
         elif isinstance(expr, IdentifierNode):
             return env.get(expr.name)
         elif isinstance(expr, MemberAccessNode):
@@ -920,6 +966,16 @@ class Interpreter:
                 return method.call(self, arguments)
             else:
                 raise RuntimeErrorLyric(f"'{stmt.method}' is not a method")
+        elif isinstance(obj, RexObject):
+            # Handle method calls on RexObject instances
+            if hasattr(obj, stmt.method):
+                method = getattr(obj, stmt.method)
+                if callable(method):
+                    return method(*arguments)
+                else:
+                    raise RuntimeErrorLyric(f"'{stmt.method}' is not a method")
+            else:
+                raise RuntimeErrorLyric(f"RexObject has no method '{stmt.method}'")
         else:
             raise RuntimeErrorLyric(f"Cannot call method '{stmt.method}' on non-instance object")
 

@@ -173,6 +173,15 @@ class LiteralNode(ASTNode):
 
 
 @dataclass
+class RegexLiteralNode(ASTNode):
+    """Represents a regex literal value."""
+    value: str  # The regex pattern as a string
+
+    def __repr__(self):
+        return f"RegexLiteralNode(value={repr(self.value)})"
+
+
+@dataclass
 class IdentifierNode(ASTNode):
     """Represents an identifier."""
     name: str
