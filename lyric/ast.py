@@ -255,8 +255,21 @@ class ReturnNode(ASTNode):
 
 
 @dataclass
+class TryCatchFinallyNode(ASTNode):
+    """Represents a try/catch/finally/fade block."""
+    try_body: List[ASTNode]
+    catch_body: Optional[List[ASTNode]]
+    finally_body: Optional[List[ASTNode]]
+
+    def __repr__(self):
+        catch_info = f", catch={len(self.catch_body)} statements" if self.catch_body else ""
+        finally_info = f", finally={len(self.finally_body)} statements" if self.finally_body else ""
+        return (f"TryCatchFinallyNode(try={len(self.try_body)} statements{catch_info}{finally_info})")
+
+
+@dataclass
 class TryNode(ASTNode):
-    """Represents a try/except/finally block."""
+    """Represents a try/except/finally block (legacy)."""
     try_body: List[ASTNode]
     except_clauses: List['ExceptNode']
     finally_body: Optional[List[ASTNode]]
@@ -275,6 +288,19 @@ class ExceptNode(ASTNode):
 
     def __repr__(self):
         return f"ExceptNode(type='{self.exception_type}', body={len(self.body)} statements)"
+
+
+@dataclass
+class RaiseNode(ASTNode):
+    """Represents a raise statement."""
+    exception_type: Optional[str]  # None for simple string errors, str for typed errors
+    message: ASTNode  # The error message (string literal or expression)
+
+    def __repr__(self):
+        if self.exception_type:
+            return f"RaiseNode(type='{self.exception_type}', message={self.message})"
+        else:
+            return f"RaiseNode(message={self.message})"
 
 
 # Update the forward reference for ElifNode

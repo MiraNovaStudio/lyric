@@ -8,7 +8,8 @@ from lyric.lexer import Token
 from lyric.ast import (
     ProgramNode, FunctionNode, ClassNode, IfNode, ElifNode, LoopNode,
     AssignNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode,
-    IdentifierNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode
+    IdentifierNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode,
+    TryCatchFinallyNode, RaiseNode
 )
 from lyric.errors import ParseError
 
@@ -106,8 +107,12 @@ class Parser:
             return self._parse_if_block()
         elif token.type == 'GIVEN':
             return self._parse_loop_block()
+        elif token.type == 'TRY':
+            return self._parse_try_catch_finally_block()
         elif token.type == 'RETURN':
             return self._parse_return_stmt()
+        elif token.type == 'RAISE':
+            return self._parse_raise_stmt()
         elif token.type == 'VAR':
             # var keyword for dynamic typing
             return self._parse_assignment_or_expr_stmt()
@@ -229,18 +234,18 @@ class Parser:
         elifs = []
         else_body = None
 
-        # Parse elif clauses
-        while self._match('ELSE'):
-            self._advance()
-            if self._match('IF'):
+        # Parse elif clauses and else clause
+        while self._match('ELIF') or self._match('ELSE'):
+            if self._match('ELIF'):
                 # This is an elif
-                self._advance()  # consume 'if'
+                self._advance()  # consume 'elif'
                 elif_condition = self._parse_expression()
                 self._consume('COLON', "Expected ':' after elif condition")
                 elif_body = self._parse_statement_list()
                 elifs.append(ElifNode(condition=elif_condition, body=elif_body))
             else:
                 # This is an else
+                self._advance()  # consume 'else'
                 self._consume('COLON', "Expected ':' after else")
                 else_body = self._parse_statement_list()
                 break
@@ -264,6 +269,33 @@ class Parser:
         loop_kind = "iterator" if self._is_iterator_expression(condition_or_iter) else "while"
 
         return LoopNode(condition_or_iter=condition_or_iter, loop_kind=loop_kind, body=body)
+
+    def _parse_try_catch_finally_block(self) -> TryCatchFinallyNode:
+        """Parse a try/catch/finally/fade block."""
+        self._consume('TRY', "Expected 'try'")
+        self._consume('COLON', "Expected ':' after try")
+
+        # Parse try body
+        try_body = self._parse_statement_list()
+
+        # Parse optional catch block
+        catch_body = None
+        if self._match('CATCH'):
+            self._advance()  # consume 'catch'
+            self._consume('COLON', "Expected ':' after catch")
+            catch_body = self._parse_statement_list()
+
+        # Parse optional finally block
+        finally_body = None
+        if self._match('FINALLY'):
+            self._advance()  # consume 'finally'
+            self._consume('COLON', "Expected ':' after finally")
+            finally_body = self._parse_statement_list()
+
+        # Require fade to close the block
+        self._consume('FADE', "Expected 'fade' to close try/catch/finally block")
+
+        return TryCatchFinallyNode(try_body=try_body, catch_body=catch_body, finally_body=finally_body)
 
     def _is_iterator_expression(self, expr) -> bool:
         """Check if expression is an iterator (e.g., 'i in range(5)')."""
@@ -396,11 +428,11 @@ class Parser:
             self._skip_newlines()
 
             # Check if we've hit an end marker
-            if self._match('END', 'DONE', 'RBRACE', 'CLASS_END'):
+            if self._match('END', 'DONE', 'RBRACE', 'CLASS_END', 'FADE'):
                 break
 
             # Check if we've hit control flow keywords that end statement lists
-            if self._match('ELSE'):
+            if self._match('ELIF', 'ELSE', 'CATCH', 'FINALLY'):
                 break
 
             stmt = self._parse_statement()
@@ -408,6 +440,26 @@ class Parser:
                 statements.append(stmt)
 
         return statements
+
+    def _parse_raise_stmt(self) -> RaiseNode:
+        """Parse a raise statement."""
+        self._consume('RAISE', "Expected 'raise'")
+        
+        # Check if this is a typed exception: raise TypeError("message")
+        if self._match('IDENTIFIER'):
+            exception_type_token = self._consume('IDENTIFIER', "Expected exception type")
+            exception_type = exception_type_token.value
+            
+            # Expect parentheses and message
+            self._consume('LPAREN', "Expected '(' after exception type")
+            message_expr = self._parse_expression()
+            self._consume('RPAREN', "Expected ')' after exception message")
+            
+            return RaiseNode(exception_type=exception_type, message=message_expr)
+        else:
+            # Simple string error: raise "message"
+            message_expr = self._parse_expression()
+            return RaiseNode(exception_type=None, message=message_expr)
 
     def _parse_param_list(self) -> tuple[List[str], List[str]]:
         """Parse parameter list with C-style type declarations.

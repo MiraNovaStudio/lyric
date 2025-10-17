@@ -8,7 +8,8 @@ import re
 from lyric.ast import (
     ProgramNode, FunctionNode, ClassNode, IfNode, LoopNode,
     AssignNode, MultiDeclareNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode, RegexLiteralNode,
-    IdentifierNode, PrintNode, ImportNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode
+    IdentifierNode, PrintNode, ImportNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode,
+    TryCatchFinallyNode, RaiseNode
 )
 from lyric.errors import RuntimeErrorLyric, StackFrame
 from lyric.runtime import register_builtins, BuiltinFunction
@@ -196,7 +197,7 @@ class Environment:
             return True
         elif expected_type == 'None' and value is None:
             return True
-        elif expected_type == 'rex' and isinstance(value, (str, RexObject)):
+        elif expected_type == 'rex' and isinstance(value, RexObject):
             return True
         else:
             # Check for custom class types
@@ -718,6 +719,10 @@ class Interpreter:
             return self._execute_return(stmt, env)
         elif isinstance(stmt, ImportNode):
             return self._execute_import(stmt, env)
+        elif isinstance(stmt, TryCatchFinallyNode):
+            return self._execute_try_catch_finally(stmt, env)
+        elif isinstance(stmt, RaiseNode):
+            return self._execute_raise(stmt, env)
         else:
             # Try to evaluate as expression
             return self._evaluate_expression(stmt, env)
@@ -953,6 +958,79 @@ class Interpreter:
         # In a full implementation, this would load modules
         pass
 
+    def _execute_try_catch_finally(self, stmt: TryCatchFinallyNode, env: Environment) -> Any:
+        """Execute a try/catch/finally/fade block."""
+        result = None
+        error_to_propagate = None
+        
+        try:
+            # Execute the try block
+            result = self._execute_block(stmt.try_body, env)
+        except RuntimeErrorLyric as e:
+            # An error occurred in the try block
+            if stmt.catch_body:
+                # Execute the catch block if present
+                try:
+                    catch_result = self._execute_block(stmt.catch_body, env)
+                    result = catch_result  # Use the result from catch block
+                except RuntimeErrorLyric as catch_error:
+                    # Error in catch block - will propagate after finally
+                    error_to_propagate = catch_error
+            else:
+                # No catch block - error will propagate after finally
+                error_to_propagate = e
+        except Exception as e:
+            # Convert non-Lyric exceptions to RuntimeErrorLyric
+            lyric_error = RuntimeErrorLyric(f"Unexpected error: {str(e)}")
+            if stmt.catch_body:
+                try:
+                    catch_result = self._execute_block(stmt.catch_body, env)
+                    result = catch_result  # Use the result from catch block
+                except RuntimeErrorLyric as catch_error:
+                    error_to_propagate = catch_error
+            else:
+                error_to_propagate = lyric_error
+        
+        # Execute finally block if present (always executes)
+        if stmt.finally_body:
+            try:
+                self._execute_block(stmt.finally_body, env)
+            except RuntimeErrorLyric as finally_error:
+                # Error in finally block - this takes precedence
+                raise finally_error
+        
+        # Re-raise the error if there was one and no catch block handled it
+        if error_to_propagate:
+            raise error_to_propagate
+        
+        return result
+
+    def _execute_raise(self, stmt: RaiseNode, env: Environment) -> None:
+        """Execute a raise statement."""
+        # Evaluate the message expression
+        message_value = self._evaluate_expression(stmt.message, env)
+        message_str = str(message_value)
+        
+        if stmt.exception_type:
+            # Typed exception: raise TypeError("message")
+            # Get the error class from the global environment
+            error_class = env.get(stmt.exception_type)
+            if error_class is None:
+                # Error class not found, create a generic error
+                raise RuntimeErrorLyric(f"Unknown error type '{stmt.exception_type}': {message_str}")
+            
+            # Create an instance of the error class
+            try:
+                error_instance = error_class(message_str)
+                # Raise as RuntimeErrorLyric with the formatted message
+                raise RuntimeErrorLyric(str(error_instance))
+            except Exception as e:
+                # If error creation fails, raise with the message
+                raise RuntimeErrorLyric(f"Error creating {stmt.exception_type}: {message_str}")
+        else:
+            # Simple string error: raise "message"
+            raise RuntimeErrorLyric(message_str)
+
     def _evaluate_expression(self, expr: Any, env: Environment) -> Any:
         """Evaluate an expression."""
         if isinstance(expr, LiteralNode):
@@ -1102,7 +1180,23 @@ class Interpreter:
             self._record_constant_fold()
             return self._fold_constant_binary_op(expr.op, expr.left.value, expr.right.value)
         
-        # Evaluate operands normally
+        # Handle logical operators with short-circuit evaluation
+        if expr.op == 'and':
+            # Short-circuit: evaluate left first, only evaluate right if left is truthy
+            left = self._evaluate_expression(expr.left, env)
+            if not self._is_truthy(left):
+                return False
+            right = self._evaluate_expression(expr.right, env)
+            return self._is_truthy(right)
+        elif expr.op == 'or':
+            # Short-circuit: evaluate left first, only evaluate right if left is falsy
+            left = self._evaluate_expression(expr.left, env)
+            if self._is_truthy(left):
+                return True
+            right = self._evaluate_expression(expr.right, env)
+            return self._is_truthy(right)
+        
+        # Evaluate operands normally for non-logical operators
         left = self._evaluate_expression(expr.left, env)
         right = self._evaluate_expression(expr.right, env)
 
@@ -1132,10 +1226,6 @@ class Interpreter:
             return left > right
         elif expr.op == '>=':
             return left >= right
-        elif expr.op == 'and':
-            return self._is_truthy(left) and self._is_truthy(right)
-        elif expr.op == 'or':
-            return self._is_truthy(left) or self._is_truthy(right)
         elif expr.op == 'in':
             return right.__contains__(left)
         else:

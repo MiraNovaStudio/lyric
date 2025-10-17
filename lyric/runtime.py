@@ -258,6 +258,12 @@ def _builtin_type(args: List[Any]) -> str:
         return "list"
     elif isinstance(obj, dict):
         return "dict"
+    
+    # Handle RexObject
+    from lyric.interpreter import RexObject
+    if isinstance(obj, RexObject):
+        return "rex"
+    
     else:
         return type(obj).__name__
 
@@ -338,6 +344,14 @@ def register_builtins(env: dict) -> None:
 
     for builtin in builtins:
         env[builtin.name] = builtin
+    
+    # Register error classes in the global scope
+    from lyric.errors_hierarchy import Error, TypeError, ValueError, NameError, RuntimeError as LyricRuntimeError
+    env["Error"] = Error
+    env["TypeError"] = TypeError
+    env["ValueError"] = ValueError
+    env["NameError"] = NameError
+    env["RuntimeError"] = LyricRuntimeError
 
 
 # For testing purposes, we can inject custom input functions
