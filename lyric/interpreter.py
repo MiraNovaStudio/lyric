@@ -318,6 +318,46 @@ class Environment:
             else:
                 raise RuntimeErrorLyric(error_msg)
 
+    def assign_local(self, name: str, value: Any) -> None:
+        """Assign a value to a variable in the current scope only (for shadowing behavior)."""
+        if name in self.variables:
+            # Check if this variable has a type declaration and enforce it
+            existing_type = self.variable_types.get(name)
+            if existing_type and existing_type != 'unknown' and existing_type != 'var':
+                if not self._check_type(value, existing_type):
+                    error_msg = (f"Type mismatch for variable '{name}': expected {existing_type}, "
+                               f"got {self._get_type_name(value)}")
+                    if self.interpreter:
+                        raise self.interpreter._create_runtime_error(error_msg)
+                    else:
+                        raise RuntimeErrorLyric(error_msg)
+            
+            self.variables[name] = value
+            self.initialized_variables[name] = True  # Mark as initialized
+            self._cache[name] = value  # Update cache
+        elif name in self.declared_variables:
+            # Variable is declared but not initialized - initialize it now
+            existing_type = self.variable_types.get(name)
+            if existing_type and existing_type != 'unknown' and existing_type != 'var':
+                if not self._check_type(value, existing_type):
+                    error_msg = (f"Type mismatch for variable '{name}': expected {existing_type}, "
+                               f"got {self._get_type_name(value)}")
+                    if self.interpreter:
+                        raise self.interpreter._create_runtime_error(error_msg)
+                    else:
+                        raise RuntimeErrorLyric(error_msg)
+            
+            self.variables[name] = value
+            self.initialized_variables[name] = True  # Mark as initialized
+            self._cache[name] = value  # Update cache
+        else:
+            # Variable is not in current scope - this should be an error
+            error_msg = f"Variable '{name}' not found in current scope"
+            if self.interpreter:
+                raise self.interpreter._create_runtime_error(error_msg)
+            else:
+                raise RuntimeErrorLyric(error_msg)
+
 
 class Function:
     """Represents a user-defined function."""
@@ -683,10 +723,12 @@ class Interpreter:
             return self._evaluate_expression(stmt, env)
     
     def _execute_block(self, statements: List[Any], env: Environment) -> Any:
-        """Execute a block of statements."""
+        """Execute a block of statements in a new nested environment."""
+        # Create a new nested environment for proper scope resolution
+        block_env = Environment(parent=env, interpreter=self)
         result = None
         for stmt in statements:
-            result = self._execute_statement(stmt, env)
+            result = self._execute_statement(stmt, block_env)
         return result
 
     def _execute_function_def(self, stmt: FunctionNode, env: Environment) -> None:
@@ -761,23 +803,14 @@ class Interpreter:
                 # New variable with type declaration
                 env.define(stmt.name, value, stmt.type_annotation)
             else:
-                # Check if variable exists or is declared but uninitialized
+                # Check if variable exists in current scope or is declared but uninitialized
                 if (stmt.name in env.variables or 
                     stmt.name in env.declared_variables):
                     # Reassign existing variable or initialize declared variable (with type checking)
-                    env.assign(stmt.name, value)
-                elif env.parent:
-                    # Try to find in parent scope
-                    try:
-                        env.parent.assign(stmt.name, value)
-                    except:
-                        # Variable doesn't exist anywhere - this should be an error
-                        error_msg = f"Variable '{stmt.name}' used before declaration"
-                        raise self._create_runtime_error(error_msg)
+                    env.assign_local(stmt.name, value)
                 else:
-                    # Variable doesn't exist and no parent - this should be an error
-                    error_msg = f"Variable '{stmt.name}' used before declaration"
-                    raise self._create_runtime_error(error_msg)
+                    # Variable doesn't exist in current scope - create new variable (shadowing behavior)
+                    env.define(stmt.name, value)
             return value
         elif isinstance(stmt.name, IdentifierNode):
             # Regular variable assignment from identifier with optional type declaration
@@ -785,19 +818,13 @@ class Interpreter:
                 # New variable with type declaration
                 env.define(stmt.name.name, value, stmt.type_annotation)
             else:
-                # Check if variable exists
-                if stmt.name.name in env.variables:
+                # Check if variable exists in current scope or is declared but uninitialized
+                if (stmt.name.name in env.variables or 
+                    stmt.name.name in env.declared_variables):
                     # Reassign existing variable (with type checking)
-                    env.assign(stmt.name.name, value)
-                elif env.parent:
-                    # Try to find in parent scope
-                    try:
-                        env.parent.assign(stmt.name.name, value)
-                    except:
-                        # Variable doesn't exist anywhere, define it
-                        env.define(stmt.name.name, value)
+                    env.assign_local(stmt.name.name, value)
                 else:
-                    # New variable without type declaration
+                    # Variable doesn't exist in current scope - create new variable (shadowing behavior)
                     env.define(stmt.name.name, value)
             return value
         else:
@@ -923,13 +950,6 @@ class Interpreter:
         # For now, imports are not implemented
         # In a full implementation, this would load modules
         pass
-
-    def _execute_block(self, statements: List[Any], env: Environment) -> Any:
-        """Execute a block of statements."""
-        result = None
-        for statement in statements:
-            result = self._execute_statement(statement, env)
-        return result
 
     def _evaluate_expression(self, expr: Any, env: Environment) -> Any:
         """Evaluate an expression."""
