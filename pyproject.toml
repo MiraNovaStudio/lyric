@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lyric"
-version = "0.1.6"
+version = "0.1.9"
 description = "A minimal programming language implementation"
 authors = [
     {name = "Lyric Team", email = "team@lyric.dev"}

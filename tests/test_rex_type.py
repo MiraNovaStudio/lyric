@@ -41,7 +41,7 @@ def main() {
 '''
         output = self.capture_output(source)
         assert "Pattern: ^abc" in output
-        assert "Type: str" in output
+        assert "Type: RexObject" in output
 
     def test_rex_complex_pattern(self):
         """Test complex regex pattern."""

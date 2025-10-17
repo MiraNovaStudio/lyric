@@ -13,7 +13,7 @@ from lyric.errors import LexError, ParseError, RuntimeErrorLyric
 def main():
     """Main entry point for the lyric command."""
     parser = argparse.ArgumentParser(description='Lyric Language Interpreter')
-    parser.add_argument('--version', action='version', version='Lyric 0.1.6')
+    parser.add_argument('--version', action='version', version='Lyric 0.1.9')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode with stack traces')
     
     # Allow both subcommand and direct file execution

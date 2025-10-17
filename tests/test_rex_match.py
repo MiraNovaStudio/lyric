@@ -223,6 +223,6 @@ def main() {
 }
 '''
         output = self.capture_output(source)
-        assert "Result type: bool" in output
+        assert "Result type: god" in output
         assert "Result value: True" in output
         assert "Boolean evaluation: True" in output

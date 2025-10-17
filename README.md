@@ -202,6 +202,23 @@ def main() {
     print("PI:", pi, "Type:", type(pi))
     print("Name:", name, "Type:", type(name))
     
+    # Regular expressions with rex type
+    rex email_pattern = /^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$/
+    rex word_pattern = /^[a-zA-Z]+$/
+    
+    var test_email = "user@example.com"
+    var test_word = "hello"
+    
+    print("Email valid:", email_pattern.match(test_email))
+    print("Word valid:", word_pattern.match(test_word))
+    print("Pattern type:", type(email_pattern))
+    
+    # String replacement with regex
+    rex space_pattern = /\s+/
+    var spaced_text = "hello    world    test"
+    var clean_text = space_pattern.replace(spaced_text, " ")
+    print("Cleaned text:", clean_text)
+    
     # List and dictionary operations
     print("First number:", numbers[0])
     print("Person's name:", person["name"])
@@ -242,6 +259,22 @@ def main() {
     # Enhanced print with None handling
     print("Value:", None)
 }
+```
+
+### CLI Usage Examples
+```bash
+# Run Lyric programs using either command form:
+python -m lyric.cli run hello.ly
+python -m lyric.cli hello.ly
+
+# After pip install -e ., use the global command:
+lyric run hello.ly
+lyric hello.ly
+
+# Help and version information:
+lyric --help
+lyric --version
+lyric --debug hello.ly
 ```
 
 ## License and Credits

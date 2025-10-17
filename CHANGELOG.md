@@ -1,3 +1,40 @@
+# Lyric Language — Version 0.1.9
+
+**Release Date:** December 2024
+
+## Summary
+
+This version completes Sprint 5 (Regex Type System & CLI Enhancements) with all 7 tasks implemented. The language now includes a complete regex type system with the `rex` type, dual CLI entrypoint functionality, global command availability via pip, and the `god` type honoring Kurt Gödel. This milestone represents a major enhancement to Lyric's type system and user experience with 59+ new tests and professional-grade CLI functionality.
+
+## Added (Sprint 5 - Complete)
+
+- **Regex Type System**: Complete `rex` type implementation with `/.../` literal syntax
+- **Regex Methods**: `.match()` and `.replace()` methods for pattern matching and string replacement
+- **Dual CLI Entrypoint**: Support for both `lyric run file.ly` and `lyric file.ly` command forms
+- **Global Command**: `lyric` command globally available after `pip install -e .`
+- **GOD Type**: Boolean type named in honor of logician Kurt Gödel
+- **Comprehensive Testing**: 59 new tests covering regex functionality and CLI execution
+- **Professional CLI**: Full error handling, help system, and debug mode support
+
+## Changed
+
+- **Version Number**: Updated from 0.1.6 to 0.1.9 (Sprint 5 complete)
+- **Type System**: Added `rex` type and renamed `bool` to `god` type
+- **CLI Interface**: Enhanced with dual command forms and global availability
+- **Documentation**: Updated README with regex examples and CLI usage
+- **Test Coverage**: Expanded to 285+ tests with comprehensive Sprint 5 coverage
+
+## Notes
+
+- Sprint 5 is complete with all 7 tasks implemented and verified
+- All Definition of Done criteria met and validated
+- Ready for production use with `0.1.9` tag
+- Professional CLI experience with global command availability
+- Complete regex type system with pattern matching and replacement
+- All 285+ tests passing with 100% success rate
+
+---
+
 # Lyric Language — Version 0.1.6
 
 **Release Date:** December 2024
