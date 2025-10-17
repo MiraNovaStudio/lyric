@@ -146,7 +146,7 @@ def main() {
         """Test that --version flag works."""
         exit_code, stdout, stderr = self.run_cli_command(['--version'])
         assert exit_code == 0
-        assert "Lyric 0.1.6" in stdout
+        assert "Lyric 0.1.9" in stdout
 
     def test_help_flag_works(self):
         """Test that --help flag works."""

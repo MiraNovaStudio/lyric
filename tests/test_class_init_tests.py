@@ -61,16 +61,16 @@ class TestClassInitTests:
         
         def test_basic_class_operations() {
             print("=== Basic Class Operations ===")
-            person1 = Person()
-            person2 = Person()
+            var person1 = Person()
+            var person2 = Person()
             
             print("Person1 default name:", person1.name)
             print("Person1 default age:", person1.age)
             print("Person2 default name:", person2.name)
             print("Person2 default age:", person2.age)
             
-            greeting1 = person1.greet()
-            greeting2 = person2.greet()
+            var greeting1 = person1.greet()
+            var greeting2 = person2.greet()
             print("Person1 greeting:", greeting1)
             print("Person2 greeting:", greeting2)
             
@@ -83,16 +83,16 @@ class TestClassInitTests:
             print("Person1 name:", person1.name, "age:", person1.age)
             print("Person2 name:", person2.name, "age:", person2.age)
             
-            updated_greeting1 = person1.greet()
-            updated_greeting2 = person2.greet()
+            var updated_greeting1 = person1.greet()
+            var updated_greeting2 = person2.greet()
             print("Updated Person1 greeting:", updated_greeting1)
             print("Updated Person2 greeting:", updated_greeting2)
         }
         
         def test_counter_operations() {
             print("=== Counter Operations ===")
-            counter1 = Counter()
-            counter2 = Counter()
+            var counter1 = Counter()
+            var counter2 = Counter()
             
             print("Counter1 initial:", counter1.get_count())
             print("Counter2 initial:", counter2.get_count())
@@ -154,7 +154,7 @@ class TestClassInitTests:
         +++
         
         def main() {
-            instance = TestClass()
+            var instance = TestClass()
             print("Initial value:", instance.get_value())
             
             instance.value = 200
@@ -184,8 +184,8 @@ class TestClassInitTests:
         +++
         
         def main() {
-            counter1 = Counter()
-            counter2 = Counter()
+            var counter1 = Counter()
+            var counter2 = Counter()
             
             print("Counter1 initial:", counter1.get_count())
             print("Counter2 initial:", counter2.get_count())
@@ -225,7 +225,7 @@ class TestClassInitTests:
         +++
         
         def main() {
-            math = SimpleMath()
+            var math = SimpleMath()
             
             print("Initial result:", math.get_result())
             

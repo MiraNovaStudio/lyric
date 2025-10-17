@@ -38,8 +38,8 @@ def test_basic_class_operations() {
     print("=== Basic Class Operations ===")
     
     # Create instances
-    person1 = Person()
-    person2 = Person()
+    var person1 = Person()
+    var person2 = Person()
     
     # Test default values
     print("Person1 default name:", person1.name)
@@ -48,8 +48,8 @@ def test_basic_class_operations() {
     print("Person2 default age:", person2.age)
     
     # Test method calls
-    greeting1 = person1.greet()
-    greeting2 = person2.greet()
+    var greeting1 = person1.greet()
+    var greeting2 = person2.greet()
     print("Person1 greeting:", greeting1)
     print("Person2 greeting:", greeting2)
     
@@ -64,8 +64,8 @@ def test_basic_class_operations() {
     print("Person2 name:", person2.name, "age:", person2.age)
     
     # Test updated method calls
-    updated_greeting1 = person1.greet()
-    updated_greeting2 = person2.greet()
+    var updated_greeting1 = person1.greet()
+    var updated_greeting2 = person2.greet()
     print("Updated Person1 greeting:", updated_greeting1)
     print("Updated Person2 greeting:", updated_greeting2)
 }
@@ -74,8 +74,8 @@ def test_basic_class_operations() {
 def test_counter_operations() {
     print("=== Counter Operations ===")
     
-    counter1 = Counter()
-    counter2 = Counter()
+    var counter1 = Counter()
+    var counter2 = Counter()
     
     # Test initial state
     print("Counter1 initial:", counter1.get_count())
@@ -104,8 +104,8 @@ def test_counter_operations() {
 def test_class_type_information() {
     print("=== Class Type Information ===")
     
-    person = Person()
-    counter = Counter()
+    var person = Person()
+    var counter = Counter()
     
     print("Person instance type:", type(person))
     print("Counter instance type:", type(counter))
@@ -119,13 +119,13 @@ def test_class_type_information() {
 def test_direct_attribute_modification() {
     print("=== Direct Attribute Modification ===")
     
-    person = Person()
+    var person = Person()
     
     # Test direct attribute modification
     person.name = "Charlie"
     print("After direct assignment person.name = 'Charlie':", person.name)
     
-    greeting = person.greet()
+    var greeting = person.greet()
     print("Greeting after name change:", greeting)
     
     # Test multiple modifications
