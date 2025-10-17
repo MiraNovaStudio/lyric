@@ -175,3 +175,113 @@ python -m pytest tests/ -v
 **Verification**: Test passes, no infinite loops observed  
 
 This NOVA has been successfully resolved with a robust fix that addresses the root cause while maintaining system stability and backward compatibility.
+
+---
+
+## 🚨 Second Issue: Additional Infinite Loop in `test_while_loop`
+
+### Problem Description
+**Test**: `test_while_loop` in `tests/test_interpreter.py`  
+**Symptom**: After fixing the first infinite loop issue, a second infinite loop was discovered in a different while loop construct.
+
+### Root Cause Analysis
+The second infinite loop was caused by a **stale cache issue** in the variable lookup mechanism:
+
+1. **Variable Assignment**: When `x = x - 1` was executed in the loop body, it correctly updated the variable in the parent scope
+2. **Cache Problem**: However, the variable lookup was returning a cached stale value from a child scope instead of the updated value
+3. **Loop Continuation**: The condition `x > 0` kept evaluating to `true` because it was reading the cached old value
+
+### Code Flow (Broken):
+```
+Parent Environment: x = 3
+├── while evaluate(x > 0) → true (x = 3)
+└── Execute loop body:
+    ├── x = x - 1 (updates parent env: x = 2)
+    ├── Cache in child scope still has x = 3
+    └── Next iteration: while evaluate(x > 0) → true (from cache!)
+```
+
+### Solution Implemented
+
+**File**: `lyric_lang/interpreter.py`  
+**Method**: `get()` in Environment class
+
+**Before**:
+```python
+# Look up in parent environments
+if self.parent:
+    value = self.parent.get(name)
+    # Cache the result for future lookups
+    if self._cache_valid:
+        self._cache[name] = value
+    return value
+```
+
+**After**:
+```python
+# Look up in parent environments
+if self.parent:
+    value = self.parent.get(name)
+    # Don't cache variables that might be assigned in parent scopes
+    # This prevents stale cache issues when variables are updated
+    return value
+```
+
+### Test Results
+
+**Before Fix**:
+```
+Before assignment: x = 3
+After assignment: x = 3  # Still showing old value!
+[INFINITE LOOP - keeps printing 3 forever]
+```
+
+**After Fix**:
+```
+3
+2
+1
+[Loop exits correctly]
+```
+
+### Test Status:
+- ✅ `test_while_loop` - **PASSED**
+- ✅ All while loop constructs now work correctly
+- ✅ Variable assignments in loop bodies properly update condition evaluation
+
+### Technical Details
+
+**Key Insight**: The caching mechanism was causing stale values to be returned when variables were assigned in parent scopes. By not caching variables from parent scopes, we ensure that variable lookups always return the most up-to-date value.
+
+**Files Modified**:
+- `lyric_lang/interpreter.py`: Modified `get()` method to prevent caching of parent scope variables
+
+### Impact Assessment
+- ✅ Second infinite loop issue completely resolved
+- ✅ Variable assignments in loop bodies now work as expected
+- ✅ No performance impact (caching still works for local variables)
+- ✅ No breaking changes to existing functionality
+
+### Commands for Verification
+
+```bash
+# Run the specific test
+python -m pytest tests/test_interpreter.py::TestInterpreter::test_while_loop -v
+
+# Run full test suite
+python -m pytest tests/ -v
+```
+
+### Lessons Learned
+1. **Caching Complexity**: Caching mechanisms must be carefully designed to handle variable updates across scope boundaries
+2. **Debugging Strategy**: Adding debug output to variable lookup and assignment methods was crucial for identifying the stale cache issue
+3. **Scope-Aware Caching**: Not all variables should be cached - those that might be modified in parent scopes should always be looked up fresh
+
+## ✅ Final Resolution Status
+
+**Status**: ✅ **FULLY RESOLVED**  
+**Issues Fixed**: 2 infinite loop issues  
+**Impact**: Critical issues blocking test suite execution  
+**Verification**: All loop-related tests pass, no infinite loops observed  
+
+Both NOVA issues have been successfully resolved with robust fixes that address the root causes while maintaining system stability and backward compatibility.

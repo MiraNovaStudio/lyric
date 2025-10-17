@@ -345,13 +345,20 @@ def register_builtins(env: dict) -> None:
     for builtin in builtins:
         env[builtin.name] = builtin
     
-    # Register error classes in the global scope
+    # Register error classes in the global scope as callable functions
     from lyric_lang.errors_hierarchy import Error, TypeError, ValueError, NameError, RuntimeError as LyricRuntimeError
-    env["Error"] = Error
-    env["TypeError"] = TypeError
-    env["ValueError"] = ValueError
-    env["NameError"] = NameError
-    env["RuntimeError"] = LyricRuntimeError
+    
+    def create_error_wrapper(error_class):
+        """Create a wrapper function that can be called from Lyric code."""
+        def wrapper(message=""):
+            return error_class(message)
+        return wrapper
+    
+    env["Error"] = create_error_wrapper(Error)
+    env["TypeError"] = create_error_wrapper(TypeError)
+    env["ValueError"] = create_error_wrapper(ValueError)
+    env["NameError"] = create_error_wrapper(NameError)
+    env["RuntimeError"] = create_error_wrapper(LyricRuntimeError)
 
 
 # For testing purposes, we can inject custom input functions

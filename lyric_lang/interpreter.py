@@ -885,6 +885,13 @@ class Interpreter:
             builtin = self.global_env.variables[stmt.func_name]
             if isinstance(builtin, BuiltinFunction):
                 return builtin.call(arguments)
+            
+            # Check if it's an error wrapper function
+            if callable(builtin):
+                try:
+                    return builtin(*arguments)
+                except Exception as e:
+                    raise RuntimeErrorLyric(f"Error calling {stmt.func_name}: {str(e)}")
 
         # Check if it's a class (for instantiation) - check local and global environments
         obj = None
@@ -1033,19 +1040,25 @@ class Interpreter:
         
         if stmt.exception_type:
             # Typed exception: raise TypeError("message")
-            # Get the error class from the global environment
-            error_class = env.get(stmt.exception_type)
-            if error_class is None:
-                # Error class not found, create a generic error
+            # Get the error wrapper function from the global environment
+            error_wrapper = env.get(stmt.exception_type)
+            if error_wrapper is None:
+                # Error wrapper not found, create a generic error
                 raise RuntimeErrorLyric(f"Unknown error type '{stmt.exception_type}': {message_str}")
             
-            # Create an instance of the error class
+            # Create an instance of the error class using the wrapper
             try:
-                error_instance = error_class(message_str)
-                # Raise as RuntimeErrorLyric with the formatted message
+                error_instance = error_wrapper(message_str)
+                # The error instance has the proper format, create RuntimeErrorLyric with it
                 raise RuntimeErrorLyric(str(error_instance))
+            except (TypeError, ValueError, AttributeError) as e:
+                # If error creation fails due to wrong arguments or missing attributes, raise with the message
+                raise RuntimeErrorLyric(f"Error creating {stmt.exception_type}: {message_str}")
             except Exception as e:
-                # If error creation fails, raise with the message
+                # If it's a RuntimeErrorLyric, re-raise it
+                if isinstance(e, RuntimeErrorLyric):
+                    raise e
+                # Otherwise, raise with the message
                 raise RuntimeErrorLyric(f"Error creating {stmt.exception_type}: {message_str}")
         else:
             # Simple string error: raise "message"

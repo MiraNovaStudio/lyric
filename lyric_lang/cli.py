@@ -72,7 +72,11 @@ def main():
         print(str(e))
         sys.exit(1)
     except RuntimeErrorLyric as e:
-        print(str(e))
+        print(f"Traceback (most recent call last):")
+        if e.stack_trace:
+            for frame in e.stack_trace:
+                print(f"  File \"{frame.filename}\", line {frame.line}, in {frame.function_name}")
+        print(f"{type(e).__name__}: {e.message}")
         if args.debug and e.stack_trace:
             print()
             print(e.format_debug_info())
