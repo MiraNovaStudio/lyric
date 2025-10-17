@@ -1,3 +1,36 @@
+# Lyric Language — Version 0.1.6
+
+**Release Date:** December 2024
+
+## Summary
+
+This version completes Sprint 4 (Variable Handling & Declaration Syntax) with all 5 tasks implemented. The language now supports dynamic typing with the `var` keyword, strict declaration enforcement, multi-variable declarations, comprehensive documentation, and extensive validation. This milestone represents a significant enhancement to Lyric's variable system with 226+ passing tests and production-ready features.
+
+## Added (Sprint 4 - Complete)
+
+- **Dynamic Typing**: Complete `var` keyword implementation with full type flexibility
+- **Declaration Enforcement**: Strict variable declaration requirements preventing implicit creation
+- **Multi-Variable Declarations**: Comma-separated syntax supporting mixed-type declarations
+- **Comprehensive Documentation**: Updated specification with formal grammar and examples
+- **Extensive Validation**: 38 dedicated Sprint 4 tests with 100% success rate
+
+## Changed
+
+- **Version Number**: Updated from 0.1.4 to 0.1.6 (Sprint 4 complete)
+- **Variable System**: Enhanced with dynamic typing and declaration enforcement
+- **Documentation**: Complete specification update with formal grammar rules
+- **Test Coverage**: Expanded to 226+ tests with comprehensive Sprint 4 coverage
+
+## Notes
+
+- Sprint 4 is complete with all 5 tasks implemented and verified
+- All Definition of Done criteria met and validated
+- Ready for production use with `dev-0.1.6` tag
+- Comprehensive documentation and specification available
+- All 226+ tests passing with 100% success rate
+
+---
+
 # Lyric Language — Version 0.1.4
 
 **Release Date:** December 2024

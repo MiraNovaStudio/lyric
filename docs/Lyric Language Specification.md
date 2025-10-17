@@ -1,6 +1,6 @@
 # Lyric Language Specification
 
-**Version:** 0.1.4  
+**Version:** 0.1.6  
 **Authors:** Michael (Aeonath), ChatGPT, and Claude  
 **Project:** MiraNova Studios Initiative  
 **Date:** December 2024  
@@ -352,7 +352,7 @@ def main() {
 }
 ```
 
-## 🚫 Features Omitted in v0.1.4
+## 🚫 Features Omitted in v0.1.6
 
 To maintain simplicity and focus on core concepts:
 
@@ -368,7 +368,7 @@ Lyric is about learning and clarity, not syntax density.
 
 ## 📋 Current Implementation Status
 
-### ✅ Implemented Features (v0.1.4)
+### ✅ Implemented Features (v0.1.6)
 - Core language constructs (functions, conditionals, loops)
 - Class system with `+++` terminator
 - Built-in data structures (lists, dictionaries)
@@ -446,7 +446,7 @@ It's a bridge between thought and execution — a language that emphasizes inten
 
 ---
 
-**Current Version:** 0.1.4 (Sprint 4 - Variable Handling & Declaration Syntax - Tasks 1-4 Complete)  
+**Current Version:** 0.1.6 (Sprint 4 - Variable Handling & Declaration Syntax - COMPLETE)  
 **Development Team:** Michael (Aeonath), ChatGPT, Claude  
 **Project:** MiraNova Studios Initiative
 

@@ -248,7 +248,7 @@ def main() {
 
 The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
 
-The project is currently **pre-release** and version **0.1.4** introduces Sprint 4 Tasks 1-3 (Dynamic Typing, Declaration Enforcement, and Multi-Variable Declarations) and completes Sprint 3 (Type System, Value Validation, and Advanced Runtime). This milestone includes dynamic typing with the `var` keyword, strict variable declaration enforcement, multi-variable declarations, complete type declarations and inference, built-in data structures (lists and dictionaries), enhanced error handling with try/except/finally, runtime safety improvements, and comprehensive test coverage with 226+ passing tests. Sprint 3 is complete and Sprint 4 is in progress.
+The project is currently **pre-release** and version **0.1.6** completes Sprint 4 (Variable Handling & Declaration Syntax) with all 5 tasks implemented. This milestone includes dynamic typing with the `var` keyword, strict variable declaration enforcement, multi-variable declarations, comprehensive documentation with formal grammar, extensive validation, complete type declarations and inference, built-in data structures (lists and dictionaries), enhanced error handling with try/except/finally, runtime safety improvements, and comprehensive test coverage with 226+ passing tests. Sprint 3 and Sprint 4 are complete.
 
 ## Contributing
 
