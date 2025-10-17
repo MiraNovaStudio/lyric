@@ -1,3 +1,15 @@
+# Simple Hello World and variable example
+
 def main() {
-	print("Hello, Lyric!")
+  str name = "Aeonath"
+  int age = 41
+  bool ready = true
+
+  print("Hello,", name, "— age", age)
+
+  if ready:
+    print("Lyric is ready to run!")
+  else:
+    print("Still booting up...")
+  end
 }
