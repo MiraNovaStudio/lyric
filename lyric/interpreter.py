@@ -43,6 +43,26 @@ class RexObject:
         
         return self.compiled_pattern.match(text) is not None
     
+    def replace(self, source: str, replacement: str) -> str:
+        """Replace all matches of the regex pattern in the source string.
+        
+        Args:
+            source: The source string to perform replacements on
+            replacement: The replacement string for matched patterns
+            
+        Returns:
+            A new string with all matches replaced
+            
+        Raises:
+            RuntimeErrorLyric: If source or replacement is not a string
+        """
+        if not isinstance(source, str):
+            raise RuntimeErrorLyric(f"RexObject.replace() expects source to be a string, got {type(source).__name__}")
+        if not isinstance(replacement, str):
+            raise RuntimeErrorLyric(f"RexObject.replace() expects replacement to be a string, got {type(replacement).__name__}")
+        
+        return self.compiled_pattern.sub(replacement, source)
+    
     def __str__(self) -> str:
         """String representation of the regex object."""
         return self.pattern
