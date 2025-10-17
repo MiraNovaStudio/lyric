@@ -62,7 +62,7 @@ This version introduces Sprint 4 Task 1 (Dynamic Typing with `var` keyword) and 
 
 ## Added (Sprint 3)
 
-- **Type System**: Complete type declaration and inference system with int, float, str, bool, and None types
+- **Type System**: Complete type declaration and inference system with int, float, str, god, and None types
 - **Type Enforcement**: Runtime type checking for function parameters and variable assignments
 - **Built-in Data Structures**: Full support for lists and dictionaries with indexing and operations
 - **Enhanced Error Handling**: Improved error messages with filename, line number, and context information
@@ -113,7 +113,7 @@ This version completes Sprint 2 (Control Flow, Error Handling, and Class Support
 - **Runtime Enhancements**: Added isinstance() and type() built-in functions for type checking and introspection
 - **Enhanced Print Function**: Improved handling of None values and compound types
 - **Comprehensive Test Suite**: 88 tests covering all features including CLI integration tests
-- **New Example Programs**: class_test.ly, nested_flow.ly, boolean_test.ly, runtime_test.ly, and error demonstration files
+- **New Example Programs**: class_test.ly, nested_flow.ly, godean_test.ly, runtime_test.ly, and error demonstration files
 
 ## Changed
 

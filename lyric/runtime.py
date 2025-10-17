@@ -202,7 +202,7 @@ def _builtin_isinstance(args: List[Any]) -> bool:
             return True
         elif type_name == "str" and isinstance(obj, str):
             return True
-        elif type_name == "bool" and isinstance(obj, bool):
+        elif type_name == "god" and isinstance(obj, bool):
             return True
         elif type_name == "list" and isinstance(obj, list):
             return True
@@ -247,7 +247,7 @@ def _builtin_type(args: List[Any]) -> str:
     if obj is None:
         return "None"
     elif isinstance(obj, bool):
-        return "bool"
+        return "god"
     elif isinstance(obj, int):
         return "int"
     elif isinstance(obj, float):

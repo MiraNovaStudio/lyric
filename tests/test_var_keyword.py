@@ -61,7 +61,7 @@ class TestVarKeyword:
         '''
         
         output = self.capture_output(source)
-        expected = "x = 10 type: int\nx = hello type: str\nx = True type: bool\nx = [1, 2, 3] type: list"
+        expected = "x = 10 type: int\nx = hello type: str\nx = True type: god\nx = [1, 2, 3] type: list"
         assert output == expected
 
     def test_var_with_different_initial_types(self):
@@ -70,20 +70,20 @@ class TestVarKeyword:
         def main() {
             var str_var = "hello"
             var int_var = 42
-            var bool_var = true
+            var god_var = true
             var list_var = [1, 2, 3]
             var dict_var = {"key": "value"}
             
             print("str_var:", str_var, type(str_var))
             print("int_var:", int_var, type(int_var))
-            print("bool_var:", bool_var, type(bool_var))
+            print("god_var:", god_var, type(god_var))
             print("list_var:", list_var, type(list_var))
             print("dict_var:", dict_var, type(dict_var))
         }
         '''
         
         output = self.capture_output(source)
-        expected = "str_var: hello str\nint_var: 42 int\nbool_var: True bool\nlist_var: [1, 2, 3] list\ndict_var: {key: \"value\"} dict"
+        expected = "str_var: hello str\nint_var: 42 int\ngod_var: True god\nlist_var: [1, 2, 3] list\ndict_var: {key: \"value\"} dict"
         assert output == expected
 
     def test_var_vs_static_typing(self):
@@ -189,9 +189,9 @@ class TestVarKeyword:
             result = 5 + 3 * 2
             print("numeric result:", result)
             
-            # Change to boolean
+            # Change to godean
             result = true and false
-            print("boolean result:", result)
+            print("godean result:", result)
             
             # Change to string
             result = "complex" + " " + "expression"
@@ -204,7 +204,7 @@ class TestVarKeyword:
         '''
         
         output = self.capture_output(source)
-        expected = "numeric result: 11\nboolean result: False\nstring result: complex expression\nlist result: [1, 2, 3, 4, 5]"
+        expected = "numeric result: 11\ngodean result: False\nstring result: complex expression\nlist result: [1, 2, 3, 4, 5]"
         assert output == expected
 
     def test_var_parsing_errors(self):

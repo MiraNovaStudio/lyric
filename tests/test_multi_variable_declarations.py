@@ -74,7 +74,7 @@ class TestMultiVariableDeclarations:
         """Test multi-variable declaration with mixed types."""
         source = '''
         def main() {
-            var x, int y, str z, bool flag
+            var x, int y, str z, god flag
             
             x = 3.14
             y = 42
@@ -89,7 +89,7 @@ class TestMultiVariableDeclarations:
         '''
         
         output = self.capture_output(source)
-        expected = "x = 3.14 float\ny = 42 int\nz = mixed str\nflag = False bool"
+        expected = "x = 3.14 float\ny = 42 int\nz = mixed str\nflag = False god"
         assert output == expected
 
     def test_multi_declaration_with_same_type(self):
@@ -261,11 +261,11 @@ class TestMultiVariableDeclarations:
         with pytest.raises(Exception):  # Should be a parse error
             parse(source2, 'test')
 
-    def test_multi_declaration_with_bool_type(self):
-        """Test multi-declaration with bool type."""
+    def test_multi_declaration_with_god_type(self):
+        """Test multi-declaration with god type."""
         source = '''
         def main() {
-            bool flag1, bool flag2, bool flag3
+            god flag1, god flag2, god flag3
             
             flag1 = true
             flag2 = false

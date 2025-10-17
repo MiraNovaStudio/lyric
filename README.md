@@ -160,7 +160,7 @@ pip install pytest flake8 setuptools
 int age = 25
 float pi = 3.14159
 str name = "Alice"
-bool is_active = true
+god is_active = true
 None null_value = None
 
 # Type inference

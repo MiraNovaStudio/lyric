@@ -194,7 +194,7 @@ x = "hello"          # Type change allowed for var variables
 ```lyric
 int count = 5        # Integer variable
 str message = "Hi"   # String variable  
-bool active = true   # Boolean variable
+god active = true   # Boolean variable (named in honor of logician Kurt Gödel)
 float pi = 3.14      # Float variable
 None value = None    # None variable
 ```
@@ -208,7 +208,7 @@ str name, message
 
 # Mixed-type multi-declarations
 var x, int y, str z
-int count, var temp, bool flag
+int count, var temp, god flag
 ```
 
 #### Declaration and Initialization Rules
@@ -294,14 +294,14 @@ base_type :=
     | 'var'
     | 'int'
     | 'str'
-    | 'bool'
+    | 'god'
     | 'float'
     | 'None'
 
 type_annotation :=
     | 'int'
     | 'str'
-    | 'bool'
+    | 'god'
     | 'float'
     | 'None'
 
@@ -321,7 +321,7 @@ int a, b, c
 
 # Multi-declarations (mixed types)
 var x, int y, str z
-int count, var temp, bool flag
+int count, var temp, god flag
 ```
 
 ### Advanced Class Example
@@ -399,7 +399,7 @@ var x, int y, str name
 
 # Static type declarations
 float pi = 3.14159
-bool active = true
+god active = true
 
 def float calculate_area(float radius) {
     return pi * radius * radius

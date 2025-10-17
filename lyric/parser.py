@@ -111,7 +111,7 @@ class Parser:
         elif token.type == 'VAR':
             # var keyword for dynamic typing
             return self._parse_assignment_or_expr_stmt()
-        elif token.type == 'IDENTIFIER' or token.type == 'NONE' or token.type == 'REX':
+        elif token.type == 'IDENTIFIER' or token.type == 'NONE' or token.type == 'GOD' or token.type == 'REX':
             # Could be assignment or expression statement
             return self._parse_assignment_or_expr_stmt()
         else:
@@ -128,13 +128,15 @@ class Parser:
 
         # Check for optional return type declaration (C-style: def int func(...) or def rex func(...))
         return_type = None
-        if ((self._match('IDENTIFIER') or self._match('NONE') or self._match('REX')) and 
+        if ((self._match('IDENTIFIER') or self._match('NONE') or self._match('GOD') or self._match('REX')) and 
             self._peek_next() and self._peek_next().type == 'IDENTIFIER'):
             # This looks like a return type followed by function name
             if self._match('IDENTIFIER'):
                 return_type_token = self._consume('IDENTIFIER', "Expected return type")
             elif self._match('NONE'):
                 return_type_token = self._consume('NONE', "Expected return type")
+            elif self._match('GOD'):
+                return_type_token = self._consume('GOD', "Expected return type")
             else:  # REX
                 return_type_token = self._consume('REX', "Expected return type")
             return_type = return_type_token.value
@@ -292,11 +294,13 @@ class Parser:
             
             # Check if there's a type annotation for this variable
             # Look ahead to see if the next token is a type identifier followed by another identifier
-            if ((self._match('IDENTIFIER') or self._match('REX')) and 
+            if ((self._match('IDENTIFIER') or self._match('GOD') or self._match('REX')) and 
                 self._peek_next() and self._peek_next().type == 'IDENTIFIER'):
-                # This variable has its own type annotation: type var_name or rex var_name
+                # This variable has its own type annotation: type var_name, god var_name, or rex var_name
                 if self._match('IDENTIFIER'):
                     var_type = self._consume('IDENTIFIER', "Expected variable type")
+                elif self._match('GOD'):
+                    var_type = self._consume('GOD', "Expected variable type")
                 else:  # REX
                     var_type = self._consume('REX', "Expected variable type")
                 var_name = self._consume('IDENTIFIER', "Expected variable name")
@@ -330,17 +334,19 @@ class Parser:
                 return AssignNode(name=var_token.value, expr=right_expr, 
                                 type_annotation='var')
         
-        # Check if this is a C-style type-declared variable declaration: int x = value, None x = value, or rex x = value
-        if self._match('IDENTIFIER') or self._match('NONE') or self._match('REX'):
+        # Check if this is a C-style type-declared variable declaration: int x = value, None x = value, god x = value, or rex x = value
+        if self._match('IDENTIFIER') or self._match('NONE') or self._match('GOD') or self._match('REX'):
             # Peek ahead to see if this is a type declaration followed by variable name
             next_token = self._peek_next()
             if (next_token and next_token.type == 'IDENTIFIER' and 
                 self._peek_next_next() and self._peek_next_next().type == 'ASSIGN'):
-                # This is a C-style type-declared variable: int x = value, None x = value, or rex x = value
+                # This is a C-style type-declared variable: int x = value, None x = value, god x = value, or rex x = value
                 if self._match('IDENTIFIER'):
                     type_token = self._consume('IDENTIFIER', "Expected variable type")
                 elif self._match('NONE'):
                     type_token = self._consume('NONE', "Expected variable type")
+                elif self._match('GOD'):
+                    type_token = self._consume('GOD', "Expected variable type")
                 else:  # REX
                     type_token = self._consume('REX', "Expected variable type")
                 var_token = self._consume('IDENTIFIER', "Expected variable name")
@@ -350,11 +356,13 @@ class Parser:
                                 type_annotation=type_token.value)
             elif (next_token and next_token.type == 'IDENTIFIER' and 
                   self._peek_next_next() and self._peek_next_next().type == 'COMMA'):
-                # This is a multi-declaration: int x, str y, bool z, or rex x, int y, str z
+                # This is a multi-declaration: int x, str y, god z, or rex x, int y, str z
                 if self._match('IDENTIFIER'):
                     type_token = self._consume('IDENTIFIER', "Expected variable type")
                 elif self._match('NONE'):
                     type_token = self._consume('NONE', "Expected variable type")
+                elif self._match('GOD'):
+                    type_token = self._consume('GOD', "Expected variable type")
                 else:  # REX
                     type_token = self._consume('REX', "Expected variable type")
                 return self._parse_multi_declaration(type_token.value)

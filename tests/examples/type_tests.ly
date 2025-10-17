@@ -5,14 +5,14 @@
 int age = 25
 float pi = 3.14159
 str name = "Aeonath"
-bool is_active = true
+god is_active = true
 None null_value = None
 
 # Test 2: Type inference
 var auto_int = 42
 var auto_float = 2.718
 var auto_string = "inferred"
-var auto_bool = false
+var auto_god = false
 var auto_none = None
 
 # Test 3: Function with type declarations
@@ -24,7 +24,7 @@ def str format_greeting(str name, int age) {
     return "Hello " + name + ", you are " + str(age) + " years old"
 }
 
-def bool is_even(int number) {
+def god is_even(int number) {
     if number % 2 == 0:
         return true
     else:
@@ -61,7 +61,7 @@ def main() {
     print("auto_int:", auto_int, "type:", type(auto_int))
     print("auto_float:", auto_float, "type:", type(auto_float))
     print("auto_string:", auto_string, "type:", type(auto_string))
-    print("auto_bool:", auto_bool, "type:", type(auto_bool))
+    print("auto_god:", auto_god, "type:", type(auto_god))
     print("auto_none:", auto_none, "type:", type(auto_none))
     
     # Test function calls with correct types

@@ -37,7 +37,7 @@ class TestTypeSystem:
         source = '''
 int x = 5
 str y = "hello"
-bool z = true
+        god z = true
 
 def main() {
     print("x:", x, "type:", type(x))
@@ -48,7 +48,7 @@ def main() {
         output = self.capture_output(source)
         assert "x: 5 type: int" in output
         assert "y: hello type: str" in output
-        assert "z: True type: bool" in output
+        assert "z: True type: god" in output
 
     def test_type_enforcement_variable(self):
         """Test A2: Assigning a string to a variable declared as int raises a runtime error."""
@@ -97,14 +97,14 @@ def main() {
 var auto_int = 42
 var auto_float = 3.14
 var auto_string = "inferred"
-var auto_bool = false
+var auto_god = false
 var auto_none = None
 
 def main() {
     print("auto_int:", auto_int, "type:", type(auto_int))
     print("auto_float:", auto_float, "type:", type(auto_float))
     print("auto_string:", auto_string, "type:", type(auto_string))
-    print("auto_bool:", auto_bool, "type:", type(auto_bool))
+    print("auto_god:", auto_god, "type:", type(auto_god))
     print("auto_none:", auto_none, "type:", type(auto_none))
 }
 '''
@@ -112,7 +112,7 @@ def main() {
         assert "auto_int: 42 type: int" in output
         assert "auto_float: 3.14 type: float" in output
         assert "auto_string: inferred type: str" in output
-        assert "auto_bool: False type: bool" in output
+        assert "auto_god: False type: god" in output
         assert "auto_none: None type: None" in output
 
     def test_return_type_enforcement(self):
@@ -179,7 +179,7 @@ def main() {
 # Type-annotated variables
 int counter = 0
 str message = "Type system working"
-bool enabled = true
+god enabled = true
 
     # Type-inferred variables
     auto_number = 100
@@ -193,7 +193,7 @@ def str format_message(str name) {
     return message + ": " + name
 }
 
-def bool check_status() {
+def god check_status() {
     return enabled
 }
 
@@ -216,7 +216,7 @@ def main() {
     # Test type checking
     print("isinstance(counter, 'int'):", isinstance(counter, "int"))
     print("isinstance(message, 'str'):", isinstance(message, "str"))
-    print("isinstance(enabled, 'bool'):", isinstance(enabled, "bool"))
+    print("isinstance(enabled, 'god'):", isinstance(enabled, "god"))
     
     print("=== All Type Tests Passed ===")
 }
@@ -225,7 +225,7 @@ def main() {
         assert "=== Type System Test ===" in output
         assert "counter: 0 type: int" in output
         assert "message: Type system working type: str" in output
-        assert "enabled: True type: bool" in output
+        assert "enabled: True type: god" in output
         assert "auto_number: 100 type: int" in output
         assert "increment(5): 6" in output
         assert "format_message('Alice'): Type system working: Alice" in output
