@@ -165,7 +165,7 @@ class Environment:
     def _get_type_name(self, value: Any) -> str:
         """Get the type name of a value."""
         if isinstance(value, bool):
-            return 'god'
+            return 'bool'
         elif isinstance(value, int):
             return 'int'
         elif isinstance(value, float):
@@ -183,7 +183,9 @@ class Environment:
 
     def _check_type(self, value: Any, expected_type: str) -> bool:
         """Check if a value matches the expected type."""
-        if expected_type == 'god' and isinstance(value, bool):
+        if expected_type == 'bool' and isinstance(value, bool):
+            return True
+        elif expected_type == 'god' and isinstance(value, bool):
             return True
         elif expected_type == 'int' and isinstance(value, int) and not isinstance(value, bool):
             return True
@@ -209,7 +211,7 @@ class Environment:
     def _get_type_name(self, value: Any) -> str:
         """Get the type name of a value."""
         if isinstance(value, bool):
-            return 'god'
+            return 'bool'
         elif isinstance(value, int):
             return 'int'
         elif isinstance(value, float):
