@@ -265,9 +265,8 @@ class Environment:
         # Look up in parent environments
         if self.parent:
             value = self.parent.get(name)
-            # Cache the result for future lookups
-            if self._cache_valid:
-                self._cache[name] = value
+            # Don't cache variables that might be assigned in parent scopes
+            # This prevents stale cache issues when variables are updated
             return value
 
         # Variable is not declared at all
@@ -328,8 +327,14 @@ class Environment:
         
         # If not found in current scope, try parent scopes
         if self.parent:
-            self.parent.assign_up_scope(name, value)
-            return
+            # Check if variable exists in parent scope
+            if name in self.parent.variables:
+                self.parent.assign_local(name, value)
+                return
+            else:
+                # Recursively search up the scope chain
+                self.parent.assign_up_scope(name, value)
+                return
         
         # If not found anywhere, create new variable in current scope
         self.define(name, value, None)
