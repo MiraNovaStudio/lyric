@@ -809,14 +809,13 @@ class Interpreter:
                 env.define(stmt.name, value, stmt.type_annotation)
             else:
                 # Check if variable exists in current scope or is declared but uninitialized
-                if (stmt.name in env.variables or 
+                if (stmt.name in env.variables or
                     stmt.name in env.declared_variables):
                     # Reassign existing variable or initialize declared variable (with type checking)
                     env.assign_local(stmt.name, value)
                 else:
-                    # Variable doesn't exist in current scope - error (declaration enforcement)
-                    error_msg = f"Variable '{stmt.name}' used before declaration"
-                    raise self._create_runtime_error(error_msg)
+                    # No type annotation and variable doesn't exist - create new variable (backward compatibility)
+                    env.define(stmt.name, value, None)
             return value
         elif isinstance(stmt.name, IdentifierNode):
             # Regular variable assignment from identifier with optional type declaration
@@ -830,9 +829,8 @@ class Interpreter:
                     # Reassign existing variable (with type checking)
                     env.assign_local(stmt.name.name, value)
                 else:
-                    # Variable doesn't exist in current scope - error (declaration enforcement)
-                    error_msg = f"Variable '{stmt.name.name}' used before declaration"
-                    raise self._create_runtime_error(error_msg)
+                    # No type annotation and variable doesn't exist - create new variable (backward compatibility)
+                    env.define(stmt.name.name, value, None)
             return value
         else:
             raise RuntimeErrorLyric(f"Invalid assignment target: {type(stmt.name)}")

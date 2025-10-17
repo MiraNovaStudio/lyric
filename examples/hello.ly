@@ -2,7 +2,7 @@
 
 def main() {
   str name = "Aeonath"
-  int age = 41
+  int age = 49
   god ready = true
 
   print("Hello,", name, "— age", age)
