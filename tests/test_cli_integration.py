@@ -13,7 +13,7 @@ class TestCLIIntegration:
     
     def run_cli_command(self, args):
         """Run a CLI command and return the result."""
-        cmd = [sys.executable, "-m", "lyric.cli"] + args
+        cmd = [sys.executable, "-m", "lyric"] + args
         result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
         return result.returncode, result.stdout, result.stderr
     

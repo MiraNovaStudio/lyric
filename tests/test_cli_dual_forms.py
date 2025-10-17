@@ -24,7 +24,7 @@ class TestCLIDualForms:
 
     def run_cli_command(self, args: list) -> tuple[int, str, str]:
         """Run a CLI command and return exit code, stdout, stderr."""
-        cmd = [sys.executable, '-m', 'lyric.cli'] + args
+        cmd = [sys.executable, '-m', 'lyric'] + args
         result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
         return result.returncode, result.stdout, result.stderr
 
@@ -136,8 +136,8 @@ def main() {
             # Both should fail with debug info
             assert exit_code1 == 1
             assert exit_code2 == 1
-            assert "Runtime Error" in stdout1
-            assert "Runtime Error" in stdout2
+            assert "RuntimeErrorLyric:" in stdout1
+            assert "RuntimeErrorLyric:" in stdout2
             # Debug mode should show stack traces (if implemented)
         finally:
             os.unlink(test_file)
