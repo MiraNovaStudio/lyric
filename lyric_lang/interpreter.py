@@ -341,6 +341,58 @@ class Environment:
         # If not found anywhere, create new variable in current scope
         self.define(name, value, None)
     
+    def declare_variable(self, name: str, type_name: str, value: Any = None) -> None:
+        """Declare a new variable with a specific type."""
+        if name in self.variables:
+            error_msg = f"Variable '{name}' already declared in this scope"
+            if self.interpreter:
+                raise self.interpreter._create_runtime_error(error_msg)
+            else:
+                raise RuntimeErrorLyric(error_msg)
+        
+        # Store the type annotation
+        self.variable_types[name] = type_name
+        
+        # If value is provided, assign it (with type checking)
+        if value is not None:
+            # Check type compatibility first (except for 'var' which allows any type)
+            if type_name != 'var' and not self._check_type(value, type_name):
+                expected_type = type_name
+                actual_type = self._get_type_name(value)
+                error_msg = f"Type mismatch for variable '{name}': expected {expected_type}, got {actual_type}"
+                if self.interpreter:
+                    raise self.interpreter._create_runtime_error(error_msg)
+                else:
+                    raise RuntimeErrorLyric(error_msg)
+            # Assign the value
+            self.variables[name] = value
+        else:
+            # Declare but don't initialize
+            self.variables[name] = None
+    
+    def assign_variable(self, name: str, value: Any) -> None:
+        """Assign a value to an already declared variable."""
+        if name not in self.variables:
+            error_msg = f"Variable '{name}' used before declaration"
+            if self.interpreter:
+                raise self.interpreter._create_runtime_error(error_msg)
+            else:
+                raise RuntimeErrorLyric(error_msg)
+        
+        # Check type compatibility (except for 'var' which allows any type)
+        type_name = self.variable_types.get(name)
+        if type_name and type_name != 'var' and not self._check_type(value, type_name):
+            expected_type = type_name
+            actual_type = self._get_type_name(value)
+            error_msg = f"Type mismatch for variable '{name}': expected {expected_type}, got {actual_type}"
+            if self.interpreter:
+                raise self.interpreter._create_runtime_error(error_msg)
+            else:
+                raise RuntimeErrorLyric(error_msg)
+        
+        # Assign the value
+        self.variables[name] = value
+    
     def assign_local(self, name: str, value: Any) -> None:
         """Assign a value to a variable in the current scope only (for shadowing behavior)."""
         if name in self.variables:
@@ -813,7 +865,11 @@ class Interpreter:
         Raises:
             RuntimeErrorLyric: If assignment target is invalid
         """
-        value = self._evaluate_expression(stmt.expr, env)
+        # Handle declaration without assignment (expr is None)
+        if stmt.expr is None:
+            value = None
+        else:
+            value = self._evaluate_expression(stmt.expr, env)
 
         # Handle member access assignment (e.g., self.name = value)
         if isinstance(stmt.name, MemberAccessNode):
@@ -827,34 +883,20 @@ class Interpreter:
         elif isinstance(stmt.name, str):
             # Regular variable assignment with optional type declaration
             if stmt.type_annotation:
-                # New variable with type declaration
-                env.define(stmt.name, value, stmt.type_annotation)
+                # New variable with type declaration - use strict declaration
+                env.declare_variable(stmt.name, stmt.type_annotation, value)
             else:
-                # Check if variable exists in current scope or is declared but uninitialized
-                if (stmt.name in env.variables or
-                    stmt.name in env.declared_variables):
-                    # Reassign existing variable or initialize declared variable (with type checking)
-                    env.assign_local(stmt.name, value)
-                else:
-                    # No type annotation and variable doesn't exist - raise error for undeclared variable
-                    error_msg = f"Variable '{stmt.name}' used before declaration"
-                    raise self._create_runtime_error(error_msg)
+                # Assignment to existing variable - use strict assignment
+                env.assign_variable(stmt.name, value)
             return value
         elif isinstance(stmt.name, IdentifierNode):
             # Regular variable assignment from identifier with optional type declaration
             if stmt.type_annotation:
-                # New variable with type declaration
-                env.define(stmt.name.name, value, stmt.type_annotation)
+                # New variable with type declaration - use strict declaration
+                env.declare_variable(stmt.name.name, stmt.type_annotation, value)
             else:
-                # Check if variable exists in current scope or is declared but uninitialized
-                if (stmt.name.name in env.variables or 
-                    stmt.name.name in env.declared_variables):
-                    # Reassign existing variable (with type checking)
-                    env.assign_local(stmt.name.name, value)
-                else:
-                    # No type annotation and variable doesn't exist - raise error for undeclared variable
-                    error_msg = f"Variable '{stmt.name.name}' used before declaration"
-                    raise self._create_runtime_error(error_msg)
+                # Assignment to existing variable - use strict assignment
+                env.assign_variable(stmt.name.name, value)
             return value
         else:
             raise RuntimeErrorLyric(f"Invalid assignment target: {type(stmt.name)}")

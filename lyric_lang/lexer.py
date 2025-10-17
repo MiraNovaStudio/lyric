@@ -26,7 +26,7 @@ class Lexer:
         'def', 'class', 'if', 'elif', 'else', 'given', 'done', 'end',
         'try', 'catch', 'except', 'finally', 'fade', 'import', 'from', 'as', 'return',
         'true', 'false', 'and', 'or', 'not', 'in', 'None', 'raise',
-        'var', 'rex', 'god'
+        'var', 'rex', 'god', 'int', 'float', 'str', 'bool', 'list', 'dict'
     }
 
     # Token patterns

@@ -116,7 +116,9 @@ class Parser:
         elif token.type == 'VAR':
             # var keyword for dynamic typing
             return self._parse_assignment_or_expr_stmt()
-        elif token.type == 'IDENTIFIER' or token.type == 'NONE' or token.type == 'GOD' or token.type == 'REX':
+        elif (token.type == 'IDENTIFIER' or token.type == 'NONE' or token.type == 'GOD' or token.type == 'REX' or
+              token.type == 'INT' or token.type == 'FLOAT' or token.type == 'STR' or token.type == 'BOOL' or
+              token.type == 'LIST' or token.type == 'DICT'):
             # Could be assignment or expression statement
             return self._parse_assignment_or_expr_stmt()
         else:
@@ -375,7 +377,9 @@ class Parser:
                                 type_annotation='var')
         
         # Check if this is a C-style type-declared variable declaration: int x = value, None x = value, god x = value, or rex x = value
-        if self._match('IDENTIFIER') or self._match('NONE') or self._match('GOD') or self._match('REX'):
+        if (self._match('IDENTIFIER') or self._match('NONE') or self._match('GOD') or self._match('REX') or
+            self._match('INT') or self._match('FLOAT') or self._match('STR') or self._match('BOOL') or 
+            self._match('LIST') or self._match('DICT')):
             # Peek ahead to see if this is a type declaration followed by variable name
             next_token = self._peek_next()
             if (next_token and next_token.type == 'IDENTIFIER' and 
@@ -387,8 +391,20 @@ class Parser:
                     type_token = self._consume('NONE', "Expected variable type")
                 elif self._match('GOD'):
                     type_token = self._consume('GOD', "Expected variable type")
-                else:  # REX
+                elif self._match('REX'):
                     type_token = self._consume('REX', "Expected variable type")
+                elif self._match('INT'):
+                    type_token = self._consume('INT', "Expected variable type")
+                elif self._match('FLOAT'):
+                    type_token = self._consume('FLOAT', "Expected variable type")
+                elif self._match('STR'):
+                    type_token = self._consume('STR', "Expected variable type")
+                elif self._match('BOOL'):
+                    type_token = self._consume('BOOL', "Expected variable type")
+                elif self._match('LIST'):
+                    type_token = self._consume('LIST', "Expected variable type")
+                elif self._match('DICT'):
+                    type_token = self._consume('DICT', "Expected variable type")
                 var_token = self._consume('IDENTIFIER', "Expected variable name")
                 self._advance()  # consume '='
                 right_expr = self._parse_expression()
@@ -403,9 +419,47 @@ class Parser:
                     type_token = self._consume('NONE', "Expected variable type")
                 elif self._match('GOD'):
                     type_token = self._consume('GOD', "Expected variable type")
-                else:  # REX
+                elif self._match('REX'):
                     type_token = self._consume('REX', "Expected variable type")
+                elif self._match('INT'):
+                    type_token = self._consume('INT', "Expected variable type")
+                elif self._match('FLOAT'):
+                    type_token = self._consume('FLOAT', "Expected variable type")
+                elif self._match('STR'):
+                    type_token = self._consume('STR', "Expected variable type")
+                elif self._match('BOOL'):
+                    type_token = self._consume('BOOL', "Expected variable type")
+                elif self._match('LIST'):
+                    type_token = self._consume('LIST', "Expected variable type")
+                elif self._match('DICT'):
+                    type_token = self._consume('DICT', "Expected variable type")
                 return self._parse_multi_declaration(type_token.value)
+            elif (next_token and next_token.type == 'IDENTIFIER' and 
+                  (not self._peek_next_next() or self._peek_next_next().type not in ['ASSIGN', 'COMMA'])):
+                # This is a declaration without assignment: int x, str y, etc.
+                if self._match('IDENTIFIER'):
+                    type_token = self._consume('IDENTIFIER', "Expected variable type")
+                elif self._match('NONE'):
+                    type_token = self._consume('NONE', "Expected variable type")
+                elif self._match('GOD'):
+                    type_token = self._consume('GOD', "Expected variable type")
+                elif self._match('REX'):
+                    type_token = self._consume('REX', "Expected variable type")
+                elif self._match('INT'):
+                    type_token = self._consume('INT', "Expected variable type")
+                elif self._match('FLOAT'):
+                    type_token = self._consume('FLOAT', "Expected variable type")
+                elif self._match('STR'):
+                    type_token = self._consume('STR', "Expected variable type")
+                elif self._match('BOOL'):
+                    type_token = self._consume('BOOL', "Expected variable type")
+                elif self._match('LIST'):
+                    type_token = self._consume('LIST', "Expected variable type")
+                elif self._match('DICT'):
+                    type_token = self._consume('DICT', "Expected variable type")
+                var_token = self._consume('IDENTIFIER', "Expected variable name")
+                return AssignNode(name=var_token.value, expr=None, 
+                                type_annotation=type_token.value)
         
         # Parse the left side as an expression
         left_expr = self._parse_expression()
