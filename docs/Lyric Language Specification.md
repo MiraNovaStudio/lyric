@@ -1,6 +1,6 @@
 # Lyric Language Specification
 
-**Version:** 0.1.3  
+**Version:** 0.1.4  
 **Authors:** Michael (Aeonath), ChatGPT, and Claude  
 **Project:** MiraNova Studios Initiative  
 **Date:** December 2024  
@@ -177,30 +177,151 @@ def main() {
 }
 ```
 
-### Type Declarations
+### Variable Declaration and Assignment
 
-- Optional type declarations using C-style syntax
-- Runtime type checking and inference
-- Types are optional and can be omitted
+Lyric supports both dynamic and static typing with strict declaration enforcement. All variables must be explicitly declared before use to prevent implicit variable creation.
+
+#### Declaration Syntax
+
+**Dynamic Typing with `var`:**
+```lyric
+var x = 10           # Dynamic variable, can change type
+var name = "Alice"   # Can be reassigned to different types
+x = "hello"          # Type change allowed for var variables
+```
+
+**Static Type Declarations:**
+```lyric
+int count = 5        # Integer variable
+str message = "Hi"   # String variable  
+bool active = true   # Boolean variable
+float pi = 3.14      # Float variable
+None value = None    # None variable
+```
+
+**Multi-Variable Declarations:**
+```lyric
+# Simple multi-declarations (same base type)
+var x, y, z
+int a, b, c
+str name, message
+
+# Mixed-type multi-declarations
+var x, int y, str z
+int count, var temp, bool flag
+```
+
+#### Declaration and Initialization Rules
+
+1. **Declaration Before Use**: All variables must be explicitly declared before assignment or reference
+2. **Initialization Tracking**: Variables are marked as declared but uninitialized until first assignment
+3. **Type Enforcement**: Static types enforce type checking at runtime
+4. **Dynamic Flexibility**: `var` variables can change type during reassignment
+
+#### Error Handling
+
+**Undeclared Variable Assignment:**
+```lyric
+def main() {
+    x = 10  # Error: Variable 'x' used before declaration
+}
+```
+
+**Referencing Uninitialized Variable:**
+```lyric
+def main() {
+    var x    # Declared but uninitialized
+    print(x) # Error: Variable 'x' referenced before assignment
+    x = 10   # Now initialized
+    print(x) # Works: prints 10
+}
+```
+
+**Type Mismatch:**
+```lyric
+def main() {
+    int x = 10
+    x = "hello"  # Error: Type mismatch for variable 'x': expected int, got str
+}
+```
+
+#### Function Type Declarations
 
 ```lyric
-# Typed version
+# Typed function with parameters and return type
 def int add_numbers(int a, int b) {
     return a + b
 }
 
-# Untyped version (also valid)
+# Mixed typed and untyped parameters
+def str format_greeting(str name, int age) {
+    return "Hello " + name + ", age " + str(age)
+}
+
+# Dynamic function (no type declarations)
 def greet(name) {
     print("Hello", name)
 }
 
 def main() {
-    int x = 5          # Explicit type
-    y = 10             # Type inferred as int
-    str name = "Alice" # Explicit type
-    result = add_numbers(x, y)
-    greet(name)
+    var result = add_numbers(5, 10)        # Dynamic variable
+    int sum = add_numbers(20, 30)          # Static variable
+    str greeting = format_greeting("Alice", 25)
+    greet("World")
 }
+```
+
+#### Grammar Rules
+
+**Variable Declaration Grammar:**
+```
+variable_declaration := 
+    | single_declaration
+    | multi_declaration
+
+single_declaration :=
+    | type_annotation identifier '=' expression
+    | 'var' identifier '=' expression
+
+multi_declaration :=
+    | base_type identifier (',' declaration_item)*
+
+declaration_item :=
+    | identifier                    # Uses base_type
+    | type_annotation identifier    # Overrides base_type
+
+base_type :=
+    | 'var'
+    | 'int'
+    | 'str'
+    | 'bool'
+    | 'float'
+    | 'None'
+
+type_annotation :=
+    | 'int'
+    | 'str'
+    | 'bool'
+    | 'float'
+    | 'None'
+
+identifier := [a-zA-Z_][a-zA-Z0-9_]*
+```
+
+**Examples of Valid Grammar:**
+```lyric
+# Single declarations
+var x = 10
+int count = 5
+str name = "Alice"
+
+# Multi-declarations (simple)
+var x, y, z
+int a, b, c
+
+# Multi-declarations (mixed types)
+var x, int y, str z
+int count, var temp, bool flag
 ```
 
 ### Advanced Class Example
@@ -231,7 +352,7 @@ def main() {
 }
 ```
 
-## 🚫 Features Omitted in v0.1.3
+## 🚫 Features Omitted in v0.1.4
 
 To maintain simplicity and focus on core concepts:
 
@@ -247,7 +368,7 @@ Lyric is about learning and clarity, not syntax density.
 
 ## 📋 Current Implementation Status
 
-### ✅ Implemented Features (v0.1.3)
+### ✅ Implemented Features (v0.1.4)
 - Core language constructs (functions, conditionals, loops)
 - Class system with `+++` terminator
 - Built-in data structures (lists, dictionaries)
@@ -256,7 +377,11 @@ Lyric is about learning and clarity, not syntax density.
 - Enhanced error handling with stack traces
 - Runtime optimizations (constant folding, caching)
 - Performance monitoring
-- Comprehensive test suite (143+ tests)
+- **Dynamic typing with `var` keyword**
+- **Declaration enforcement (all variables must be declared)**
+- **Multi-variable declarations with comma-separated syntax**
+- **Mixed-type multi-declarations support**
+- Comprehensive test suite (226+ tests)
 
 ### 🚧 Planned Features
 - Import system
@@ -269,20 +394,47 @@ Lyric is about learning and clarity, not syntax density.
 ## 💡 Example Program
 
 ```lyric
+# Multi-variable declarations with mixed types
+var x, int y, str name
+
+# Static type declarations
+float pi = 3.14159
+bool active = true
+
 def float calculate_area(float radius) {
-    return 3.14159 * radius * radius
+    return pi * radius * radius
+}
+
+def str format_result(float area, str shape) {
+    return "Area of " + shape + ": " + str(area)
 }
 
 def main() {
-    float r = 5.0
-    area = calculate_area(r)
-    print("Area of circle with radius", r, "is:", area)
+    # Initialize multi-declared variables
+    x = 10
+    y = 5
+    name = "Circle"
+    
+    # Calculate area using typed function
+    var area = calculate_area(5.0)  # Dynamic variable
+    str result = format_result(area, name)  # Static variable
+    
+    print(result)
+    print("Dynamic x:", x, "type:", type(x))
+    print("Static y:", y, "type:", type(y))
+    
+    # Demonstrate type flexibility with var
+    x = "Hello"
+    print("Now x is:", x, "type:", type(x))
 }
 ```
 
 ### Output
 ```
-Area of circle with radius 5.0 is: 78.53975
+Area of Circle: 78.53975
+Dynamic x: 10 type: int
+Static y: 5 type: int
+Now x is: Hello type: str
 ```
 
 ## 🎵 Closing Thoughts
@@ -294,7 +446,7 @@ It's a bridge between thought and execution — a language that emphasizes inten
 
 ---
 
-**Current Version:** 0.1.3 (Sprint 3 - Type System & Performance - 5/8 Tasks Complete)  
+**Current Version:** 0.1.4 (Sprint 4 - Variable Handling & Declaration Syntax - Tasks 1-4 Complete)  
 **Development Team:** Michael (Aeonath), ChatGPT, Claude  
 **Project:** MiraNova Studios Initiative
 
