@@ -28,4 +28,4 @@ lyric = "lyric_lang.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["lyric-lang*"]
+include = ["lyric_lang*"]

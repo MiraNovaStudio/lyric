@@ -319,6 +319,21 @@ class Environment:
             else:
                 raise RuntimeErrorLyric(error_msg)
 
+    def assign_up_scope(self, name: str, value: Any) -> None:
+        """Assign a value to a variable, updating it in the current scope or parent scopes."""
+        # First try to assign in current scope
+        if name in self.variables:
+            self.assign_local(name, value)
+            return
+        
+        # If not found in current scope, try parent scopes
+        if self.parent:
+            self.parent.assign_up_scope(name, value)
+            return
+        
+        # If not found anywhere, create new variable in current scope
+        self.define(name, value, None)
+    
     def assign_local(self, name: str, value: Any) -> None:
         """Assign a value to a variable in the current scope only (for shadowing behavior)."""
         if name in self.variables:
@@ -814,8 +829,8 @@ class Interpreter:
                     # Reassign existing variable or initialize declared variable (with type checking)
                     env.assign_local(stmt.name, value)
                 else:
-                    # No type annotation and variable doesn't exist - create new variable (backward compatibility)
-                    env.define(stmt.name, value, None)
+                    # No type annotation and variable doesn't exist - try to assign up scope chain
+                    env.assign_up_scope(stmt.name, value)
             return value
         elif isinstance(stmt.name, IdentifierNode):
             # Regular variable assignment from identifier with optional type declaration
@@ -829,8 +844,8 @@ class Interpreter:
                     # Reassign existing variable (with type checking)
                     env.assign_local(stmt.name.name, value)
                 else:
-                    # No type annotation and variable doesn't exist - create new variable (backward compatibility)
-                    env.define(stmt.name.name, value, None)
+                    # No type annotation and variable doesn't exist - try to assign up scope chain
+                    env.assign_up_scope(stmt.name.name, value)
             return value
         else:
             raise RuntimeErrorLyric(f"Invalid assignment target: {type(stmt.name)}")
@@ -932,17 +947,19 @@ class Interpreter:
                 # Iterate over the iterable
                 for item in iterable:
                     env.define(var_name, item)
-                    self._execute_block(stmt.body, env)
+                    # Execute loop body in same environment so loop variables are accessible
+                    result = None
+                    for body_stmt in stmt.body:
+                        result = self._execute_statement(body_stmt, env)
             else:
                 raise RuntimeErrorLyric("Iterator loop must be in the form 'variable in iterable'")
         else:
             # While loop: boolean condition
-            while True:
-                condition = self._evaluate_expression(stmt.condition_or_iter, env)
-                if not self._is_truthy(condition):
-                    break
-
-                self._execute_block(stmt.body, env)
+            while self._is_truthy(self._evaluate_expression(stmt.condition_or_iter, env)):
+                # Execute loop body in same environment so condition variables are accessible
+                result = None
+                for body_stmt in stmt.body:
+                    result = self._execute_statement(body_stmt, env)
 
     def _execute_return(self, stmt: ReturnNode, env: Environment) -> Any:
         """Execute a return statement."""
