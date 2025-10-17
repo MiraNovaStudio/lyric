@@ -1,0 +1,307 @@
+Metadata-Version: 2.4
+Name: lyric-lang
+Version: 0.1.9
+Summary: A minimal programming language implementation
+Author-email: Lyric Team <team@lyric.dev>
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+
+# Lyric Language
+
+Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. It is implemented in Python and currently supports basic constructs such as def, if, else, end, given, done, and the class terminator +++.
+
+## How to Run
+
+Lyric programs use the `.ly` file extension and are executed through the command line interface.
+
+To execute a Lyric program, open a terminal and run the command:
+```
+lyric run path_to_file.ly
+```
+
+For example:
+```
+lyric run tests/examples/hello.ly
+```
+
+This command runs the program's main function automatically if it exists. You can also check the current interpreter version with:
+```
+lyric --version
+```
+
+### Example Programs
+
+The project includes several example programs that demonstrate core language features:
+
+- **hello.ly** - Basic function definition and print statement
+- **if_demo.ly** - Conditional logic with if/else statements  
+- **loop.ly** - Iterator loops using the given/done construct
+- **class_test.ly** - Class definition and instantiation
+- **nested_flow.ly** - Nested control flow structures
+- **boolean_test.ly** - Boolean and comparison operations
+- **runtime_test.ly** - Runtime enhancements (isinstance, type, enhanced print)
+- **type_tests.ly** - Type system demonstrations (declarations, inference, enforcement)
+- **list_dict_tests.ly** - Data structure operations (lists, dictionaries, indexing)
+- **exception_tests.ly** - Exception and error handling demonstrations
+- **class_init_tests.ly** - Class initialization and method testing
+
+## How to Develop
+
+Development requires Python 3.8 or newer.
+
+### Basic Workflow
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd lyric
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+   or
+   ```bash
+   pip install pytest flake8
+   ```
+
+3. **Run tests**
+   ```bash
+   pytest tests/
+   ```
+
+4. **Check code formatting**
+   ```bash
+   flake8 lyric/ tests/
+   ```
+
+### Development Commands
+
+- `pytest` runs the comprehensive test suite (188 tests covering all components)
+- `flake8` enforces coding style and identifies potential issues
+- `python -m lyric.cli run tests/examples/hello.ly` runs the interpreter directly if the project hasn't been installed as a package
+
+## Project Layout
+
+```
+lyric/
+├── lyric/                    # Main source code for the language
+│   ├── lexer.py             # Converts source code into tokens
+│   ├── parser.py            # Builds the abstract syntax tree
+│   ├── ast.py               # Defines node types for syntax trees
+│   ├── interpreter.py       # Executes parsed programs
+│   ├── runtime.py           # Provides built-in functions like print, input, and range
+│   ├── errors.py            # Defines exceptions for lexing, parsing, and runtime
+│   └── cli.py               # Command line interface for running Lyric programs
+├── tests/                   # Contains automated test files and example programs
+│   ├── examples/            # Sample Lyric programs
+│   │   ├── hello.ly         # Basic hello world program
+│   │   ├── if_demo.ly       # Conditional logic demonstration
+│   │   ├── loop.ly          # Iterator loop demonstration
+│   │   ├── class_test.ly    # Class definition and instantiation
+│   │   ├── nested_flow.ly   # Nested control flow structures
+│   │   ├── boolean_test.ly  # Boolean and comparison operations
+│   │   ├── runtime_test.ly  # Runtime enhancements demonstration
+│   │   ├── type_tests.ly    # Type system demonstrations
+│   │   ├── list_dict_tests.ly # Data structure operations
+│   │   ├── exception_tests.ly # Exception and error handling
+│   │   └── class_init_tests.ly # Class initialization testing
+│   ├── test_lexer.py        # Lexer test suite (22 tests)
+│   ├── test_parser.py       # Parser test suite (28 tests)
+│   ├── test_interpreter.py  # Interpreter test suite (26 tests)
+│   └── test_cli_integration.py # CLI integration test suite (12 tests)
+├── examples/                # Additional example programs
+│   ├── hello.ly
+│   ├── if_demo.ly
+│   └── loop.ly
+├── README.md                # Project overview and setup instructions
+├── CHANGELOG.md             # Version history and release notes
+└── pyproject.toml           # Build configuration and CLI entry point
+```
+
+## Dependencies
+
+The following Python packages are required for development:
+
+- **pytest** — for comprehensive testing of all language components
+- **flake8** — for linting and style checking
+- **setuptools** — for package building and CLI entry point configuration
+
+All dependencies can be installed with pip:
+```bash
+pip install pytest flake8 setuptools
+```
+
+## Language Features
+
+### Core Constructs
+
+- **Functions**: `def name(params) { body }` with optional return statements
+- **Conditionals**: `if condition: ... else: ... end`
+- **Loops**: `given variable in iterable: ... done` or `given condition: ... done`
+- **Classes**: `class Name: ... +++` (full implementation with instantiation, methods, and init())
+- **Variables**: Dynamic typing `var name = value` or static type declarations `type name = value` (all variables must be declared before use)
+- **Multi-Variable Declarations**: Declare multiple variables in one line `var x, int y, str z`
+- **Data Structures**: `[item1, item2, ...]` for lists, `{"key": value, ...}` for dictionaries
+- **Exception Handling**: `try: ... except: ... finally: ... end`
+- **Comments**: `# comment text` (full-line and inline comments)
+
+### Built-in Functions
+
+- `print(*args)` — Multi-argument printing with space separation and None handling
+- `input(prompt?)` — Read from stdin with optional prompt
+- `int(value)`, `float(value)`, `str(value)` — Type conversions
+- `range(start?, stop, step?)` — Integer sequence generation
+- `len(sequence)` — Length calculation for strings, lists, and dictionaries
+- `keys(dict)` — Returns list of dictionary keys
+- `values(dict)` — Returns list of dictionary values
+- `append(list, item)` — Adds item to end of list
+- `open(path)` — File iteration over lines
+- `isinstance(obj, type_name)` — Type checking for objects and class instances
+- `type(obj)` — Type introspection returning string type names
+
+### Example Syntax
+
+```lyric
+# Type declarations and inference
+int age = 25
+float pi = 3.14159
+str name = "Alice"
+god is_active = true
+None null_value = None
+
+# Type inference
+auto_int = 42          # Automatically inferred as int
+auto_float = 2.718     # Automatically inferred as float
+auto_string = "hello"  # Automatically inferred as str
+
+# Lists and dictionaries
+numbers = [1, 2, 3, 4, 5]
+fruits = ["apple", "banana", "orange"]
+person = {"name": "Bob", "age": 30, "city": "New York"}
+scores = {"math": 95, "science": 87}
+
+# Class definition with init() method
+class Player:
+    name = "Guest"
+    score = 0
+    
+    def init(self, player_name) {
+        self.name = player_name
+        self.score = 0
+        print("Player", self.name, "initialized!")
+    }
+    
+    def greet() {
+        print("Hello,", self.name)
+    }
+    
+    def add_score(points) {
+        self.score = self.score + points
+    }
++++
+
+def main() {
+    print("Hello, Lyric!")
+    
+    # Type system demonstration
+    print("Age:", age, "Type:", type(age))
+    print("PI:", pi, "Type:", type(pi))
+    print("Name:", name, "Type:", type(name))
+    
+    # Regular expressions with rex type
+    rex email_pattern = /^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$/
+    rex word_pattern = /^[a-zA-Z]+$/
+    
+    var test_email = "user@example.com"
+    var test_word = "hello"
+    
+    print("Email valid:", email_pattern.match(test_email))
+    print("Word valid:", word_pattern.match(test_word))
+    print("Pattern type:", type(email_pattern))
+    
+    # String replacement with regex
+    rex space_pattern = /\s+/
+    var spaced_text = "hello    world    test"
+    var clean_text = space_pattern.replace(spaced_text, " ")
+    print("Cleaned text:", clean_text)
+    
+    # List and dictionary operations
+    print("First number:", numbers[0])
+    print("Person's name:", person["name"])
+    print("List length:", len(numbers))
+    print("Dictionary keys:", keys(person))
+    
+    # Conditional logic
+    if 5 > 3:
+        print("Math works!")
+    else:
+        print("Something's wrong")
+    end
+    
+    # Iterator loops
+    given i in range(3):
+        print("Count:", i)
+    done
+    
+    # Class instantiation with init()
+    player = Player("Alice")
+    player.greet()
+    player.add_score(100)
+    
+    # Type checking and introspection
+    print("Player type:", type(player))
+    print("Is Player:", isinstance(player, "Player"))
+    
+    # Try/except/finally error handling
+    try:
+        result = 10 / 0  # This will cause an error
+        print("Result:", result)
+    except:
+        print("Caught division by zero error!")
+    finally:
+        print("Cleanup code always runs")
+    end
+    
+    # Enhanced print with None handling
+    print("Value:", None)
+}
+```
+
+### CLI Usage Examples
+```bash
+# Run Lyric programs using either command form:
+python -m lyric.cli run hello.ly
+python -m lyric.cli hello.ly
+
+# After pip install -e ., use the global command:
+lyric run hello.ly
+lyric hello.ly
+
+# Help and version information:
+lyric --help
+lyric --version
+lyric --debug hello.ly
+```
+
+## License and Credits
+
+The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
+
+The project is currently **pre-release** and version **0.1.6** completes Sprint 4 (Variable Handling & Declaration Syntax) with all 5 tasks implemented. This milestone includes dynamic typing with the `var` keyword, strict variable declaration enforcement, multi-variable declarations, comprehensive documentation with formal grammar, extensive validation, complete type declarations and inference, built-in data structures (lists and dictionaries), enhanced error handling with try/except/finally, runtime safety improvements, and comprehensive test coverage with 226+ passing tests. Sprint 3 and Sprint 4 are complete.
+
+## Contributing
+
+This project is part of an ongoing development sprint. Future versions will include additional language features, enhanced type system, and extended runtime capabilities.
+
+For development questions or contributions, please refer to the project's development workflow outlined above.

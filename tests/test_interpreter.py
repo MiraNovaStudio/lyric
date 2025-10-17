@@ -5,8 +5,8 @@ Tests for the Lyric interpreter.
 import pytest
 import io
 import sys
-from lyric.parser import parse
-from lyric.interpreter import interpret
+from lyric_lang.parser import parse
+from lyric_lang.interpreter import interpret
 
 
 class TestInterpreter:

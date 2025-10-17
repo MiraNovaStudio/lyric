@@ -3,10 +3,10 @@ Tests for Sprint 3 Task 1 - Type Declaration and Inference
 """
 
 import pytest
-from lyric.lexer import tokenize
-from lyric.parser import parse
-from lyric.interpreter import interpret
-from lyric.errors import RuntimeErrorLyric
+from lyric_lang.lexer import tokenize
+from lyric_lang.parser import parse
+from lyric_lang.interpreter import interpret
+from lyric_lang.errors import RuntimeErrorLyric
 
 
 class TestTypeSystem:

@@ -9,7 +9,7 @@ import os
 # Add the parent directory to the path so we can import lyric
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lyric.lexer import tokenize
+from lyric_lang.lexer import tokenize
 
 
 class TestIndexingTokens:

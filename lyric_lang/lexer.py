@@ -6,7 +6,7 @@ Tokenizes source code into tokens.
 import re
 from dataclasses import dataclass
 from typing import List, Optional
-from lyric.errors import LexError
+from lyric_lang.errors import LexError
 
 
 @dataclass

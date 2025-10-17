@@ -3,9 +3,9 @@ Tests for Sprint 3 Task 4 - Enhanced Error Handling and Debugging
 """
 
 import pytest
-from lyric.parser import parse
-from lyric.interpreter import Interpreter
-from lyric.errors import RuntimeErrorLyric, StackFrame
+from lyric_lang.parser import parse
+from lyric_lang.interpreter import Interpreter
+from lyric_lang.errors import RuntimeErrorLyric, StackFrame
 
 
 class TestEnhancedErrorHandling:

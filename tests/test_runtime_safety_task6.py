@@ -5,9 +5,9 @@ Tests for Task 6 - Runtime Safety and Error Messages
 import pytest
 import io
 import sys
-from lyric.parser import parse
-from lyric.interpreter import Interpreter
-from lyric.errors import RuntimeErrorLyric
+from lyric_lang.parser import parse
+from lyric_lang.interpreter import Interpreter
+from lyric_lang.errors import RuntimeErrorLyric
 
 
 class TestRuntimeSafetyAndErrorMessages:

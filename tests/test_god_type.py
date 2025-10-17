@@ -12,9 +12,9 @@ from contextlib import redirect_stdout
 # Add the parent directory to the path so we can import lyric
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lyric.parser import parse
-from lyric.interpreter import Interpreter
-from lyric.errors import LexError, ParseError, RuntimeErrorLyric
+from lyric_lang.parser import parse
+from lyric_lang.interpreter import Interpreter
+from lyric_lang.errors import LexError, ParseError, RuntimeErrorLyric
 
 
 class TestGodType:

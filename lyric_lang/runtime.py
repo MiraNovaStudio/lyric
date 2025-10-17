@@ -4,7 +4,7 @@ Provides built-in functions and runtime support.
 """
 
 from typing import Any, List, Optional
-from lyric.errors import RuntimeErrorLyric
+from lyric_lang.errors import RuntimeErrorLyric
 
 
 class BuiltinFunction:
@@ -212,7 +212,7 @@ def _builtin_isinstance(args: List[Any]) -> bool:
             return True
         else:
             # Check if it's a Lyric class instance
-            from lyric.interpreter import Instance
+            from lyric_lang.interpreter import Instance
             if isinstance(obj, Instance):
                 return obj.class_obj.name == type_name
             return False
@@ -239,7 +239,7 @@ def _builtin_type(args: List[Any]) -> str:
     obj = args[0]
 
     # Handle Lyric class instances
-    from lyric.interpreter import Instance
+    from lyric_lang.interpreter import Instance
     if isinstance(obj, Instance):
         return obj.class_obj.name
 
@@ -260,7 +260,7 @@ def _builtin_type(args: List[Any]) -> str:
         return "dict"
     
     # Handle RexObject
-    from lyric.interpreter import RexObject
+    from lyric_lang.interpreter import RexObject
     if isinstance(obj, RexObject):
         return "rex"
     
@@ -346,7 +346,7 @@ def register_builtins(env: dict) -> None:
         env[builtin.name] = builtin
     
     # Register error classes in the global scope
-    from lyric.errors_hierarchy import Error, TypeError, ValueError, NameError, RuntimeError as LyricRuntimeError
+    from lyric_lang.errors_hierarchy import Error, TypeError, ValueError, NameError, RuntimeError as LyricRuntimeError
     env["Error"] = Error
     env["TypeError"] = TypeError
     env["ValueError"] = ValueError

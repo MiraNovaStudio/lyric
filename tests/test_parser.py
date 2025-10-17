@@ -3,7 +3,7 @@ Tests for the parser module.
 """
 
 import pytest
-from lyric.ast import (
+from lyric_lang.ast import (
     ProgramNode, FunctionNode, IfNode, ElifNode, LoopNode, AssignNode,
     CallNode, BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode,
     ClassNode, PrintNode, ImportNode, ReturnNode, TryNode, ExceptNode, MemberAccessNode
@@ -291,7 +291,7 @@ class TestParser:
         """Test parsing function definition."""
         source = 'def main() { print("Hello, Lyric!") }'
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         # Verify program structure
@@ -323,7 +323,7 @@ else:
     print("zero")
 end'''
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         # Verify program structure
@@ -369,7 +369,7 @@ end'''
     print(i)
 done'''
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         # Verify program structure
@@ -411,7 +411,7 @@ done'''
     }
 +++'''
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         # Verify program structure
@@ -454,7 +454,7 @@ done'''
         """Test parsing assignment statements."""
         source = 'x = 42'
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         assert isinstance(program, ProgramNode)
@@ -471,7 +471,7 @@ done'''
         """Test operator precedence in expressions."""
         source = 'x = 1 + 2 * 3'
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         assign = program.statements[0]
@@ -493,7 +493,7 @@ done'''
         """Test parsing function calls."""
         source = 'print("hello", "world")'
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         call = program.statements[0]
@@ -507,7 +507,7 @@ done'''
         """Test parsing comparison operators."""
         source = 'x = a > b and c == d'
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         assign = program.statements[0]
@@ -532,7 +532,7 @@ done'''
     x = x - 1
 done'''
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         loop = program.statements[0]
@@ -561,7 +561,7 @@ else:
     print("other")
 end'''
         
-        from lyric.parser import parse
+        from lyric_lang.parser import parse
         program = parse(source)
         
         if_stmt = program.statements[0]

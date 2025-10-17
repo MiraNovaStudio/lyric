@@ -19,7 +19,7 @@ Implementation Details:
 2. Update Import Paths:
    - Update all internal imports referencing "lyric" to use "lyric_lang".
      Example:
-       from lyric.cli import main
+       from lyric_lang.cli import main
      becomes:
        from lyric_lang.cli import main
 

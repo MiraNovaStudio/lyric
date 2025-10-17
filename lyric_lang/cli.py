@@ -5,9 +5,9 @@ Command-line interface for the Lyric interpreter.
 import sys
 import os
 import argparse
-from lyric.parser import parse
-from lyric.interpreter import Interpreter
-from lyric.errors import LexError, ParseError, RuntimeErrorLyric
+from lyric_lang.parser import parse
+from lyric_lang.interpreter import Interpreter
+from lyric_lang.errors import LexError, ParseError, RuntimeErrorLyric
 
 
 def main():

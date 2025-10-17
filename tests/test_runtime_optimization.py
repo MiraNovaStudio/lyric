@@ -3,8 +3,8 @@ Tests for Sprint 3 Task 5 - Runtime Optimization and Performance
 """
 
 import pytest
-from lyric.parser import parse
-from lyric.interpreter import Interpreter
+from lyric_lang.parser import parse
+from lyric_lang.interpreter import Interpreter
 
 
 class TestRuntimeOptimization:

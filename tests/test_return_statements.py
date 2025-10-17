@@ -3,9 +3,9 @@ Tests for Sprint 3 Task 2 - Return Statements and Function Values
 """
 
 import pytest
-from lyric.parser import parse
-from lyric.interpreter import interpret
-from lyric.errors import RuntimeErrorLyric
+from lyric_lang.parser import parse
+from lyric_lang.interpreter import interpret
+from lyric_lang.errors import RuntimeErrorLyric
 
 
 class TestReturnStatements:

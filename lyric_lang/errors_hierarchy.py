@@ -3,7 +3,7 @@ Built-in error hierarchy for the Lyric language.
 Provides Error, TypeError, ValueError, NameError, and RuntimeError classes.
 """
 
-from lyric.errors import RuntimeErrorLyric
+from lyric_lang.errors import RuntimeErrorLyric
 
 
 class Error:

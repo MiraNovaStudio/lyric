@@ -3,8 +3,8 @@ Tests for the lexer module.
 """
 
 import pytest
-from lyric.lexer import tokenize, Token, Lexer
-from lyric.errors import LexError
+from lyric_lang.lexer import tokenize, Token, Lexer
+from lyric_lang.errors import LexError
 
 
 class TestLexer:

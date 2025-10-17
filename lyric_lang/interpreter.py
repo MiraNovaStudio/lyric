@@ -5,14 +5,14 @@ Executes AST nodes to run programs.
 
 from typing import Dict, List, Any, Optional
 import re
-from lyric.ast import (
+from lyric_lang.ast import (
     ProgramNode, FunctionNode, ClassNode, IfNode, LoopNode,
     AssignNode, MultiDeclareNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode, RegexLiteralNode,
     IdentifierNode, PrintNode, ImportNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode,
     TryCatchFinallyNode, RaiseNode
 )
-from lyric.errors import RuntimeErrorLyric, StackFrame
-from lyric.runtime import register_builtins, BuiltinFunction
+from lyric_lang.errors import RuntimeErrorLyric, StackFrame
+from lyric_lang.runtime import register_builtins, BuiltinFunction
 
 
 class RexObject:
@@ -201,7 +201,7 @@ class Environment:
             return True
         else:
             # Check for custom class types
-            from lyric.interpreter import Instance
+            from lyric_lang.interpreter import Instance
             if isinstance(value, Instance) and expected_type == value.class_obj.name:
                 return True
         return False
@@ -225,7 +225,7 @@ class Environment:
         elif isinstance(value, RexObject):
             return 'rex'
         else:
-            from lyric.interpreter import Instance
+            from lyric_lang.interpreter import Instance
             if isinstance(value, Instance):
                 return value.class_obj.name
             return 'unknown'

@@ -4,14 +4,14 @@ Parses tokens into an Abstract Syntax Tree (AST).
 """
 
 from typing import List, Optional, Union, Dict, Any
-from lyric.lexer import Token
-from lyric.ast import (
+from lyric_lang.lexer import Token
+from lyric_lang.ast import (
     ProgramNode, FunctionNode, ClassNode, IfNode, ElifNode, LoopNode,
     AssignNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode,
     IdentifierNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode,
     TryCatchFinallyNode, RaiseNode
 )
-from lyric.errors import ParseError
+from lyric_lang.errors import ParseError
 
 
 class Parser:
@@ -312,7 +312,7 @@ class Parser:
         Returns:
             MultiDeclareNode with all declared variables
         """
-        from lyric.ast import MultiDeclareNode
+        from lyric_lang.ast import MultiDeclareNode
         
         declarations = []
         
@@ -604,7 +604,7 @@ class Parser:
             # Remove slashes from regex and unescape
             regex_content = token.value[1:-1]
             unescaped = self._unescape_string(regex_content)
-            from lyric.ast import RegexLiteralNode
+            from lyric_lang.ast import RegexLiteralNode
             return RegexLiteralNode(unescaped)
         elif self._match('LBRACKET'):
             # Parse list literal
@@ -829,7 +829,7 @@ def parse(source: str, filename: str = None) -> ProgramNode:
     Returns:
         ProgramNode representing the parsed program
     """
-    from lyric.lexer import tokenize
+    from lyric_lang.lexer import tokenize
     tokens = tokenize(source, filename)
     parser = Parser(tokens, filename)
     return parser.parse()

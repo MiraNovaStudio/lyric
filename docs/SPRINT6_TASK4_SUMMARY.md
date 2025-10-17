@@ -152,7 +152,7 @@ def register_builtins(env: dict) -> None:
     # ... existing builtins ...
     
     # Register error classes in the global scope
-    from lyric.errors_hierarchy import Error, TypeError, ValueError, NameError, RuntimeError as LyricRuntimeError
+    from lyric_lang.errors_hierarchy import Error, TypeError, ValueError, NameError, RuntimeError as LyricRuntimeError
     env["Error"] = Error
     env["TypeError"] = TypeError
     env["ValueError"] = ValueError

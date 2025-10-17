@@ -53,7 +53,7 @@ def _builtin_isinstance(args: List[Any]) -> bool:
         # ... (other built-in types)
         else:
             # Check if it's a Lyric class instance
-            from lyric.interpreter import Instance
+            from lyric_lang.interpreter import Instance
             if isinstance(obj, Instance):
                 return obj.class_obj.name == type_name
             return False
@@ -86,7 +86,7 @@ def _builtin_type(args: List[Any]) -> str:
     obj = args[0]
     
     # Handle Lyric class instances
-    from lyric.interpreter import Instance
+    from lyric_lang.interpreter import Instance
     if isinstance(obj, Instance):
         return obj.class_obj.name
     

@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lyric"
+name = "lyric-lang"
 version = "0.1.9"
 description = "A minimal programming language implementation"
 authors = [
@@ -24,8 +24,8 @@ classifiers = [
 ]
 
 [project.scripts]
-lyric = "lyric.cli:main"
+lyric = "lyric_lang.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["lyric*"]
+include = ["lyric_lang*"]
