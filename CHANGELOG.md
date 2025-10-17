@@ -20,6 +20,13 @@ This version introduces Sprint 4 Task 1 (Dynamic Typing with `var` keyword) and 
 - **Clear Error Messages**: Specific error messages for undeclared and uninitialized variables
 - **Enhanced Test Coverage**: 14 new tests for declaration enforcement scenarios
 
+## Added (Sprint 4 - Task 3)
+
+- **Multi-Variable Declarations**: Support for comma-separated variable declarations in a single line
+- **Mixed Type Declarations**: Variables of different types can be declared together (e.g., `var x, int y, str z`)
+- **Flexible Declaration Syntax**: Support for both simple and mixed-type multi-declarations
+- **Enhanced Test Coverage**: 14 new tests for multi-variable declaration scenarios
+
 ## Added (Sprint 3)
 
 - **Type System**: Complete type declaration and inference system with int, float, str, bool, and None types

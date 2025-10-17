@@ -267,16 +267,63 @@ class Parser:
             return True
         return False
 
+    def _parse_multi_declaration(self, base_type: str) -> 'MultiDeclareNode':
+        """Parse a multi-variable declaration statement.
+        
+        Args:
+            base_type: The base type for the declaration (e.g., 'var', 'int', 'str')
+            
+        Returns:
+            MultiDeclareNode with all declared variables
+        """
+        from lyric.ast import MultiDeclareNode
+        
+        declarations = []
+        
+        # Parse the first variable
+        first_var = self._consume('IDENTIFIER', f"Expected variable name after '{base_type}'")
+        declarations.append((first_var.value, base_type))
+        
+        # Parse additional variables
+        while self._match('COMMA'):
+            self._advance()  # consume ','
+            
+            # Check if there's a type annotation for this variable
+            # Look ahead to see if the next token is a type identifier followed by another identifier
+            if (self._match('IDENTIFIER') and 
+                self._peek_next() and self._peek_next().type == 'IDENTIFIER'):
+                # This variable has its own type annotation: type var_name
+                var_type = self._consume('IDENTIFIER', "Expected variable type")
+                var_name = self._consume('IDENTIFIER', "Expected variable name")
+                declarations.append((var_name.value, var_type.value))
+            elif self._match('NONE'):
+                # This variable has None type annotation: None var_name
+                var_type = self._consume('NONE', "Expected variable type")
+                var_name = self._consume('IDENTIFIER', "Expected variable name")
+                declarations.append((var_name.value, var_type.value))
+            else:
+                # This variable uses the base type
+                var_name = self._consume('IDENTIFIER', "Expected variable name")
+                declarations.append((var_name.value, base_type))
+        
+        return MultiDeclareNode(declarations)
+
     def _parse_assignment_or_expr_stmt(self) -> object:
         """Parse assignment or expression statement."""
-        # Check if this is a var keyword for dynamic typing: var x = value
+        # Check if this is a var keyword for dynamic typing: var x = value or var x, int y, str z
         if self._match('VAR'):
             self._advance()  # consume 'var'
-            var_token = self._consume('IDENTIFIER', "Expected variable name after 'var'")
-            self._consume('ASSIGN', "Expected '=' after variable name")
-            right_expr = self._parse_expression()
-            return AssignNode(name=var_token.value, expr=right_expr, 
-                            type_annotation='var')
+            
+            # Check if this is a multi-declaration: var x, int y, str z
+            if self._peek_next() and self._peek_next().type == 'COMMA':
+                return self._parse_multi_declaration('var')
+            else:
+                # Single var declaration: var x = value
+                var_token = self._consume('IDENTIFIER', "Expected variable name after 'var'")
+                self._consume('ASSIGN', "Expected '=' after variable name")
+                right_expr = self._parse_expression()
+                return AssignNode(name=var_token.value, expr=right_expr, 
+                                type_annotation='var')
         
         # Check if this is a C-style type-declared variable declaration: int x = value or None x = value
         if self._match('IDENTIFIER') or self._match('NONE'):
@@ -294,6 +341,14 @@ class Parser:
                 right_expr = self._parse_expression()
                 return AssignNode(name=var_token.value, expr=right_expr, 
                                 type_annotation=type_token.value)
+            elif (next_token and next_token.type == 'IDENTIFIER' and 
+                  self._peek_next_next() and self._peek_next_next().type == 'COMMA'):
+                # This is a multi-declaration: int x, str y, bool z
+                if self._match('IDENTIFIER'):
+                    type_token = self._consume('IDENTIFIER', "Expected variable type")
+                else:  # NONE
+                    type_token = self._consume('NONE', "Expected variable type")
+                return self._parse_multi_declaration(type_token.value)
         
         # Parse the left side as an expression
         left_expr = self._parse_expression()

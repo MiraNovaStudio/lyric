@@ -94,11 +94,11 @@ def main() {
     def test_type_inference_literals(self):
         """Test A4: Type inference assigns correct default types for literals."""
         source = '''
-auto_int = 42
-auto_float = 3.14
-auto_string = "inferred"
-auto_bool = false
-auto_none = None
+var auto_int = 42
+var auto_float = 3.14
+var auto_string = "inferred"
+var auto_bool = false
+var auto_none = None
 
 def main() {
     print("auto_int:", auto_int, "type:", type(auto_int))

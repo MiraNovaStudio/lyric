@@ -106,6 +106,21 @@ class AssignNode(ASTNode):
 
 
 @dataclass
+class MultiDeclareNode(ASTNode):
+    """Represents multiple variable declarations in one statement."""
+    declarations: List[Tuple[str, Optional[str]]]  # List of (name, type_annotation) tuples
+
+    def __repr__(self):
+        decl_strs = []
+        for name, type_ann in self.declarations:
+            if type_ann:
+                decl_strs.append(f"{type_ann} {name}")
+            else:
+                decl_strs.append(name)
+        return f"MultiDeclareNode({', '.join(decl_strs)})"
+
+
+@dataclass
 class CallNode(ASTNode):
     """Represents a function call."""
     func_name: str

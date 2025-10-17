@@ -6,7 +6,7 @@ Executes AST nodes to run programs.
 from typing import Dict, List, Any, Optional
 from lyric.ast import (
     ProgramNode, FunctionNode, ClassNode, IfNode, LoopNode,
-    AssignNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode,
+    AssignNode, MultiDeclareNode, CallNode, BinaryOpNode, UnaryOpNode, LiteralNode,
     IdentifierNode, PrintNode, ImportNode, ReturnNode, MemberAccessNode, MethodCallNode, IndexNode
 )
 from lyric.errors import RuntimeErrorLyric, StackFrame
@@ -20,6 +20,7 @@ class Environment:
         self.variables: Dict[str, Any] = {}
         self.variable_types: Dict[str, str] = {}  # Track variable types
         self.declared_variables: Dict[str, bool] = {}  # Track which variables are explicitly declared
+        self.initialized_variables: Dict[str, bool] = {}  # Track which variables are initialized
         self.parent = parent
         self.interpreter = interpreter
         self._cache: Dict[str, Any] = {}  # Cache for variable lookups
@@ -47,8 +48,9 @@ class Environment:
                 type_annotation = 'unknown'
         
         # Type enforcement if type declaration is provided (but not for class objects or var)
-        if (type_annotation and type_annotation != 'unknown' and type_annotation != 'var' and 
-            not self._check_type(value, type_annotation)):
+        # Allow None values for uninitialized variables
+        if (type_annotation and type_annotation != 'unknown' and type_annotation != 'var' and
+            value is not None and not self._check_type(value, type_annotation)):
             # Create enhanced error message with context
             error_msg = (f"Type mismatch for parameter '{name}': expected {type_annotation}, "
                         f"got {self._get_type_name(value)}")
@@ -60,6 +62,7 @@ class Environment:
         self.variables[name] = value
         self.variable_types[name] = type_annotation
         self.declared_variables[name] = True  # Mark as explicitly declared
+        self.initialized_variables[name] = True  # Track if initialized (any value including None)
         self._cache[name] = value  # Update cache
         self._invalidate_parent_cache()  # Invalidate parent caches
     
@@ -75,6 +78,14 @@ class Environment:
             return True
         elif self.parent:
             return self.parent.is_declared(name)
+        return False
+    
+    def is_initialized(self, name: str) -> bool:
+        """Check if a variable is initialized in this environment or parent environments."""
+        if name in self.initialized_variables:
+            return self.initialized_variables[name]
+        elif self.parent:
+            return self.parent.is_initialized(name)
         return False
     
     
@@ -158,7 +169,15 @@ class Environment:
         if self.interpreter:
             self.interpreter._record_variable_lookup()
         
-        # Check local variables first
+        # Check if variable is declared but uninitialized (check this first)
+        if self.is_declared(name) and not self.is_initialized(name):
+            error_msg = f"Variable '{name}' referenced before assignment"
+            if self.interpreter:
+                raise self.interpreter._create_runtime_error(error_msg)
+            else:
+                raise RuntimeErrorLyric(error_msg)
+        
+        # Check local variables
         if name in self.variables:
             return self.variables[name]
         
@@ -173,14 +192,6 @@ class Environment:
             if self._cache_valid:
                 self._cache[name] = value
             return value
-
-        # Check if variable is declared but uninitialized
-        if self.is_declared(name):
-            error_msg = f"Variable '{name}' referenced before assignment"
-            if self.interpreter:
-                raise self.interpreter._create_runtime_error(error_msg)
-            else:
-                raise RuntimeErrorLyric(error_msg)
 
         # Variable is not declared at all
         error_msg = f"Variable '{name}' used before declaration"
@@ -204,6 +215,22 @@ class Environment:
                         raise RuntimeErrorLyric(error_msg)
             
             self.variables[name] = value
+            self.initialized_variables[name] = True  # Mark as initialized
+            self._cache[name] = value  # Update cache
+        elif name in self.declared_variables:
+            # Variable is declared but not initialized - initialize it now
+            existing_type = self.variable_types.get(name)
+            if existing_type and existing_type != 'unknown' and existing_type != 'var':
+                if not self._check_type(value, existing_type):
+                    error_msg = (f"Type mismatch for variable '{name}': expected {existing_type}, "
+                               f"got {self._get_type_name(value)}")
+                    if self.interpreter:
+                        raise self.interpreter._create_runtime_error(error_msg)
+                    else:
+                        raise RuntimeErrorLyric(error_msg)
+            
+            self.variables[name] = value
+            self.initialized_variables[name] = True  # Mark as initialized
             self._cache[name] = value  # Update cache
         elif self.parent:
             self.parent.assign(name, value)
@@ -559,6 +586,8 @@ class Interpreter:
             return self._execute_class_def(stmt, env)
         elif isinstance(stmt, AssignNode):
             return self._execute_assignment(stmt, env)
+        elif isinstance(stmt, MultiDeclareNode):
+            return self._execute_multi_declaration(stmt, env)
         elif isinstance(stmt, CallNode):
             return self._execute_call(stmt, env)
         elif isinstance(stmt, MethodCallNode):
@@ -656,9 +685,10 @@ class Interpreter:
                 # New variable with type declaration
                 env.define(stmt.name, value, stmt.type_annotation)
             else:
-                # Check if variable exists
-                if stmt.name in env.variables:
-                    # Reassign existing variable (with type checking)
+                # Check if variable exists or is declared but uninitialized
+                if (stmt.name in env.variables or 
+                    stmt.name in env.declared_variables):
+                    # Reassign existing variable or initialize declared variable (with type checking)
                     env.assign(stmt.name, value)
                 elif env.parent:
                     # Try to find in parent scope
@@ -696,6 +726,24 @@ class Interpreter:
             return value
         else:
             raise RuntimeErrorLyric(f"Invalid assignment target: {type(stmt.name)}")
+
+    def _execute_multi_declaration(self, stmt: MultiDeclareNode, env: Environment) -> None:
+        """Execute a multi-variable declaration statement.
+
+        Args:
+            stmt: The MultiDeclareNode to execute
+            env: The environment to execute in
+
+        Returns:
+            None (variables are declared but not initialized)
+        """
+        for var_name, type_annotation in stmt.declarations:
+            # Declare the variable without initialization
+            # Mark as declared and uninitialized
+            env.declared_variables[var_name] = True
+            env.variable_types[var_name] = type_annotation
+            env.initialized_variables[var_name] = False
+            # Don't store in variables dict until actually assigned
 
     def _execute_call(self, stmt: CallNode, env: Environment) -> Any:
         """Execute a function call."""

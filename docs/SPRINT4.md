@@ -87,7 +87,7 @@ Verify correctness through dedicated test scripts covering:
 - All acceptance criteria met for each task.  
 - `CHANGELOG.md` and `README.md` updated to reflect new syntax.  
 - Sprint reviewed and merged to `main` branch.  
-- Version tag: **`dev-0.0.4`**
+- Version tag: **`dev-0.0.6`**
 
 ---
 
