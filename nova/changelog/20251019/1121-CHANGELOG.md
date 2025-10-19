@@ -25,7 +25,7 @@ Established foundational project scaffold for Lyric programming language interpr
 Establishes foundational project structure and CLI interface for Lyric v0.1, enabling development of lexer, parser, and interpreter components.
 
 ## Git Commit Hash
-`TBD` - Sprint1 Task1 Project Scaffold Implementation
+`68d9100` - Sprint1 Task1 Project Scaffold Implementation
 
 ## Status
 ✅ Completed
