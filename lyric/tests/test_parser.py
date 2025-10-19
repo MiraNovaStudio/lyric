@@ -346,3 +346,153 @@ end
     assert len(nested_if.then_body) == 1
     assert len(nested_if.else_body) == 1
     assert len(nested_if.elifs) == 0
+
+
+def test_parse_hello_example():
+    """Test parsing the hello.ly example."""
+    source = """def main() {
+    print("Hello, Lyric!")
+}"""
+    
+    ast = parse(source)
+    
+    # Should have one function definition
+    assert len(ast.statements) == 1
+    func = ast.statements[0]
+    assert isinstance(func, FunctionNode)
+    assert func.name == "main"
+    
+    # Should have one statement in main body
+    assert len(func.body_statements) == 1
+    print_stmt = func.body_statements[0]
+    assert isinstance(print_stmt, CallNode)
+    assert print_stmt.func_name == "print"
+    assert len(print_stmt.args) == 1
+    assert isinstance(print_stmt.args[0], LiteralNode)
+    assert print_stmt.args[0].value == "Hello, Lyric!"
+
+
+def test_parse_if_demo_example():
+    """Test parsing the if_demo.ly example."""
+    source = """def main() {
+    x = 5
+    if x > 0:
+        print("positive")
+    else:
+        print("non-positive")
+    end
+}"""
+    
+    ast = parse(source)
+    
+    # Should have one function definition
+    assert len(ast.statements) == 1
+    func = ast.statements[0]
+    assert isinstance(func, FunctionNode)
+    assert func.name == "main"
+    
+    # Should have two statements in main body
+    assert len(func.body_statements) == 2
+    
+    # First statement: assignment
+    assign_stmt = func.body_statements[0]
+    assert isinstance(assign_stmt, AssignNode)
+    assert assign_stmt.name == "x"
+    assert isinstance(assign_stmt.expr, LiteralNode)
+    assert assign_stmt.expr.value == 5
+    
+    # Second statement: if-else
+    if_stmt = func.body_statements[1]
+    assert isinstance(if_stmt, IfNode)
+    
+    # Check condition
+    assert isinstance(if_stmt.condition, BinaryOpNode)
+    assert if_stmt.condition.op == ">"
+    assert isinstance(if_stmt.condition.left, IdentifierNode)
+    assert if_stmt.condition.left.name == "x"
+    assert isinstance(if_stmt.condition.right, LiteralNode)
+    assert if_stmt.condition.right.value == 0
+    
+    # Check then body
+    assert len(if_stmt.then_body) == 1
+    print_stmt = if_stmt.then_body[0]
+    assert isinstance(print_stmt, CallNode)
+    assert print_stmt.func_name == "print"
+    assert print_stmt.args[0].value == "positive"
+    
+    # Check else body
+    assert len(if_stmt.else_body) == 1
+    print_stmt = if_stmt.else_body[0]
+    assert isinstance(print_stmt, CallNode)
+    assert print_stmt.func_name == "print"
+    assert print_stmt.args[0].value == "non-positive"
+
+
+def test_parse_loop_example():
+    """Test parsing the loop.ly example."""
+    source = """def main() {
+    given i in range(3):
+        print(i)
+    done
+}"""
+    
+    ast = parse(source)
+    
+    # Should have one function definition
+    assert len(ast.statements) == 1
+    func = ast.statements[0]
+    assert isinstance(func, FunctionNode)
+    assert func.name == "main"
+    
+    # Should have one statement in main body
+    assert len(func.body_statements) == 1
+    loop_stmt = func.body_statements[0]
+    assert isinstance(loop_stmt, LoopNode)
+    assert loop_stmt.loop_kind == "iterator"
+    assert loop_stmt.iterator_var == "i"
+    
+    # Check the range call
+    assert isinstance(loop_stmt.condition_or_iter, CallNode)
+    assert loop_stmt.condition_or_iter.func_name == "range"
+    assert len(loop_stmt.condition_or_iter.args) == 1
+    assert isinstance(loop_stmt.condition_or_iter.args[0], LiteralNode)
+    assert loop_stmt.condition_or_iter.args[0].value == 3
+    
+    # Check loop body
+    assert len(loop_stmt.body) == 1
+    print_stmt = loop_stmt.body[0]
+    assert isinstance(print_stmt, CallNode)
+    assert print_stmt.func_name == "print"
+    assert len(print_stmt.args) == 1
+    assert isinstance(print_stmt.args[0], IdentifierNode)
+    assert print_stmt.args[0].name == "i"
+
+
+def test_parse_class_example():
+    """Test parsing a class definition example."""
+    source = """class Player:
+def greet() {
+    print("Hello!")
+}
++++"""
+    
+    ast = parse(source)
+    
+    # Should have one class definition
+    assert len(ast.statements) == 1
+    class_stmt = ast.statements[0]
+    assert isinstance(class_stmt, ClassNode)
+    assert class_stmt.name == "Player"
+    
+    # Should have one method in the class
+    assert len(class_stmt.members_statements) == 1
+    method = class_stmt.members_statements[0]
+    assert isinstance(method, FunctionNode)
+    assert method.name == "greet"
+    
+    # Check method body
+    assert len(method.body_statements) == 1
+    print_stmt = method.body_statements[0]
+    assert isinstance(print_stmt, CallNode)
+    assert print_stmt.func_name == "print"
+    assert print_stmt.args[0].value == "Hello!"

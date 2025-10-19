@@ -358,3 +358,85 @@ print(result1, result2, result3)
         # This test will need to be updated when boolean literals are implemented
     finally:
         sys.stdout = old_stdout
+
+
+def test_evaluate_hello_example():
+    """Test evaluating the hello.ly example."""
+    source = """def main() {
+    print("Hello, Lyric!")
+}"""
+    
+    ast = parse(source)
+    
+    # Capture print output
+    import io
+    import sys
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = io.StringIO()
+    
+    try:
+        result = evaluate(ast)
+        assert result is None
+        
+        # Check exact output
+        output = captured_output.getvalue().strip()
+        assert output == "Hello, Lyric!"
+    finally:
+        sys.stdout = old_stdout
+
+
+def test_evaluate_if_demo_example():
+    """Test evaluating the if_demo.ly example."""
+    source = """def main() {
+    x = 5
+    if x > 0:
+        print("positive")
+    else:
+        print("non-positive")
+    end
+}"""
+    
+    ast = parse(source)
+    
+    # Capture print output
+    import io
+    import sys
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = io.StringIO()
+    
+    try:
+        result = evaluate(ast)
+        assert result is None
+        
+        # Check exact output
+        output = captured_output.getvalue().strip()
+        assert output == "positive"
+    finally:
+        sys.stdout = old_stdout
+
+
+def test_evaluate_loop_example():
+    """Test evaluating the loop.ly example."""
+    source = """def main() {
+    given i in range(3):
+        print(i)
+    done
+}"""
+    
+    ast = parse(source)
+    
+    # Capture print output
+    import io
+    import sys
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = io.StringIO()
+    
+    try:
+        result = evaluate(ast)
+        assert result is None
+        
+        # Check exact output
+        output = captured_output.getvalue().strip()
+        assert output == "0\n1\n2"
+    finally:
+        sys.stdout = old_stdout

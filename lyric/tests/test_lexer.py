@@ -50,6 +50,41 @@ def test_class_with_terminator():
     assert tokens[3].value == '+++'
 
 
+def test_class_with_methods_and_terminator():
+    """Test tokenizing class with methods and +++ terminator."""
+    source = """class Calculator:
+def add(x, y):
+return x + y
++++"""
+    
+    tokens = tokenize(source)
+    
+    # Should contain class, method definition, and terminator
+    token_types = [token.type for token in tokens]
+    assert 'CLASS' in token_types
+    assert 'DEF' in token_types
+    assert 'CLASS_END' in token_types
+    
+    # Find the class end token
+    class_end_token = next(token for token in tokens if token.type == 'CLASS_END')
+    assert class_end_token.value == '+++'
+
+
+def test_multiple_classes_with_terminators():
+    """Test tokenizing multiple classes with +++ terminators."""
+    source = """class A: +++
+class B: +++"""
+    
+    tokens = tokenize(source)
+    
+    # Should have two CLASS_END tokens
+    class_end_tokens = [token for token in tokens if token.type == 'CLASS_END']
+    assert len(class_end_tokens) == 2
+    
+    for token in class_end_tokens:
+        assert token.value == '+++'
+
+
 def test_else_if_tokens():
     """Test that 'else if' is tokenized as separate ELSE and IF tokens."""
     source = "else if x > 0:"
