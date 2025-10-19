@@ -4,7 +4,7 @@ from typing import List, Optional
 from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, PrintNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -435,6 +435,16 @@ class Parser:
             expr = self._parse_expression()
             self._consume('RPAREN', "Expected ')' after expression")
             return expr
+        
+        if self._match('LBRACKET'):
+            # List literal: [ expression* ]
+            elements = []
+            if not self._check('RBRACKET'):
+                elements.append(self._parse_expression())
+                while self._match('COMMA'):
+                    elements.append(self._parse_expression())
+            self._consume('RBRACKET', "Expected ']' after list elements")
+            return ListLiteralNode(elements)
         
         raise SyntaxErrorLyric(f"Expected expression", self._peek().line, self._peek().col)
     

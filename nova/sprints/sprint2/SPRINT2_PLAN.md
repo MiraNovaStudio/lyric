@@ -1,11 +1,11 @@
 # Sprint 2 — Control Flow, Error Handling, and Class Support
 
 **Project:** Lyric Programming Language  
-**Version Target:** 0.0.3  
-**Owner:** Michael Stone  
+**Version Target:** 0.2.0
+**Owner:** Michael (Aeonath)  
 **Architect:** ChatGPT  
 **Engineer:** Claude  
-**Duration:** 1 Week  
+**Duration:** 1 Day  
 
 ## Objective
 

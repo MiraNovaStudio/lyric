@@ -217,6 +217,21 @@ class ReturnNode:
 
 
 @dataclass
+class ListLiteralNode:
+    """Represents a list literal."""
+    elements: List['ASTNode']
+    
+    def __repr__(self):
+        return f"ListLiteralNode(elements={len(self.elements)})"
+    
+    def to_dict(self):
+        return {
+            'type': 'ListLiteralNode',
+            'elements': [elem.to_dict() if hasattr(elem, 'to_dict') else str(elem) for elem in self.elements]
+        }
+
+
+@dataclass
 class PrintNode:
     """Represents a print statement (convenience node)."""
     args: List['ASTNode']
@@ -234,5 +249,5 @@ class PrintNode:
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, PrintNode
 ]

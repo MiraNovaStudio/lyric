@@ -52,6 +52,83 @@ def open_builtin(path: str) -> Iterator[str]:
             yield line.rstrip('\n\r')
 
 
+def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
+    """Built-in isinstance function for checking type names."""
+    # Handle Lyric class instances
+    if isinstance(obj, dict) and '__instance_class__' in obj:
+        instance_class = obj['__instance_class__']
+        
+        # Check against class definition (dict)
+        if isinstance(class_or_type, dict) and '__class_name__' in class_or_type:
+            return instance_class == class_or_type['__class_name__']
+        
+        # Check against class name string
+        if isinstance(class_or_type, str):
+            return instance_class == class_or_type
+    
+    # Handle Python built-in types
+    if isinstance(class_or_type, type):
+        return isinstance(obj, class_or_type)
+    
+    # Handle string type names
+    if isinstance(class_or_type, str):
+        if class_or_type == "int":
+            return isinstance(obj, int)
+        elif class_or_type == "float":
+            return isinstance(obj, float)
+        elif class_or_type == "str":
+            return isinstance(obj, str)
+        elif class_or_type == "list":
+            return isinstance(obj, list)
+        elif class_or_type == "dict":
+            return isinstance(obj, dict)
+        elif class_or_type == "bool":
+            return isinstance(obj, bool)
+        elif class_or_type == "None":
+            return obj is None
+    
+    # Handle when class_or_type is a built-in function (int_builtin, str_builtin, etc.)
+    # Map built-in functions to their corresponding Python types
+    if callable(class_or_type):
+        if class_or_type.__name__ == "int_builtin":
+            return isinstance(obj, int)
+        elif class_or_type.__name__ == "float_builtin":
+            return isinstance(obj, float)
+        elif class_or_type.__name__ == "str_builtin":
+            return isinstance(obj, str)
+        elif class_or_type.__name__ == "list_builtin":
+            return isinstance(obj, list)
+        elif class_or_type.__name__ == "dict_builtin":
+            return isinstance(obj, dict)
+        elif class_or_type.__name__ == "bool_builtin":
+            return isinstance(obj, bool)
+    
+    return False
+
+
+def type_builtin(obj: Any) -> str:
+    """Built-in type function returning the object's class name or Python type."""
+    # Handle Lyric class instances
+    if isinstance(obj, dict) and '__instance_class__' in obj:
+        return obj['__instance_class__']
+    
+    # Handle Python built-in types
+    if isinstance(obj, int):
+        return "int"
+    elif isinstance(obj, float):
+        return "float"
+    elif isinstance(obj, str):
+        return "str"
+    elif isinstance(obj, list):
+        return "list"
+    elif isinstance(obj, bool):
+        return "bool"
+    elif obj is None:
+        return "None"
+    else:
+        return str(type(obj).__name__)
+
+
 def register_builtins(env: dict) -> None:
     """Register all built-in functions in the given environment."""
     env['print'] = print_builtin
@@ -62,3 +139,5 @@ def register_builtins(env: dict) -> None:
     env['range'] = range_builtin
     env['len'] = len_builtin
     env['open'] = open_builtin
+    env['isinstance'] = isinstance_builtin
+    env['type'] = type_builtin

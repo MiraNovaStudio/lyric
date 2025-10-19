@@ -25,7 +25,7 @@ class Lexer:
     
     # Single character operators and delimiters
     SINGLE_CHARS = {
-        '+', '-', '*', '/', '=', '(', ')', '{', '}', ':', ',', ';', '.'
+        '+', '-', '*', '/', '=', '(', ')', '{', '}', ':', ',', ';', '.', '[', ']'
     }
     
     # Operator type mappings
@@ -44,7 +44,9 @@ class Lexer:
         ':': 'COLON',
         ',': 'COMMA',
         ';': 'SEMICOLON',
-        '.': 'DOT'
+        '.': 'DOT',
+        '[': 'LBRACKET',
+        ']': 'RBRACKET'
     }
     
     # Multi-character operators

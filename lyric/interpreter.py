@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, PrintNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
@@ -15,7 +15,8 @@ class Interpreter:
     def __init__(self):
         self.global_scope = {
             'true': True,
-            'false': False
+            'false': False,
+            'None': None
         }
         # Register built-in functions
         register_builtins(self.global_scope)
@@ -154,6 +155,10 @@ class Interpreter:
             return self._evaluate_expression(node.value)
         return None
     
+    def _evaluate_list_literal(self, node: ListLiteralNode) -> List[Any]:
+        """Evaluate a list literal."""
+        return [self._evaluate_expression(elem) for elem in node.elements]
+    
     def _evaluate_function_definition(self, node: FunctionNode) -> None:
         """Evaluate a function definition."""
         self.functions[node.name] = {
@@ -164,6 +169,8 @@ class Interpreter:
     def _evaluate_class_definition(self, node: ClassNode) -> None:
         """Evaluate a class definition."""
         class_dict = {}
+        # Add a special marker to identify this as a class definition
+        class_dict['__class_name__'] = node.name
         for member in node.members_statements:
             if isinstance(member, AssignNode):
                 # Class member assignment
@@ -312,6 +319,8 @@ class Interpreter:
             class_def = self.classes[node.func_name]
             # Create instance as a copy of class definition
             instance = dict(class_def)
+            # Add instance class name marker
+            instance['__instance_class__'] = node.func_name
             return instance
         elif node.func_name in self.global_scope and callable(self.global_scope[node.func_name]):
             # Built-in function from global scope
@@ -336,6 +345,8 @@ class Interpreter:
             return self._evaluate_unary_operation(expr)
         elif isinstance(expr, CallNode):
             return self._evaluate_function_call(expr)
+        elif isinstance(expr, ListLiteralNode):
+            return self._evaluate_list_literal(expr)
         else:
             raise RuntimeErrorLyric(f"Unknown expression type: {type(expr)}")
     
