@@ -1,5 +1,9 @@
 # Claude Configuration — Lyric Project (dev-core)
 
+## 🚨 CRITICAL WORKFLOW RULE 🚨
+**NEVER COMMIT ANY CHANGES WITHOUT CREATING A CHANGELOG ENTRY FIRST!**
+This applies to ALL filesystem modifications - code, config, docs, renames, deletions, etc.
+
 ## User Control Configuration
 
 ### Git Commit Toggle
@@ -87,10 +91,20 @@ nova/sprints/sprintX/SPRINTX_DOD_SUMMARY.md
 
 ### 6. Git Add & Commit (Conditional)
 
-**MANDATORY REQUIREMENT**: Changelog entry MUST be created before any git commit operation.
+**🚨 CRITICAL REQUIREMENT 🚨**: 
+**NEVER COMMIT WITHOUT CREATING A CHANGELOG ENTRY FIRST!**
+
+**This applies to ALL commits, including:**
+- File modifications
+- File deletions  
+- File renames/moves
+- Directory changes
+- Configuration updates
+- Documentation changes
+- ANY filesystem modification
 
 **Final Step Process:**
-1. **REQUIRED**: Create changelog entry (Step 3)
+1. **REQUIRED**: Create changelog entry (Step 3) - **MUST BE DONE FIRST**
 2. **REQUIRED**: Create sprint task summary (Step 4) 
 3. **REQUIRED**: Create sprint DOD summary (Step 5) if sprint complete
 4. Stage all new files: `git add *`
