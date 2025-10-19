@@ -58,7 +58,9 @@ lyric/
 - `lyric --version` prints `Lyric 0.1`.
 - `lyric run examples/hello.ly` prints “execution not implemented”.
 - All modules import without Python errors:
-  ```bash
+
+
+```bash
   python -c "import lyric, lyric.cli, lyric.errors, lyric.lexer, lyric.parser, lyric.ast, lyric.interpreter, lyric.runtime"
 ```
 
