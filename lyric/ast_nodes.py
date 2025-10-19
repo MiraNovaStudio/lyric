@@ -202,6 +202,21 @@ class ClassNode:
 
 
 @dataclass
+class ReturnNode:
+    """Represents a return statement."""
+    value: Optional['ASTNode']
+    
+    def __repr__(self):
+        return f"ReturnNode(value={self.value})"
+    
+    def to_dict(self):
+        return {
+            'type': 'ReturnNode',
+            'value': self.value.to_dict() if self.value and hasattr(self.value, 'to_dict') else str(self.value)
+        }
+
+
+@dataclass
 class PrintNode:
     """Represents a print statement (convenience node)."""
     args: List['ASTNode']
@@ -219,5 +234,5 @@ class PrintNode:
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, PrintNode
 ]

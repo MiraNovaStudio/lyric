@@ -4,7 +4,7 @@ from typing import List, Optional
 from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, PrintNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -67,6 +67,10 @@ class Parser:
         # Skip NEWLINE tokens
         while self._match('NEWLINE'):
             pass
+        
+        # If we're at EOF after skipping newlines, return None
+        if self._is_at_end():
+            return None
         
         if self._check('DEF'):
             return self._parse_func_def()
@@ -274,18 +278,41 @@ class Parser:
     
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""
-        if self._check('IDENT') and self._peek_next().type == 'ASSIGN':
-            # Assignment: IDENT "=" expression
-            name_token = self._advance()
-            name = name_token.value
-            
-            self._advance()  # consume '='
-            expr = self._parse_expression()
-            
-            return AssignNode(name, expr)
-        else:
-            # Expression statement
-            return self._parse_expression()
+        if self._check('IDENT'):
+            # Check if it's an assignment
+            if self._peek_next().type == 'ASSIGN':
+                # Assignment: IDENT "=" expression
+                name_token = self._advance()
+                name = name_token.value
+                
+                self._advance()  # consume '='
+                expr = self._parse_expression()
+                
+                return AssignNode(name, expr)
+            elif self._peek_next().type == 'DOT' and self._peek_next_next().type == 'IDENT' and self._peek_next_next_next().type == 'ASSIGN':
+                # Assignment to member: obj.attr = expression
+                obj_name = self._advance().value
+                self._advance()  # consume '.'
+                member_name = self._advance().value
+                self._advance()  # consume '='
+                
+                full_name = f"{obj_name}.{member_name}"
+                expr = self._parse_expression()
+                
+                return AssignNode(full_name, expr)
+        
+        # Expression statement
+        return self._parse_expression()
+    
+    def _parse_return_stmt(self) -> ReturnNode:
+        """Parse return statement: return expression? """
+        self._consume('RETURN', "Expected 'return'")
+        
+        value = None
+        if not self._check('NEWLINE') and not self._check('EOF'):
+            value = self._parse_expression()
+        
+        return ReturnNode(value)
     
     def _parse_expression(self):
         """Parse an expression with proper precedence."""
@@ -389,7 +416,18 @@ class Parser:
             # Handle member access: obj.member
             if self._match('DOT'):
                 member_name = self._consume('IDENT', "Expected member name after '.'").value
-                return IdentifierNode(f"{name}.{member_name}")
+                full_name = f"{name}.{member_name}"
+                
+                # Check if it's a method call: obj.method()
+                if self._match('LPAREN'):
+                    args = []
+                    if not self._check('RPAREN'):
+                        args = self._parse_argument_list()
+                    
+                    self._consume('RPAREN', "Expected ')' after arguments")
+                    return CallNode(full_name, args)
+                
+                return IdentifierNode(full_name)
             
             return IdentifierNode(name)
         
@@ -420,6 +458,18 @@ class Parser:
         if self.current + 1 >= len(self.tokens):
             return self.tokens[-1]  # Return EOF token
         return self.tokens[self.current + 1]
+    
+    def _peek_next_next(self) -> Token:
+        """Look at the token after next without advancing."""
+        if self.current + 2 >= len(self.tokens):
+            return self.tokens[-1]  # Return EOF token
+        return self.tokens[self.current + 2]
+    
+    def _peek_next_next_next(self) -> Token:
+        """Look at the token after next next without advancing."""
+        if self.current + 3 >= len(self.tokens):
+            return self.tokens[-1]  # Return EOF token
+        return self.tokens[self.current + 3]
 
 
 def parse(source: str) -> ProgramNode:

@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, PrintNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
@@ -72,6 +72,38 @@ class Interpreter:
         else:
             raise RuntimeErrorLyric(f"Function '{func_name}' is not defined")
     
+    def _call_method(self, instance: dict, method: dict, args: List[Any]) -> Any:
+        """Call a method on an instance."""
+        params = method['params']
+        body = method['body']
+        
+        # Create local scope with 'self' pointing to the instance
+        local_scope = {'self': instance}
+        
+        # Add method parameters
+        for i, param in enumerate(params):
+            if i < len(args):
+                local_scope[param] = self._evaluate_expression(args[i])
+            else:
+                local_scope[param] = None
+        
+        # Save current scope
+        old_scope = self.global_scope.copy()
+        
+        # Set local scope
+        self.global_scope.update(local_scope)
+        
+        try:
+            # Execute method body
+            result = None
+            for statement in body:
+                result = self._evaluate_statement(statement)
+            return result
+        finally:
+            # Restore scope
+            self.global_scope = old_scope
+    
+    
     def _evaluate_statement(self, statement) -> Any:
         """Evaluate a single statement."""
         if isinstance(statement, AssignNode):
@@ -86,6 +118,8 @@ class Interpreter:
             return self._evaluate_loop_statement(statement)
         elif isinstance(statement, CallNode):
             return self._evaluate_function_call(statement)
+        elif isinstance(statement, ReturnNode):
+            return self._evaluate_return_statement(statement)
         else:
             # Expression statement
             return self._evaluate_expression(statement)
@@ -93,8 +127,32 @@ class Interpreter:
     def _evaluate_assignment(self, node: AssignNode) -> Any:
         """Evaluate an assignment statement."""
         value = self._evaluate_expression(node.expr)
-        self.global_scope[node.name] = value
+        
+        if '.' in node.name:
+            # Assignment to member: self.attribute = value
+            parts = node.name.split('.')
+            obj_name = parts[0]
+            member_name = parts[1]
+            
+            if obj_name in self.global_scope:
+                obj = self.global_scope[obj_name]
+                if isinstance(obj, dict):
+                    obj[member_name] = value
+                else:
+                    raise RuntimeErrorLyric(f"Cannot assign to member of non-object '{obj_name}'")
+            else:
+                raise RuntimeErrorLyric(f"Variable '{obj_name}' is not defined")
+        else:
+            # Regular assignment
+            self.global_scope[node.name] = value
+        
         return value
+    
+    def _evaluate_return_statement(self, node: ReturnNode) -> Any:
+        """Evaluate a return statement."""
+        if node.value:
+            return self._evaluate_expression(node.value)
+        return None
     
     def _evaluate_function_definition(self, node: FunctionNode) -> None:
         """Evaluate a function definition."""
@@ -209,7 +267,31 @@ class Interpreter:
     
     def _evaluate_function_call(self, node: CallNode) -> Any:
         """Evaluate a function call."""
-        if node.func_name == "print":
+        if '.' in node.func_name:
+            # Method call: obj.method()
+            parts = node.func_name.split('.')
+            obj_name = parts[0]
+            method_name = parts[1]
+            
+            if obj_name in self.global_scope:
+                obj = self.global_scope[obj_name]
+                if isinstance(obj, dict) and method_name in obj:
+                    method = obj[method_name]
+                    if isinstance(method, dict) and 'params' in method and 'body' in method:
+                        # It's a method definition
+                        return self._call_method(obj, method, node.args)
+                    else:
+                        # It's a regular attribute, call it if callable
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"'{method_name}' is not callable")
+                else:
+                    raise RuntimeErrorLyric(f"Method '{method_name}' not found in '{obj_name}'")
+            else:
+                raise RuntimeErrorLyric(f"Variable '{obj_name}' is not defined")
+        elif node.func_name == "print":
             # Built-in print function
             args = [self._evaluate_expression(arg) for arg in node.args]
             print(*args)
@@ -225,6 +307,12 @@ class Interpreter:
                 return list(range(args[0], args[1], args[2]))
             else:
                 raise RuntimeErrorLyric(f"range() takes 1-3 arguments, got {len(args)}")
+        elif node.func_name in self.classes:
+            # Class instantiation: ClassName()
+            class_def = self.classes[node.func_name]
+            # Create instance as a copy of class definition
+            instance = dict(class_def)
+            return instance
         elif node.func_name in self.global_scope and callable(self.global_scope[node.func_name]):
             # Built-in function from global scope
             args = [self._evaluate_expression(arg) for arg in node.args]

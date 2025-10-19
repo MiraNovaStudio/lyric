@@ -4,7 +4,7 @@ import pytest
 from lyric.parser import parse
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, PrintNode
 )
 from lyric.errors import ParseError
 
@@ -290,8 +290,11 @@ return x + y
     assert func.params == ["x", "y"]
     assert len(func.body_statements) == 1
     
-    # Note: "return" is not implemented yet, so this would be an expression statement
-    expr = func.body_statements[0]
+    # Now "return" is implemented, so this should be a return statement
+    return_stmt = func.body_statements[0]
+    assert isinstance(return_stmt, ReturnNode)
+    assert return_stmt.value is not None
+    expr = return_stmt.value
     assert isinstance(expr, BinaryOpNode)
     assert expr.op == "+"
     assert isinstance(expr.left, IdentifierNode)
