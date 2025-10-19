@@ -1,2 +1,15 @@
+# Byte-compiled / cache
 __pycache__/
-.pyc
+*.pyc
+*.pyo
+*.pyd
+
+# Build artifacts
+*.egg-info/
+build/
+dist/
+
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+
