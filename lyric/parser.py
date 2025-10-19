@@ -226,6 +226,8 @@ class Parser:
         """Parse loop block: given expression ":" statement* "done" """
         self._consume('GIVEN', "Expected 'given'")
         
+        iterator_var = None
+        
         # Handle "i in range(3)" pattern
         if self._check('IDENT') and self._peek_next().type == 'IN':
             # Iterator pattern: given i in range(3):
@@ -256,7 +258,7 @@ class Parser:
         
         self._consume('DONE', "Expected 'done' after loop body")
         
-        return LoopNode(condition_or_iter, loop_kind, body)
+        return LoopNode(condition_or_iter, loop_kind, body, iterator_var)
     
     def _parse_return_stmt(self):
         """Parse return statement: return expression? """

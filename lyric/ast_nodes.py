@@ -69,16 +69,18 @@ class LoopNode:
     condition_or_iter: 'ASTNode'
     loop_kind: str  # "iterator" or "while"
     body: List['ASTNode']
+    iterator_var: Optional[str] = None  # Variable name for iterator loops
     
     def __repr__(self):
-        return f"LoopNode(kind='{self.loop_kind}', condition={self.condition_or_iter}, body={len(self.body)})"
+        return f"LoopNode(kind='{self.loop_kind}', condition={self.condition_or_iter}, body={len(self.body)}, iterator_var={self.iterator_var})"
     
     def to_dict(self):
         return {
             'type': 'LoopNode',
             'loop_kind': self.loop_kind,
             'condition_or_iter': self.condition_or_iter.to_dict() if hasattr(self.condition_or_iter, 'to_dict') else str(self.condition_or_iter),
-            'body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.body]
+            'body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.body],
+            'iterator_var': self.iterator_var
         }
 
 

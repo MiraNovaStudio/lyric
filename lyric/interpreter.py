@@ -6,6 +6,7 @@ from lyric.ast_nodes import (
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, PrintNode
 )
 from lyric.errors import RuntimeErrorLyric
+from lyric.runtime import register_builtins
 
 
 class Interpreter:
@@ -16,6 +17,8 @@ class Interpreter:
             'true': True,
             'false': False
         }
+        # Register built-in functions
+        register_builtins(self.global_scope)
         self.functions = {}
         self.classes = {}
     
@@ -154,6 +157,9 @@ class Interpreter:
         """Evaluate an iterator loop."""
         # For now, handle range() calls
         if isinstance(node.condition_or_iter, CallNode) and node.condition_or_iter.func_name == "range":
+            # Get the iterator variable name from the loop node
+            iterator_var = node.iterator_var or 'i'
+            
             # Evaluate range arguments
             args = [self._evaluate_expression(arg) for arg in node.condition_or_iter.args]
             
@@ -161,6 +167,8 @@ class Interpreter:
                 # range(n) -> 0 to n-1
                 end = args[0]
                 for i in range(end):
+                    # Assign loop variable to scope
+                    self.global_scope[iterator_var] = i
                     # Execute loop body
                     for statement in node.body:
                         self._evaluate_statement(statement)
@@ -168,6 +176,8 @@ class Interpreter:
                 # range(start, end)
                 start, end = args
                 for i in range(start, end):
+                    # Assign loop variable to scope
+                    self.global_scope[iterator_var] = i
                     # Execute loop body
                     for statement in node.body:
                         self._evaluate_statement(statement)
@@ -175,6 +185,8 @@ class Interpreter:
                 # range(start, end, step)
                 start, end, step = args
                 for i in range(start, end, step):
+                    # Assign loop variable to scope
+                    self.global_scope[iterator_var] = i
                     # Execute loop body
                     for statement in node.body:
                         self._evaluate_statement(statement)
@@ -213,6 +225,10 @@ class Interpreter:
                 return list(range(args[0], args[1], args[2]))
             else:
                 raise RuntimeErrorLyric(f"range() takes 1-3 arguments, got {len(args)}")
+        elif node.func_name in self.global_scope and callable(self.global_scope[node.func_name]):
+            # Built-in function from global scope
+            args = [self._evaluate_expression(arg) for arg in node.args]
+            return self.global_scope[node.func_name](*args)
         elif node.func_name in self.functions:
             # User-defined function
             args = [self._evaluate_expression(arg) for arg in node.args]
