@@ -130,7 +130,7 @@ This sprint will expand the Lyric language interpreter to handle advanced contro
 - Run `flake8` on all modules and fix warnings.
 - Add docstrings to new interpreter and parser functions.
 - Update `README.md` to include class syntax example.
-- Update `CHANGELOG.md` with version 0.0.3 section when complete.
+- Update `CHANGELOG.md` with version 0.2.0 section when complete.
 
 ### Acceptance Criteria:
 - **A21)** No flake8 critical errors remain.
@@ -143,4 +143,4 @@ This sprint will expand the Lyric language interpreter to handle advanced contro
 - Lyric programs with nested control flow and simple class structures execute correctly.
 - Errors are reported cleanly with file name and line number.
 - All tests pass with pytest.
-- The code is tagged as `dev-0.0.3` and prepared for Sprint 3 (type system and extended runtime).
+- The code is tagged as `dev-0.2.0` and prepared for Sprint 3 (type system and extended runtime).  Michael will tag the codebase manually.

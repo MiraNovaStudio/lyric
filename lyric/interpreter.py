@@ -1,9 +1,9 @@
 """Interpreter module for executing Lyric AST nodes."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
@@ -440,4 +440,5 @@ class Interpreter:
 def evaluate(ast: ProgramNode) -> Any:
     """Evaluate an AST and return the result."""
     interpreter = Interpreter()
-    return interpreter.evaluate(ast)
+    return interpreter.evaluate(ast) 
+ 

@@ -1,10 +1,10 @@
 """Parser module for converting tokens to AST."""
 
-from typing import List, Optional
+from typing import List
 from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -29,7 +29,9 @@ class Parser:
     
     def _is_at_end(self) -> bool:
         """Check if we've reached the end of tokens."""
-        return self.current >= len(self.tokens) or (self.current < len(self.tokens) and self.tokens[self.current].type == 'EOF')
+        return (self.current >= len(self.tokens) or 
+                (self.current < len(self.tokens) and 
+                 self.tokens[self.current].type == 'EOF'))
     
     def _peek(self) -> Token:
         """Look at the current token without advancing."""
@@ -131,7 +133,9 @@ class Parser:
                     param_token = self._advance()
                     params.append(param_token.value)
                 else:
-                    raise ParseError(f"Expected parameter name after ',' at line {self._peek().line}, column {self._peek().col}")
+                    raise ParseError(
+                        f"Expected parameter name after ',' at line {self._peek().line}, "
+                        f"column {self._peek().col}")
         
         return params
     
@@ -264,18 +268,6 @@ class Parser:
         
         return LoopNode(condition_or_iter, loop_kind, body, iterator_var)
     
-    def _parse_return_stmt(self):
-        """Parse return statement: return expression? """
-        self._consume('RETURN', "Expected 'return'")
-        
-        # Return statement can have an optional expression
-        if not self._check('NEWLINE', 'EOF', 'RBRACE', 'END', 'DONE', 'CLASS_END'):
-            expr = self._parse_expression()
-            return expr
-        else:
-            # Return without expression (returns None)
-            return LiteralNode(None)
-    
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""
         if self._check('IDENT'):
@@ -289,7 +281,9 @@ class Parser:
                 expr = self._parse_expression()
                 
                 return AssignNode(name, expr)
-            elif self._peek_next().type == 'DOT' and self._peek_next_next().type == 'IDENT' and self._peek_next_next_next().type == 'ASSIGN':
+            elif (self._peek_next().type == 'DOT' and 
+                  self._peek_next_next().type == 'IDENT' and 
+                  self._peek_next_next_next().type == 'ASSIGN'):
                 # Assignment to member: obj.attr = expression
                 obj_name = self._advance().value
                 self._advance()  # consume '.'
@@ -446,7 +440,7 @@ class Parser:
             self._consume('RBRACKET', "Expected ']' after list elements")
             return ListLiteralNode(elements)
         
-        raise SyntaxErrorLyric(f"Expected expression", self._peek().line, self._peek().col)
+        raise SyntaxErrorLyric("Expected expression", self._peek().line, self._peek().col)
     
     def _parse_argument_list(self) -> List:
         """Parse argument list: expression ("," expression)*"""

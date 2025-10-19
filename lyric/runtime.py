@@ -1,7 +1,6 @@
 """Runtime module with built-in functions."""
 
-import sys
-from typing import Any, List, Union, Iterator
+from typing import Any, Iterator
 
 
 def print_builtin(*args: Any) -> None:
