@@ -37,8 +37,8 @@ class TestImports:
     
     def test_ast_module_import(self):
         """Test that AST module can be imported."""
-        import lyric.ast
-        assert lyric.ast is not None
+        import lyric.ast_nodes
+        assert lyric.ast_nodes is not None
     
     def test_interpreter_module_import(self):
         """Test that interpreter module can be imported."""
@@ -57,7 +57,7 @@ class TestImports:
         import lyric.errors
         import lyric.lexer
         import lyric.parser
-        import lyric.ast
+        import lyric.ast_nodes
         import lyric.interpreter
         import lyric.runtime
         
@@ -67,6 +67,6 @@ class TestImports:
         assert lyric.errors is not None
         assert lyric.lexer is not None
         assert lyric.parser is not None
-        assert lyric.ast is not None
+        assert lyric.ast_nodes is not None
         assert lyric.interpreter is not None
         assert lyric.runtime is not None
