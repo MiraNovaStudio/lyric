@@ -110,16 +110,18 @@ nova/sprints/sprintX/SPRINTX_DOD_SUMMARY.md
 - ANY filesystem modification
 
 **Final Step Process:**
-1. **REQUIRED**: Create changelog entry (Step 3) - **MUST BE DONE FIRST**
+1. **REQUIRED**: Create changelog entry (Step 3) with placeholder commit hash - **MUST BE DONE FIRST**
 2. **REQUIRED**: Create sprint task summary (Step 4) 
 3. **REQUIRED**: Create sprint DOD summary (Step 5) if sprint complete
-4. Stage all new files: `git add *`
+4. Stage all files: `git add *`
 5. Commit all changes: `git commit -a -m "SprintX TaskY: <brief description>"`
 
 ```bash
 git add *
 git commit -a -m "SprintX TaskY: <brief description>"
 ```
+
+**IMPORTANT**: This creates ONE commit per user prompt - all changes including changelog are committed together.
 
 **Commit Message Format**: 
 - **MUST** be one line only
