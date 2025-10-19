@@ -84,16 +84,22 @@ nova/sprints/sprintX/SPRINTX_DOD_SUMMARY.md
 
 ### 6. Git Add & Commit (Conditional)
 
+**MANDATORY REQUIREMENT**: Changelog entry MUST be created before any git commit operation.
+
 **Final Step Process:**
-1. Stage all new files: `git add *`
-2. Commit all changes (including staged files and modifications): `git commit -a -m "SprintX: <short message>"`
+1. **REQUIRED**: Create changelog entry (Step 3)
+2. **REQUIRED**: Create sprint task summary (Step 4) 
+3. **REQUIRED**: Create sprint DOD summary (Step 5) if sprint complete
+4. Stage all new files: `git add *`
+5. Commit all changes: `git commit -a -m "SprintX: <short message>"`
 
 ```bash
 git add *
 git commit -a -m "SprintX: <short message>"
 ```
 
-**Note**: This two-step process ensures that:
+**Note**: This process ensures that:
+- Changelog entries are ALWAYS created before commits
 - New files created (changelog entries, task summaries, DOD summaries) are staged with `git add *`
 - All modifications to existing files are included with `git commit -a`
 - Both new documentation and code changes are committed together

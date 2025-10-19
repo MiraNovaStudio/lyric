@@ -1,7 +1,4 @@
-
----
-
-## 🧱 Revised `SPRINT1_PLAN.md`
+# 🧱 Revised `SPRINT1_PLAN.md`
 > Adds environment setup tasks, ensures `lyric/` directory creation, and readies Claude to bootstrap the interpreter cleanly.
 
 ```markdown
@@ -68,7 +65,7 @@ lyric/
 
 ## Task 2 — Test Environment Setup
 
-Work
+### Work
 
 Add pytest as a development dependency.
 

@@ -42,7 +42,10 @@ class TestCLI:
                 with patch('sys.exit') as mock_exit:
                     with patch('builtins.print') as mock_print:
                         from lyric.cli import main
-                        main()
+                        try:
+                            main()
+                        except SystemExit:
+                            pass  # Expected due to sys.exit(1)
                         mock_print.assert_called_with("Error: File 'nonexistent.ly' not found")
                         mock_exit.assert_called_with(1)
     
@@ -53,6 +56,9 @@ class TestCLI:
                 with patch('sys.exit') as mock_exit:
                     with patch('builtins.print') as mock_print:
                         from lyric.cli import main
-                        main()
+                        try:
+                            main()
+                        except SystemExit:
+                            pass  # Expected due to sys.exit(1)
                         mock_print.assert_called_with("Error: File 'test.txt' is not a .ly file")
                         mock_exit.assert_called_with(1)
