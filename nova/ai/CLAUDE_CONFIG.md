@@ -84,10 +84,19 @@ nova/sprints/sprintX/SPRINTX_DOD_SUMMARY.md
 
 ### 6. Git Add & Commit (Conditional)
 
+**Final Step Process:**
+1. Stage all new files: `git add *`
+2. Commit all changes (including staged files and modifications): `git commit -a -m "SprintX: <short message>"`
+
 ```bash
 git add *
-git commit -m "SprintX: <short message>"
+git commit -a -m "SprintX: <short message>"
 ```
+
+**Note**: This two-step process ensures that:
+- New files created (changelog entries, task summaries, DOD summaries) are staged with `git add *`
+- All modifications to existing files are included with `git commit -a`
+- Both new documentation and code changes are committed together
 
 Keep commit messages short; details live in changelog entries.
 
