@@ -1,32 +1,17 @@
-# 1125-CHANGELOG.md
+# Project Reset — 20251019.1019
 
-## Sprint1 Task6: CLI Integration
+## Summary
+Reset the Lyric project to version 0.0.1 for a fresh start to test development processes. Updated project configuration and documentation to reflect the clean slate approach.
 
-### Summary
-Successfully integrated the interpreter with the CLI to enable execution of Lyric programs from files. The CLI now provides a complete execution pipeline with comprehensive error handling.
+## Files Changed
+- pyproject.toml — Reset version to 0.0.1, updated description and development status
+- README.md — Completely revised to reflect starting from scratch, removed all implemented features
 
-### Files Changed
-- `lyric/cli.py` - Complete CLI integration implementation
-- `tests/test_cli.py` - Comprehensive CLI test coverage
-- `nova/sprints/sprint1/SPRINT1_TASK6_SUMMARY.md` - Task summary documentation
+## Reason
+Preparing for a clean development iteration to test and refine our development processes. This reset allows us to build the language from the ground up with proper documentation, testing, and version control practices.
 
-### Reason
-Task 6 of Sprint 1 required integrating the parser and interpreter with the CLI to enable file-based execution of Lyric programs. This completes the core functionality of the Lyric interpreter.
+## Git Commit Hash
+`a4bac04` - Reset: Initialize project for fresh start - v0.0.1
 
-### Key Features Implemented
-- **File Execution Pipeline**: parse → evaluate
-- **Error Handling**: Lexical, parse, runtime, and file operation errors
-- **File Validation**: Existence and extension checking
-- **UTF-8 Support**: Proper file reading with encoding
-- **Comprehensive Testing**: 7 out of 8 tests passing
-
-### Test Results
-- **Total Tests**: 55
-- **Passing**: 54 (98.2%)
-- **CLI Functionality**: ✅ Working correctly
-
-### Git Commit
-Commit: `2777442` - "Sprint1 Task6: Implement CLI Integration"
-
-### Status
-✅ **COMPLETED** - CLI integration fully functional
+## Status
+✅ Completed
