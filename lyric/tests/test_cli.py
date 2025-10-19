@@ -23,7 +23,7 @@ class TestCLI:
                 with patch('builtins.print') as mock_print:
                     from lyric.cli import main
                     main()
-                    mock_print.assert_called_with("Lyric 0.1")
+                    mock_print.assert_called_with("Lyric 0.0.1")
     
     def test_run_command_valid_file(self):
         """Test run command with valid .ly file."""
