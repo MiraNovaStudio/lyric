@@ -13,7 +13,7 @@ Updated Lyric program version from 0.1.0 to 0.0.1 across all version references.
 User requested to update the version to 0.0.1 to reflect the current development stage of the Lyric interpreter.
 
 ## Git Commit Hash
-`TBD` - Version Update
+`18d93a2` - Version Update
 
 ## Status
 ✅ Completed
