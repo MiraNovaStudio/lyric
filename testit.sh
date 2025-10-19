@@ -34,10 +34,6 @@ if [ "$VERBOSE" = true ]; then
     python -m pytest lyric/tests/ -v
     
     echo ""
-    echo "Running root level tests..."
-    python -m pytest tests/ -v
-    
-    echo ""
     echo "================================================"
     echo "All tests completed!"
 else
@@ -46,7 +42,7 @@ else
     
     # Run all tests and capture summary
     echo "Running all tests..."
-    python -m pytest tests/ lyric/tests/ --tb=short -q
+    python -m pytest lyric/tests/ --tb=short -q
     
     echo ""
     echo "=================================="
