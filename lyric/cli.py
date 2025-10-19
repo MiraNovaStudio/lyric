@@ -16,7 +16,7 @@ def main():
     command = sys.argv[1]
     
     if command == "--version":
-        print("Lyric 0.0.1")
+        print("Lyric 0.2.0")
     elif command == "run":
         if len(sys.argv) < 3:
             print("Usage: lyric run <file.ly>")

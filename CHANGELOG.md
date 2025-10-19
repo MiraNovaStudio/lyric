@@ -1,4 +1,4 @@
-# Lyric Language — Version 0.0.3
+# Lyric Language — Version 0.2.0
 
 **Release Date:** December 2024
 
@@ -38,7 +38,7 @@ This version completes Sprint 2 (Control Flow, Error Handling, and Class Support
 
 - This version represents a major milestone with full object-oriented programming support
 - All Sprint 2 features are fully implemented and tested
-- Ready for version tag v0.0.3 and transition to Sprint 3
+- Ready for version tag v0.2.0 and transition to Sprint 3
 - 132 tests passing with 100% success rate
 - CLI integration tests ensure user-facing functionality works correctly
 
@@ -274,7 +274,7 @@ This version completes Sprint 2 (Control Flow, Error Handling, and Class Support
 
 - This version represents a major milestone with full object-oriented programming support
 - All Sprint 2 features are fully implemented and tested
-- Ready for version tag v0.0.3 and transition to Sprint 3
+- Ready for version tag v0.2.0 and transition to Sprint 3
 - 88 tests passing with 100% success rate
 - CLI integration tests ensure user-facing functionality works correctly
 

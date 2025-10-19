@@ -129,14 +129,14 @@
 ## Version Information
 
 ### Current Version
-- **Version:** 0.0.3
-- **Tag:** Ready for `dev-0.0.3` tag
+- **Version:** 0.2.0
+- **Tag:** Ready for `dev-0.2.0` tag
 - **Status:** Production ready
 
 ### Version History
 - **0.0.1:** Initial project scaffolding
 - **0.0.2:** Sprint 1 completion (core foundations)
-- **0.0.3:** Sprint 2 completion (control flow, error handling, classes)
+- **0.2.0:** Sprint 2 completion (control flow, error handling, classes)
 
 ## Sprint 2 Achievements
 
@@ -183,11 +183,11 @@ Sprint 2 is complete and ready for transition to Sprint 3. The codebase is:
 - ✅ Well-tested with comprehensive coverage
 - ✅ Well-documented with updated README and CHANGELOG
 - ✅ Code quality compliant with no critical issues
-- ✅ Ready for version tag v0.0.3
+- ✅ Ready for version tag v0.2.0
 
 ## Next Steps
 
-1. **Tag Release:** Create `dev-0.0.3` tag
+1. **Tag Release:** Create `dev-0.2.0` tag
 2. **Sprint 3 Planning:** Begin Sprint 3 (Type System and Extended Runtime)
 3. **Documentation:** Update project documentation for Sprint 3
 4. **Testing:** Continue comprehensive testing practices
