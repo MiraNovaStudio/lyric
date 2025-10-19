@@ -2,7 +2,7 @@
 
 import sys
 import os
-from lyric.errors import LexError, ParseError, RuntimeErrorLyric
+from lyric.errors import LexError, ParseError, RuntimeErrorLyric, SyntaxErrorLyric, NameErrorLyric
 from lyric.parser import parse
 from lyric.interpreter import evaluate
 
@@ -45,14 +45,19 @@ def main():
             # Execute the program
             evaluate(ast)
             
-        except LexError as e:
-            print(f"Lexical error: {e}")
+        except (LexError, ParseError, SyntaxErrorLyric) as e:
+            # Syntax/lexical errors
+            if hasattr(e, 'line') and e.line > 0:
+                print(f"Error [line {e.line}]: {e.args[0] if e.args else str(e)}")
+            else:
+                print(f"Error: {e}")
             sys.exit(1)
-        except ParseError as e:
-            print(f"Parse error: {e}")
-            sys.exit(1)
-        except RuntimeErrorLyric as e:
-            print(f"Runtime error: {e}")
+        except (RuntimeErrorLyric, NameErrorLyric) as e:
+            # Runtime errors
+            if hasattr(e, 'line') and e.line > 0:
+                print(f"Error [line {e.line}]: {e.args[0] if e.args else str(e)}")
+            else:
+                print(f"Runtime error: {e}")
             sys.exit(1)
         except Exception as e:
             print(f"Unexpected error: {e}")

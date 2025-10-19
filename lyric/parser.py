@@ -6,7 +6,7 @@ from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, PrintNode
 )
-from lyric.errors import ParseError
+from lyric.errors import ParseError, SyntaxErrorLyric
 
 
 class Parser:
@@ -398,7 +398,7 @@ class Parser:
             self._consume('RPAREN', "Expected ')' after expression")
             return expr
         
-        raise ParseError(f"Expected expression at line {self._peek().line}, column {self._peek().col}")
+        raise SyntaxErrorLyric(f"Expected expression", self._peek().line, self._peek().col)
     
     def _parse_argument_list(self) -> List:
         """Parse argument list: expression ("," expression)*"""
