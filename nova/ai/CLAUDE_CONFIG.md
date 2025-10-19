@@ -111,11 +111,15 @@ nova/sprints/sprintX/SPRINTX_DOD_SUMMARY.md
 
 **Final Step Process:**
 1. **REQUIRED**: Create changelog entry (Step 3) with placeholder commit hash - **MUST BE DONE FIRST**
-2. **REQUIRED**: Create sprint task summary (Step 4) 
-3. **REQUIRED**: Create sprint DOD summary (Step 5) if sprint complete
+2. **REQUIRED**: Create sprint task summary (Step 4) - **MUST BE DONE BEFORE COMMIT**
+3. **REQUIRED**: Create sprint DOD summary (Step 5) if sprint complete - **MUST BE DONE BEFORE COMMIT**
 4. Stage all files: `git add *`
 5. Commit all changes: `git commit -a -m "SprintX TaskY: <brief description>"`
 6. **STOP HERE** - Do NOT create a second commit to update changelog with commit hash
+
+**🚨 CRITICAL ORDER RULE 🚨**:
+**ALL DOCUMENTATION MUST BE CREATED BEFORE ANY COMMIT!**
+**CHANGELOG → TASK SUMMARY → DOD SUMMARY → COMMIT**
 
 ```bash
 git add *
