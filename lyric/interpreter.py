@@ -440,5 +440,4 @@ class Interpreter:
 def evaluate(ast: ProgramNode) -> Any:
     """Evaluate an AST and return the result."""
     interpreter = Interpreter()
-    return interpreter.evaluate(ast) 
- 
+    return interpreter.evaluate(ast)
