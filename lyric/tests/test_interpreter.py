@@ -440,3 +440,225 @@ def test_evaluate_loop_example():
         assert output == "0\n1\n2"
     finally:
         sys.stdout = old_stdout
+
+
+def test_evaluate_class_instantiation():
+    """Test class instantiation and method calls."""
+    source = """class Person:
+    name = "Guest"
+    age = 25
+    
+    def greet() {
+        print("Hello, I'm", self.name)
+    }
+    
+    def set_name(new_name) {
+        self.name = new_name
+    }
++++
+
+def main() {
+    person = Person()
+    person.greet()
+    person.set_name("Alice")
+    person.greet()
+}"""
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None
+
+
+def test_evaluate_nested_control_flow():
+    """Test nested if statements and loops."""
+    source = """def main() {
+    x = 5
+    if x > 0:
+        print("x is positive")
+        if x > 3:
+            print("x is greater than 3")
+        else:
+            print("x is 3 or less")
+        end
+    else:
+        print("x is not positive")
+    end
+    
+    given i in range(2):
+        print("Outer:", i)
+        given j in range(2):
+            print("  Inner:", j)
+        done
+    done
+}"""
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None
+
+
+def test_evaluate_error_reporting():
+    """Test error reporting for undefined variables."""
+    source = """def main() {
+    print(undefined_variable)
+}"""
+    
+    ast = parse(source)
+    
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        evaluate(ast)
+    
+    assert "Variable 'undefined_variable' is not defined" in str(exc_info.value)
+
+
+def test_evaluate_isinstance_function():
+    """Test isinstance function with classes and built-in types."""
+    source = """class Person:
+    name = "Guest"
++++
+
+def main() {
+    person = Person()
+    print("isinstance(person, Person):", isinstance(person, Person))
+    print("isinstance(5, int):", isinstance(5, int))
+    print("isinstance(5, str):", isinstance(5, str))
+}"""
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None
+
+
+def test_evaluate_type_function():
+    """Test type function with classes and built-in types."""
+    source = """class Person:
+    name = "Guest"
++++
+
+def main() {
+    person = Person()
+    print("type(person):", type(person))
+    print("type(5):", type(5))
+    print("type(3.14):", type(3.14))
+    print("type(hello):", type("hello"))
+}"""
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None
+
+
+def test_evaluate_list_literals():
+    """Test list literal creation and manipulation."""
+    source = """def main() {
+    numbers = [1, 2, 3]
+    print("numbers:", numbers)
+    
+    mixed = [1, "hello", 3.14]
+    print("mixed:", mixed)
+    
+    empty = []
+    print("empty:", empty)
+}"""
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None
+
+
+def test_evaluate_none_literal():
+    """Test None literal handling."""
+    source = """def main() {
+    x = None
+    print("x is:", x)
+    print("None value:", None)
+}"""
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None
+
+
+def test_evaluate_range_enhancements():
+    """Test enhanced range function with start/stop parameters."""
+    source = """def main() {
+    print("range(2, 5):", range(2, 5))
+    print("range(0, 3):", range(0, 3))
+    print("range(1, 1):", range(1, 1))
+    print("range(1, 5, 2):", range(1, 5, 2))
+}"""
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None
+
+
+def test_evaluate_complex_class_interaction():
+    """Test complex class interactions with multiple classes."""
+    source = """class Person:
+    name = "Guest"
+    
+    def greet() {
+        print("Hello, I'm", self.name)
+    }
+    
+    def set_name(new_name) {
+        self.name = new_name
+    }
++++
+
+class Student:
+    name = "Student"
+    grade = "A"
+    
+    def introduce() {
+        print("Hi, I'm", self.name, "with grade", self.grade)
+    }
++++
+
+def main() {
+    person = Person()
+    student = Student()
+    
+    person.greet()
+    student.introduce()
+    
+    person.set_name("Alice")
+    student.name = "Bob"
+    
+    person.greet()
+    student.introduce()
+}"""
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None
+
+
+def test_evaluate_method_call_errors():
+    """Test error handling for method calls on non-objects."""
+    source = """def main() {
+    x = 5
+    x.non_existent_method()
+}"""
+    
+    ast = parse(source)
+    
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        evaluate(ast)
+    
+    assert "Method 'non_existent_method' not found" in str(exc_info.value)
+
+
+def test_evaluate_class_instantiation_errors():
+    """Test error handling for undefined class instantiation."""
+    source = """def main() {
+    obj = NonExistentClass()
+}"""
+    
+    ast = parse(source)
+    
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        evaluate(ast)
+    
+    assert "Function 'NonExistentClass' is not defined" in str(exc_info.value)
