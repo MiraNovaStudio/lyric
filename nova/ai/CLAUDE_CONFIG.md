@@ -41,9 +41,12 @@ Claude will:
 ### 3. Write Summary (Conditional)
 If **Git Commit Toggle = YES**, Claude writes a changelog entry:
 
+**MANDATORY REQUIREMENT**: Always get the current date and time before creating changelog files.
 
+**Changelog Path Format:**
 nova/changelog/YYYYMMDD/TIME_HHMM-CHANGELOG.md
 
+**Time Format**: Use 24-hour format (e.g., 1430 for 2:30 PM, 0915 for 9:15 AM)
 
 **Include**
 - Commit hash
