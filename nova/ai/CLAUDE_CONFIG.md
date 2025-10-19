@@ -115,13 +115,17 @@ nova/sprints/sprintX/SPRINTX_DOD_SUMMARY.md
 3. **REQUIRED**: Create sprint DOD summary (Step 5) if sprint complete
 4. Stage all files: `git add *`
 5. Commit all changes: `git commit -a -m "SprintX TaskY: <brief description>"`
+6. **STOP HERE** - Do NOT create a second commit to update changelog with commit hash
 
 ```bash
 git add *
 git commit -a -m "SprintX TaskY: <brief description>"
 ```
 
-**IMPORTANT**: This creates ONE commit per user prompt - all changes including changelog are committed together.
+**🚨 CRITICAL RULE 🚨**: 
+**ONLY ONE COMMIT PER USER PROMPT - NO EXCEPTIONS!**
+**DO NOT UPDATE CHANGELOG WITH COMMIT HASH IN A SECOND COMMIT!**
+**LEAVE CHANGELOG WITH PLACEHOLDER HASH - IT WILL BE UPDATED LATER!**
 
 **Commit Message Format**: 
 - **MUST** be one line only
@@ -153,7 +157,9 @@ Short explanation of what was implemented or fixed.
 Establishes foundational lexer and test coverage for Lyric v0.1
 
 ## Git Commit Hash
-`abc1234` - Sprint1 Task2 Implementation
+`TBD` - SprintX TaskY Implementation
+
+**NOTE**: Use `TBD` as placeholder - commit hash will be updated later
 
 ## Status
 ✅ Completed
