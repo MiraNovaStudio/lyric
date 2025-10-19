@@ -95,24 +95,24 @@ Provide `repr` or `to_dict` methods for debugging.
 ### Acceptance Criteria:
 - **A6)** Nodes can be instantiated and pretty-printed in a simple test in `tests/test_parser.py` setup code
 
-TASK 4 — PARSER (RECURSIVE DESCENT)
-Work:
+## Task 4 — Parser (Recursive Descent)
 
-Implement a Parser class in parser.py that consumes tokens and produces ProgramNode.
+### Work:
+Implement a `Parser` class in `parser.py` that consumes tokens and produces `ProgramNode`.
 
-Grammar to support in this sprint:
+### Grammar to support in this sprint:
+```
 program := statement*
 statement :=
-func_def
-| class_def
-| if_block
-| loop_block
-| assignment_or_expr_stmt
+  func_def
+  | class_def
+  | if_block
+  | loop_block
+  | assignment_or_expr_stmt
 
 func_def: "def" IDENT "(" param_list? ")" "{" statement* "}"
 
 class_def: "class" IDENT ":" statement* CLASS_END
-
 Members may be AssignNode or func_def only (no nested classes in v0.1).
 
 if_block:
@@ -130,101 +130,87 @@ Calls: IDENT "(" arg_list? ")"
 
 Expressions:
 Standard precedence: unary (!, -), multiplicative (*,/), additive (+,-), comparisons (==, !=, <, <=, >, >=), logical (and, or) if used.
+```
 
-Provide parse(source: str) -> ProgramNode function.
+Provide `parse(source: str) -> ProgramNode` function.
 
-Tests (tests/test_parser.py):
-
+### Tests (`tests/test_parser.py`):
 Parse the following source and assert AST shapes:
-def main() { print("Hello, Lyric!") }
+- `def main() { print("Hello, Lyric!") }`
+- If/else example from spec
+- `given i in range(3): print(i) done`
+- `class Player: name = "Guest" def greet() { print("Hello,", self.name) } +++`
 
-If/else example from spec.
+### Acceptance Criteria:
+- **A7)** Parser builds the expected ASTs for the test samples without raising errors
+- **A8)** Else-if sequences using "else if" are parsed into IfNode with elifs list populated
 
-given i in range(3): print(i) done
+## Task 5 — Interpreter Core
 
-class Player: name = "Guest" def greet() { print("Hello,", self.name) } +++
+### Work:
+Implement an `Interpreter` class in `interpreter.py` with:
+- Global environment (dict) and a call stack of local environments
+- A function registry for user-defined functions
+- Evaluation methods for expressions and statement execution
 
-Acceptance Criteria:
-A7) Parser builds the expected ASTs for the test samples without raising errors.
-A8) Else-if sequences using "else if" are parsed into IfNode with elifs list populated.
+### Implement:
+- Execution of `ProgramNode`
+- Function definition and invocation (`def … { … }`)
+- Variable assignment and lookup (locals shadow globals)
+- If/else end
+- given done:
+  - a) Iterator form: `"i in range(N)"` iterates
+  - b) While form: any boolean expression (non-zero/non-empty truthiness)
+- `print()` as a built-in call routed via runtime
+- After loading a `ProgramNode`, automatically call `main()` if defined when invoked via CLI
 
-TASK 5 — INTERPRETER CORE
-Work:
+### Acceptance Criteria:
+- **A9)** Running `tests/examples/hello.ly` produces "Hello, Lyric!" exactly
+- **A10)** If/else demo prints "positive" when x=5
+- **A11)** Loop demo prints 0, 1, 2 on separate lines
 
-Implement an Interpreter class in interpreter.py with:
+## Task 6 — Runtime and Built-ins
 
-Global environment (dict) and a call stack of local environments.
+### Work:
+In `runtime.py` implement built-ins:
+- `print(*args)` // writes to stdout with single space joining
+- `input(prompt?)` // reads from stdin (can be stubbed or injectable for tests)
+- `int`, `float`, `str`
+- `range(N)` // yields 0..N-1
+- `len`
+- `open(path)` // return an iterable over lines (text mode) for simple demos
 
-A function registry for user-defined functions.
+Provide a function `register_builtins(env: dict)` to populate the global environment.
 
-Evaluation methods for expressions and statement execution.
+### Acceptance Criteria:
+- **A12)** print, int, float, str, range, len are callable from Lyric programs
+- **A13)** File I/O example using `"given line in open("numbers.txt")"` can iterate lines in a test (you can simulate a small temp file in the test)
 
-Implement:
+## Task 7 — CLI Integration
 
-Execution of ProgramNode
+### Work:
+Implement `lyric/cli.py` main() to:
+- Parse argv
+- Handle `"--version"`
+- Handle `"run <file.ly>"`: read file, tokenize, parse, interpret, auto-call main()
+- Add helpful error messages with file name and line number on `LexError`, `ParseError`, `RuntimeErrorLyric`
 
-Function definition and invocation (def … { … })
+### Acceptance Criteria:
+- **A14)** `"lyric run tests/examples/hello.ly"` runs end-to-end without Python tracebacks (unless a bug is present), printing user-friendly messages on errors
+- **A15)** `"--version"` prints "Lyric 0.1"
 
-Variable assignment and lookup (locals shadow globals)
+## Task 8 — Tests and Examples
 
-If/else end
-
-given done:
-a) Iterator form: "i in range(N)" iterates
-b) While form: any boolean expression (non-zero/non-empty truthiness)
-
-print() as a built-in call routed via runtime
-
-After loading a ProgramNode, automatically call main() if defined when invoked via CLI.
-
-Acceptance Criteria:
-A9) Running tests/examples/hello.ly produces "Hello, Lyric!" exactly.
-A10) If/else demo prints "positive" when x=5.
-A11) Loop demo prints 0, 1, 2 on separate lines.
-
-TASK 6 — RUNTIME AND BUILT-INS
-Work:
-
-In runtime.py implement built-ins:
-print(*args) // writes to stdout with single space joining
-input(prompt?) // reads from stdin (can be stubbed or injectable for tests)
-int, float, str
-range(N) // yields 0..N-1
-len
-open(path) // return an iterable over lines (text mode) for simple demos
-
-Provide a function register_builtins(env: dict) to populate the global environment.
-
-Acceptance Criteria:
-A12) print, int, float, str, range, len are callable from Lyric programs.
-A13) File I/O example using "given line in open("numbers.txt")" can iterate lines in a test (you can simulate a small temp file in the test).
-
-TASK 7 — CLI INTEGRATION
-Work:
-
-Implement lyric/cli.py main() to:
-
-Parse argv
-
-Handle "--version"
-
-Handle "run <file.ly>": read file, tokenize, parse, interpret, auto-call main()
-
-Add helpful error messages with file name and line number on LexError, ParseError, RuntimeErrorLyric.
-
-Acceptance Criteria:
-A14) "lyric run tests/examples/hello.ly" runs end-to-end without Python tracebacks (unless a bug is present), printing user-friendly messages on errors.
-A15) "--version" prints "Lyric 0.1".
-
-TASK 8 — TESTS AND EXAMPLES
-Work:
-
-Populate tests/examples/hello.ly:
+### Work:
+Populate `tests/examples/hello.ly`:
+```lyric
 def main() {
 print("Hello, Lyric!")
 }
+```
 
-Populate tests/examples/if_demo.ly:
+Populate `tests/examples/if_demo.ly`:
+```lyric
 def main() {
 x = 5
 if x > 0:
@@ -233,34 +219,30 @@ else:
 print("non-positive")
 end
 }
+```
 
-Populate tests/examples/loop.ly:
+Populate `tests/examples/loop.ly`:
+```lyric
 def main() {
 given i in range(3):
 print(i)
 done
 }
+```
 
 Implement pytest tests:
+- `tests/test_lexer.py`: at least 3 cases including class terminator `+++`
+- `tests/test_parser.py`: build ASTs for the three examples and one class sample
+- `tests/test_interpreter.py`: run the three examples; capture stdout and assert exact output
 
-tests/test_lexer.py: at least 3 cases including class terminator +++.
+### Acceptance Criteria:
+- **A16)** All tests pass: `pytest -q` returns success
+- **A17)** No flake8 or ruff critical errors (basic style clean)
 
-tests/test_parser.py: build ASTs for the three examples and one class sample.
+## Definition of Done (Sprint)
 
-tests/test_interpreter.py: run the three examples; capture stdout and assert exact output.
-
-Acceptance Criteria:
-A16) All tests pass: pytest -q returns success.
-A17) No flake8 or ruff critical errors (basic style clean).
-
-DEFINITION OF DONE (SPRINT)
-
-CLI "lyric run <file.ly>" executes a Lyric program that uses def, if/else end, given done, and print().
-
-Lexer, Parser, Interpreter, Runtime, and CLI implemented and covered by baseline tests.
-
-Examples run and produce expected output.
-
-Clear error messages with file and line number for lexing/parsing/runtime errors.
-
-Code scaffold ready for Sprint 2 (adding richer errors, class member execution rules, and the +++ class structure semantics beyond parsing).
+- CLI `"lyric run <file.ly>"` executes a Lyric program that uses `def`, `if/else end`, `given done`, and `print()`
+- Lexer, Parser, Interpreter, Runtime, and CLI implemented and covered by baseline tests
+- Examples run and produce expected output
+- Clear error messages with file and line number for lexing/parsing/runtime errors
+- Code scaffold ready for Sprint 2 (adding richer errors, class member execution rules, and the `+++` class structure semantics beyond parsing)
