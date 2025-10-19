@@ -4,6 +4,12 @@
 **NEVER COMMIT ANY CHANGES WITHOUT CREATING A CHANGELOG ENTRY FIRST!**
 This applies to ALL filesystem modifications - code, config, docs, renames, deletions, etc.
 
+## 🖥️ SHELL ENVIRONMENT REMINDER 🖥️
+**YOU ARE RUNNING POWERSHELL, NOT BASH!**
+- Use PowerShell commands: `Get-Date -Format "yyyyMMdd/HHmm"` NOT `date +"%Y%m%d/%H%M"`
+- Use PowerShell syntax for all terminal operations
+- Remember: Windows PowerShell environment in Cursor
+
 ## User Control Configuration
 
 ### Git Commit Toggle
