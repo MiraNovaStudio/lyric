@@ -91,18 +91,25 @@ nova/sprints/sprintX/SPRINTX_DOD_SUMMARY.md
 2. **REQUIRED**: Create sprint task summary (Step 4) 
 3. **REQUIRED**: Create sprint DOD summary (Step 5) if sprint complete
 4. Stage all new files: `git add *`
-5. Commit all changes: `git commit -a -m "SprintX: <short message>"`
+5. Commit all changes: `git commit -a -m "SprintX TaskY: <brief description>"`
 
 ```bash
 git add *
-git commit -a -m "SprintX: <short message>"
+git commit -a -m "SprintX TaskY: <brief description>"
 ```
+
+**Commit Message Format**: 
+- **MUST** be one line only
+- **MUST** include sprint number and task number
+- **MUST** be concise (e.g., "Sprint1 Task2: Implement Lexer", "Sprint1 Task4: Implement Parser")
+- **MUST NOT** include detailed descriptions (those go in changelog entries)
 
 **Note**: This process ensures that:
 - Changelog entries are ALWAYS created before commits
 - New files created (changelog entries, task summaries, DOD summaries) are staged with `git add *`
 - All modifications to existing files are included with `git commit -a`
 - Both new documentation and code changes are committed together
+- Commit messages are concise and follow the SprintX TaskY format
 
 Keep commit messages short; details live in changelog entries.
 
