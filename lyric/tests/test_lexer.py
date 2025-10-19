@@ -27,7 +27,7 @@ end"""
     assert tokens[0].value == 'if'
     assert tokens[1].value == 'x'
     assert tokens[2].value == '>'
-    assert tokens[3].value == '0'
+    assert tokens[3].value == 0
     assert tokens[6].value == 'print'
     assert tokens[8].value == 'positive'
 
@@ -94,8 +94,8 @@ def test_numbers_integers_and_floats():
     int_token = next(token for token in tokens if token.type == 'INT')
     float_token = next(token for token in tokens if token.type == 'FLOAT')
     
-    assert int_token.value == '42'
-    assert float_token.value == '3.14'
+    assert int_token.value == 42
+    assert float_token.value == 3.14
 
 
 def test_string_literals():

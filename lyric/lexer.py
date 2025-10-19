@@ -20,12 +20,12 @@ class Lexer:
     # Keywords
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'given', 'done', 'end', 
-        'try', 'except', 'finally'
+        'try', 'except', 'finally', 'and', 'or', 'not', 'in', 'return'
     }
     
     # Single character operators and delimiters
     SINGLE_CHARS = {
-        '+', '-', '*', '/', '=', '(', ')', '{', '}', ':', ',', ';'
+        '+', '-', '*', '/', '=', '(', ')', '{', '}', ':', ',', ';', '.'
     }
     
     # Operator type mappings
@@ -43,7 +43,8 @@ class Lexer:
         '}': 'RBRACE',
         ':': 'COLON',
         ',': 'COMMA',
-        ';': 'SEMICOLON'
+        ';': 'SEMICOLON',
+        '.': 'DOT'
     }
     
     # Multi-character operators
@@ -189,9 +190,9 @@ class Lexer:
             value += self._advance()  # consume the '.'
             while self._peek().isdigit():
                 value += self._advance()
-            self.tokens.append(Token('FLOAT', value, start_line, start_col))
+            self.tokens.append(Token('FLOAT', float(value), start_line, start_col))
         else:
-            self.tokens.append(Token('INT', value, start_line, start_col))
+            self.tokens.append(Token('INT', int(value), start_line, start_col))
     
     def _scan_identifier(self, first_char: str):
         """Scan an identifier or keyword."""
