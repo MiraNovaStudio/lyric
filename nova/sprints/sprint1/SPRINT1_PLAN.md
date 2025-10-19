@@ -1,7 +1,6 @@
 # 🧱 Revised `SPRINT1_PLAN.md`
 > Adds environment setup tasks, ensures `lyric/` directory creation, and readies Claude to bootstrap the interpreter cleanly.
 
-```markdown
 # Sprint 1 — Lyric Core Foundations (dev-core)
 
 ## Objective
