@@ -1,41 +1,36 @@
 # Lyric Language
 
-Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. It is implemented in Python and currently supports basic constructs such as def, if, else, end, given, done, and the class terminator +++.
+Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. This project is being developed from scratch to test our development processes and create a clean, educational programming language implementation.
 
-## How to Run
+**Status**: Starting Fresh - Version 0.0.1 (Pre-Alpha)
 
-Lyric programs use the `.ly` file extension and are executed through the command line interface.
+## Project Goals
 
-To execute a Lyric program, open a terminal and run the command:
-```
+This iteration of Lyric is being built from the ground up to:
+- Test and refine our development processes
+- Create a clean, minimal language implementation
+- Establish proper testing and documentation practices
+- Build a solid foundation for future language features
+
+## Current State
+
+The project is currently in its initial phase with:
+- Basic project structure established
+- Development environment configured
+- Sprint-based development process ready to begin
+
+## How to Run (Future)
+
+Once implemented, Lyric programs will use the `.ly` file extension and be executed through the command line interface:
+
+```bash
 lyric run path_to_file.ly
 ```
 
 For example:
+```bash
+lyric run examples/hello.ly
 ```
-lyric run tests/examples/hello.ly
-```
-
-This command runs the program's main function automatically if it exists. You can also check the current interpreter version with:
-```
-lyric --version
-```
-
-### Example Programs
-
-The project includes several example programs that demonstrate core language features:
-
-- **hello.ly** - Basic function definition and print statement
-- **if_demo.ly** - Conditional logic with if/else statements  
-- **loop.ly** - Iterator loops using the given/done construct
-- **class_test.ly** - Class definition and instantiation
-- **nested_flow.ly** - Nested control flow structures
-- **boolean_test.ly** - Boolean and comparison operations
-- **runtime_test.ly** - Runtime enhancements (isinstance, type, enhanced print)
-- **type_tests.ly** - Type system demonstrations (declarations, inference, enforcement)
-- **list_dict_tests.ly** - Data structure operations (lists, dictionaries, indexing)
-- **exception_tests.ly** - Exception and error handling demonstrations
-- **class_init_tests.ly** - Class initialization and method testing
 
 ## How to Develop
 
@@ -51,14 +46,10 @@ Development requires Python 3.8 or newer.
 
 2. **Install dependencies**
    ```bash
-   pip install -r requirements.txt
-   ```
-   or
-   ```bash
-   pip install pytest flake8
+   pip install pytest flake8 setuptools
    ```
 
-3. **Run tests**
+3. **Run tests** (once implemented)
    ```bash
    pytest tests/
    ```
@@ -68,13 +59,13 @@ Development requires Python 3.8 or newer.
    flake8 lyric/ tests/
    ```
 
-### Development Commands
+### Development Commands (Future)
 
-- `pytest` runs the comprehensive test suite (188 tests covering all components)
+- `pytest` will run the comprehensive test suite
 - `flake8` enforces coding style and identifies potential issues
-- `python -m lyric.cli run tests/examples/hello.ly` runs the interpreter directly if the project hasn't been installed as a package
+- `python -m lyric.cli run examples/hello.ly` will run the interpreter directly
 
-## Project Layout
+## Planned Project Layout
 
 ```
 lyric/
@@ -83,30 +74,16 @@ lyric/
 │   ├── parser.py            # Builds the abstract syntax tree
 │   ├── ast.py               # Defines node types for syntax trees
 │   ├── interpreter.py       # Executes parsed programs
-│   ├── runtime.py           # Provides built-in functions like print, input, and range
+│   ├── runtime.py           # Provides built-in functions
 │   ├── errors.py            # Defines exceptions for lexing, parsing, and runtime
 │   └── cli.py               # Command line interface for running Lyric programs
 ├── tests/                   # Contains automated test files and example programs
 │   ├── examples/            # Sample Lyric programs
-│   │   ├── hello.ly         # Basic hello world program
-│   │   ├── if_demo.ly       # Conditional logic demonstration
-│   │   ├── loop.ly          # Iterator loop demonstration
-│   │   ├── class_test.ly    # Class definition and instantiation
-│   │   ├── nested_flow.ly   # Nested control flow structures
-│   │   ├── boolean_test.ly  # Boolean and comparison operations
-│   │   ├── runtime_test.ly  # Runtime enhancements demonstration
-│   │   ├── type_tests.ly    # Type system demonstrations
-│   │   ├── list_dict_tests.ly # Data structure operations
-│   │   ├── exception_tests.ly # Exception and error handling
-│   │   └── class_init_tests.ly # Class initialization testing
-│   ├── test_lexer.py        # Lexer test suite (22 tests)
-│   ├── test_parser.py       # Parser test suite (28 tests)
-│   ├── test_interpreter.py  # Interpreter test suite (26 tests)
-│   └── test_cli_integration.py # CLI integration test suite (12 tests)
+│   ├── test_lexer.py        # Lexer test suite
+│   ├── test_parser.py       # Parser test suite
+│   ├── test_interpreter.py  # Interpreter test suite
+│   └── test_cli_integration.py # CLI integration test suite
 ├── examples/                # Additional example programs
-│   ├── hello.ly
-│   ├── if_demo.ly
-│   └── loop.ly
 ├── README.md                # Project overview and setup instructions
 ├── CHANGELOG.md             # Version history and release notes
 └── pyproject.toml           # Build configuration and CLI entry point
@@ -125,166 +102,50 @@ All dependencies can be installed with pip:
 pip install pytest flake8 setuptools
 ```
 
-## Language Features
+## Planned Language Features
 
-### Core Constructs
+### Core Constructs (To Be Implemented)
 
 - **Functions**: `def name(params) { body }` with optional return statements
 - **Conditionals**: `if condition: ... else: ... end`
 - **Loops**: `given variable in iterable: ... done` or `given condition: ... done`
 - **Classes**: `class Name: ... +++` (full implementation with instantiation, methods, and init())
-- **Variables**: Dynamic typing `var name = value` or static type declarations `type name = value` (all variables must be declared before use)
-- **Multi-Variable Declarations**: Declare multiple variables in one line `var x, int y, str z`
+- **Variables**: Dynamic typing `var name = value` or static type declarations `type name = value`
 - **Data Structures**: `[item1, item2, ...]` for lists, `{"key": value, ...}` for dictionaries
 - **Exception Handling**: `try: ... except: ... finally: ... end`
 - **Comments**: `# comment text` (full-line and inline comments)
 
-### Built-in Functions
+### Planned Built-in Functions
 
-- `print(*args)` — Multi-argument printing with space separation and None handling
+- `print(*args)` — Multi-argument printing
 - `input(prompt?)` — Read from stdin with optional prompt
 - `int(value)`, `float(value)`, `str(value)` — Type conversions
 - `range(start?, stop, step?)` — Integer sequence generation
 - `len(sequence)` — Length calculation for strings, lists, and dictionaries
-- `keys(dict)` — Returns list of dictionary keys
-- `values(dict)` — Returns list of dictionary values
-- `append(list, item)` — Adds item to end of list
-- `open(path)` — File iteration over lines
-- `isinstance(obj, type_name)` — Type checking for objects and class instances
-- `type(obj)` — Type introspection returning string type names
+- And more as the language develops...
 
-### Example Syntax
+## Development Process
 
-```lyric
-# Type declarations and inference
-int age = 25
-float pi = 3.14159
-str name = "Alice"
-god is_active = true
-None null_value = None
+This project follows a structured sprint-based development approach:
 
-# Type inference
-auto_int = 42          # Automatically inferred as int
-auto_float = 2.718     # Automatically inferred as float
-auto_string = "hello"  # Automatically inferred as str
-
-# Lists and dictionaries
-numbers = [1, 2, 3, 4, 5]
-fruits = ["apple", "banana", "orange"]
-person = {"name": "Bob", "age": 30, "city": "New York"}
-scores = {"math": 95, "science": 87}
-
-# Class definition with init() method
-class Player:
-    name = "Guest"
-    score = 0
-    
-    def init(self, player_name) {
-        self.name = player_name
-        self.score = 0
-        print("Player", self.name, "initialized!")
-    }
-    
-    def greet() {
-        print("Hello,", self.name)
-    }
-    
-    def add_score(points) {
-        self.score = self.score + points
-    }
-+++
-
-def main() {
-    print("Hello, Lyric!")
-    
-    # Type system demonstration
-    print("Age:", age, "Type:", type(age))
-    print("PI:", pi, "Type:", type(pi))
-    print("Name:", name, "Type:", type(name))
-    
-    # Regular expressions with rex type
-    rex email_pattern = /^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$/
-    rex word_pattern = /^[a-zA-Z]+$/
-    
-    var test_email = "user@example.com"
-    var test_word = "hello"
-    
-    print("Email valid:", email_pattern.match(test_email))
-    print("Word valid:", word_pattern.match(test_word))
-    print("Pattern type:", type(email_pattern))
-    
-    # String replacement with regex
-    rex space_pattern = /\s+/
-    var spaced_text = "hello    world    test"
-    var clean_text = space_pattern.replace(spaced_text, " ")
-    print("Cleaned text:", clean_text)
-    
-    # List and dictionary operations
-    print("First number:", numbers[0])
-    print("Person's name:", person["name"])
-    print("List length:", len(numbers))
-    print("Dictionary keys:", keys(person))
-    
-    # Conditional logic
-    if 5 > 3:
-        print("Math works!")
-    else:
-        print("Something's wrong")
-    end
-    
-    # Iterator loops
-    given i in range(3):
-        print("Count:", i)
-    done
-    
-    # Class instantiation with init()
-    player = Player("Alice")
-    player.greet()
-    player.add_score(100)
-    
-    # Type checking and introspection
-    print("Player type:", type(player))
-    print("Is Player:", isinstance(player, "Player"))
-    
-    # Try/except/finally error handling
-    try:
-        result = 10 / 0  # This will cause an error
-        print("Result:", result)
-    except:
-        print("Caught division by zero error!")
-    finally:
-        print("Cleanup code always runs")
-    end
-    
-    # Enhanced print with None handling
-    print("Value:", None)
-}
-```
-
-### CLI Usage Examples
-```bash
-# Run Lyric programs using either command form:
-python -m lyric.cli run hello.ly
-python -m lyric.cli hello.ly
-
-# After pip install -e ., use the global command:
-lyric run hello.ly
-lyric hello.ly
-
-# Help and version information:
-lyric --help
-lyric --version
-lyric --debug hello.ly
-```
+1. **Sprint Planning**: Each sprint has defined tasks and goals
+2. **Implementation**: Code is developed incrementally with tests
+3. **Documentation**: Changes are documented in changelog entries
+4. **Version Control**: Structured commits with clear messages
+5. **Testing**: Comprehensive test coverage for all components
 
 ## License and Credits
 
 The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
 
-The project is currently **pre-release** and version **0.1.6** completes Sprint 4 (Variable Handling & Declaration Syntax) with all 5 tasks implemented. This milestone includes dynamic typing with the `var` keyword, strict variable declaration enforcement, multi-variable declarations, comprehensive documentation with formal grammar, extensive validation, complete type declarations and inference, built-in data structures (lists and dictionaries), enhanced error handling with try/except/finally, runtime safety improvements, and comprehensive test coverage with 226+ passing tests. Sprint 3 and Sprint 4 are complete.
-
 ## Contributing
 
-This project is part of an ongoing development sprint. Future versions will include additional language features, enhanced type system, and extended runtime capabilities.
+This project is currently in active development following a structured sprint methodology. The development process emphasizes:
 
-For development questions or contributions, please refer to the project's development workflow outlined above.
+- Clean, readable code
+- Comprehensive testing
+- Clear documentation
+- Incremental feature development
+- Proper version control practices
+
+For development questions or contributions, please refer to the project's development workflow and sprint documentation.
