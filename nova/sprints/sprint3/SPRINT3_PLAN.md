@@ -1,189 +1,173 @@
-SPRINT 3 — TYPE SYSTEM, VALUE VALIDATION, AND ADVANCED RUNTIME
-PROJECT: LYRIC PROGRAMMING LANGUAGE
-VERSION TARGET: 0.1.3 (5/8 Tasks Complete)
-OWNER: AEONATH
-ARCHITECT: CHATGPT
-ENGINEER: CLAUDE
-DURATION: 1 WEEK
+# Sprint 3 — Type System, Value Validation, and Advanced Runtime
 
-OBJECTIVE
-This sprint will focus on expanding Lyric's type system, improving value validation, and extending the runtime with enhanced data types and error safety. It will also include new tests, documentation updates, and refinements to class behavior introduced in Sprint 2. 
+**Project:** Lyric Programming Language  
+**Version Target:** 0.3.0  
+**Owner:** Michael (Aeonath)  
+**Architect:** ChatGPT  
+**Engineer:** Claude  
+**Duration:** 1 Day  
 
-**CURRENT STATUS:** 5/8 tasks complete (Version 0.1.3)
-**REMAINING:** 3 tasks to complete Sprint 3 for final version
+## Objective
+
+This sprint will focus on expanding Lyric's type system, improving value validation, and extending the runtime with enhanced data types and error safety. It will also include new tests, documentation updates, and refinements to class behavior introduced in Sprint 2.
 
 The result should be a more stable and feature-complete interpreter capable of handling typed variables, stronger runtime enforcement, and cleaner error reporting.
 
-TASK 1 — TYPE DECLARATION AND INFERENCE
-Goal: Implement basic type tracking for variables and function returns.
+## Task 1 — Type Declaration and Inference
 
-Work:
+**Goal:** Implement basic type tracking for variables and function returns.
 
-Allow optional type declaration syntax in assignments and function parameters.
-Examples:
-x:int = 5
-def add(a:int, b:int) { return a + b }
+### Work:
 
-Store type metadata in the interpreter’s environment.
+- Allow optional type declaration syntax in assignments and function parameters.
+- Examples:
+  ```lyric
+  x:int = 5
+  def add(a:int, b:int) { return a + b }
+  ```
+- Store type metadata in the interpreter's environment.
+- Implement runtime enforcement for type mismatches when enabled.
+- Add simple type inference for obvious numeric and string assignments.
 
-Implement runtime enforcement for type mismatches when enabled.
+### Acceptance Criteria:
 
-Add simple type inference for obvious numeric and string assignments.
+- **A1)** The interpreter correctly records and enforces type declarations.
+- **A2)** Assigning a string to a variable declared as int raises a runtime error.
+- **A3)** Functions with typed parameters enforce types when called.
+- **A4)** Type inference assigns correct default types for literals.
 
-Acceptance Criteria:
-A1) The interpreter correctly records and enforces type declarations.
-A2) Assigning a string to a variable declared as int raises a runtime error.
-A3) Functions with typed parameters enforce types when called.
-A4) Type inference assigns correct default types for literals.
+## Task 2 — Return Statements and Function Values
 
-TASK 2 — RETURN STATEMENTS AND FUNCTION VALUES
-Goal: Enable functions to return values and use them in expressions.
+**Goal:** Enable functions to return values and use them in expressions.
 
-Work:
+### Work:
 
-Add parser support for the return keyword.
+- Add parser support for the return keyword.
+- Interpreter must propagate return values to calling context.
+- Allow expressions like `x = add(2,3)` and `print(add(2,3))`.
 
-Interpreter must propagate return values to calling context.
+### Acceptance Criteria:
 
-Allow expressions like x = add(2,3) and print(add(2,3)).
+- **A5)** Functions can return values and assign them to variables.
+- **A6)** `print(add(2,3))` outputs the correct numeric result.
+- **A7)** Missing return defaults to None.
 
-Acceptance Criteria:
-A5) Functions can return values and assign them to variables.
-A6) print(add(2,3)) outputs the correct numeric result.
-A7) Missing return defaults to None.
+## Task 3 — Built-in Data Structures
 
-TASK 3 — BUILT-IN DATA STRUCTURES
-Goal: Introduce lists and dictionaries as first-class types.
+**Goal:** Introduce lists and dictionaries as first-class types.
 
-Work:
+### Work:
 
-Extend lexer and parser to recognize list and dictionary literals.
-Example:
-list_example = [1, 2, 3]
-dict_example = {"key": "value"}
+- Extend lexer and parser to recognize list and dictionary literals.
+- Example:
+  ```lyric
+  list_example = [1, 2, 3]
+  dict_example = {"key": "value"}
+  ```
+- Interpreter supports indexing, appending, and key lookup.
+- Add built-in functions `len()`, `append()`, `keys()`, and `values()`.
 
-Interpreter supports indexing, appending, and key lookup.
+### Acceptance Criteria:
 
-Add built-in functions len(), append(), keys(), and values().
+- **A8)** Lists and dictionaries can be created, accessed, and modified.
+- **A9)** `append()` adds an item to a list.
+- **A10)** `len()`, `keys()`, and `values()` return correct results.
 
-Acceptance Criteria:
-A8) Lists and dictionaries can be created, accessed, and modified.
-A9) append() adds an item to a list.
-A10) len(), keys(), and values() return correct results.
+## Task 4 — Class Enhancements and Self Behavior
 
-TASK 4 — CLASS ENHANCEMENTS AND SELF BEHAVIOR
-Goal: Expand class system to support constructors and instance attribute initialization.
+**Goal:** Expand class system to support constructors and instance attribute initialization.
 
-Work:
+### Work:
 
-Support an optional init() method inside classes that runs on instance creation.
+- Support an optional `init()` method inside classes that runs on instance creation.
+- Enable `self` access within methods to refer to instance variables.
+- Allow calling methods through `instance.method()` syntax.
+- Allow property assignment like `self.health = 100`.
 
-Enable self access within methods to refer to instance variables.
+### Acceptance Criteria:
 
-Allow calling methods through instance.method() syntax.
+- **A11)** Classes with `init()` initialize instance variables correctly.
+- **A12)** Method calls using `instance.method()` work and print correct values.
+- **A13)** Assigning and reading instance variables works correctly.
 
-Allow property assignment like self.health = 100.
+## Task 5 — Exception Handling
 
-Acceptance Criteria:
-A11) Classes with init() initialize instance variables correctly.
-A12) Method calls using instance.method() work and print correct values.
-A13) Assigning and reading instance variables works correctly.
+**Goal:** Add try, except, and finally support to the parser and interpreter.
 
-TASK 5 — EXCEPTION HANDLING
-Goal: Add try, except, and finally support to the parser and interpreter.
+### Work:
 
-Work:
+- Extend parser to handle try/except/finally blocks.
+- Interpreter catches runtime errors and executes except or finally blocks accordingly.
+- Errors raised manually with `raise` keyword are caught by except.
 
-Extend parser to handle try/except/finally blocks.
+### Acceptance Criteria:
 
-Interpreter catches runtime errors and executes except or finally blocks accordingly.
+- **A14)** try/except/finally blocks function correctly.
+- **A15)** Raising a runtime error triggers the correct handler.
+- **A16)** finally always executes regardless of exceptions.
 
-Errors raised manually with raise keyword are caught by except.
+## Task 6 — Runtime Safety and Error Messages
 
-Acceptance Criteria:
-A14) try/except/finally blocks function correctly.
-A15) Raising a runtime error triggers the correct handler.
-A16) finally always executes regardless of exceptions.
+**Goal:** Improve runtime error clarity and introduce value type checking for function parameters.
 
-TASK 6 — RUNTIME SAFETY AND ERROR MESSAGES
-Goal: Improve runtime error clarity and introduce value type checking for function parameters.
+### Work:
 
-Work:
+- Implement runtime type verification before function execution.
+- Enhance all error messages to include filename, line number, and offending statement.
+- Ensure consistent error categories for runtime, type, and attribute errors.
 
-Implement runtime type verification before function execution.
+### Acceptance Criteria:
 
-Enhance all error messages to include filename, line number, and offending statement.
+- **A17)** Errors show precise file and line references.
+- **A18)** Calling a function with incorrect argument types raises a descriptive error.
+- **A19)** No Python stack traces appear in user-facing output.
 
-Ensure consistent error categories for runtime, type, and attribute errors.
+## Task 7 — Test Suite Expansion
 
-Acceptance Criteria:
-A17) Errors show precise file and line references.
-A18) Calling a function with incorrect argument types raises a descriptive error.
-A19) No Python stack traces appear in user-facing output.
+**Goal:** Extend test coverage for all new Sprint 3 features.
 
-TASK 7 — TEST SUITE EXPANSION
-Goal: Extend test coverage for all new Sprint 3 features.
+### Work:
 
-Work:
+- Add new test files:
+  - `type_tests.ly`
+  - `list_dict_tests.ly`
+  - `exception_tests.ly`
+  - `class_init_tests.ly`
+- Add corresponding pytest files to verify runtime and error outputs.
+- Confirm all tests pass cleanly before tagging.
 
-Add new test files:
-type_tests.ly
-list_dict_tests.ly
-exception_tests.ly
-class_init_tests.ly
+### Acceptance Criteria:
 
-Add corresponding pytest files to verify runtime and error outputs.
+- **A20)** All new test files run successfully through the CLI.
+- **A21)** pytest returns all tests passed.
+- **A22)** All previously implemented features remain functional.
 
-Confirm all tests pass cleanly before tagging.
+## Task 8 — Documentation and Version Update
 
-Acceptance Criteria:
-A20) All new test files run successfully through the CLI.
-A21) pytest returns all tests passed.
-A22) All previously implemented features remain functional.
+**Goal:** Update project documentation to reflect the new version and features.
 
-TASK 8 — DOCUMENTATION AND VERSION UPDATE
-Goal: Update project documentation to reflect the new version and features.
+### Work:
 
-Work:
+- Update changelog with a new entry for version 0.3.0, summarizing all Sprint 3 changes.
+- Verify README.md includes examples of:
+  - Typed variables
+  - Lists and dictionaries
+  - Class with `init()`
+  - try/except/finally usage
+- Increment version numbers in pyproject.toml and cli.py to the final Sprint 3 version.
 
-Update CHANGELOG.md with a new entry for version 0.0.4, summarizing all Sprint 3 changes.
+### Acceptance Criteria:
 
-Verify README.md includes examples of:
+- **A23)** Changelog includes a section for the final Sprint 3 version with completed Sprint 3 notes.
+- **A24)** README.md contains up-to-date examples and matches actual syntax.
+- **A25)** Version output from `lyric --version` shows the final Sprint 3 version.
 
-Typed variables
+## Definition of Done for Sprint 3
 
-Lists and dictionaries
-
-Class with init()
-
-try/except/finally usage
-
-Increment version numbers in pyproject.toml and cli.py to the final Sprint 3 version.
-
-Acceptance Criteria:
-A23) CHANGELOG.md includes a section for the final Sprint 3 version with completed Sprint 3 notes.
-A24) README.md contains up-to-date examples and matches actual syntax.
-A25) Version output from lyric --version shows the final Sprint 3 version.
-
-DEFINITION OF DONE FOR SPRINT 3
-**CURRENT STATUS: 5/8 Tasks Complete (Version 0.1.3)**
-
-**Completed Tasks (1-5):**
-- ✅ TASK 1 — TYPE DECLARATION AND INFERENCE
-- ✅ TASK 2 — RETURN STATEMENTS AND FUNCTION VALUES  
-- ✅ TASK 3 — BUILT-IN DATA STRUCTURES
-- ✅ TASK 4 — ENHANCED ERROR HANDLING AND DEBUGGING
-- ✅ TASK 5 — RUNTIME OPTIMIZATION AND PERFORMANCE
-
-**Remaining Tasks (6-8):**
-- 🚧 TASK 6 — RUNTIME SAFETY AND ERROR MESSAGES
-- 🚧 TASK 7 — TEST SUITE EXPANSION
-- 🚧 TASK 8 — DOCUMENTATION AND VERSION UPDATE
-
-**FINAL GOAL:**
-All tasks from 1 through 8 are implemented and verified.
-The Lyric interpreter supports typed variables, return statements, built-in data structures, constructors, and exception handling.
-All tests and examples execute successfully through the CLI.
-CHANGELOG.md and README.md are updated to reflect final Sprint 3 version.
-Version numbers in the codebase are incremented to final Sprint 3 version.
-The code is committed and tagged as the final Sprint 3 version in the GitHub repository.
+### Final Goal:
+- All tasks from 1 through 8 are implemented and verified.
+- The Lyric interpreter supports typed variables, return statements, built-in data structures, constructors, and exception handling.
+- All tests and examples execute successfully through the CLI.
+- Changelog and README.md are updated to reflect final Sprint 3 version.
+- Version numbers in the codebase are incremented to final Sprint 3 version.
+- The code is committed and tagged as the final Sprint 3 version in the GitHub repository.
