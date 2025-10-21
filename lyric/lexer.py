@@ -20,8 +20,8 @@ class Lexer:
     # Keywords
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'given', 'done', 'end', 
-        'try', 'except', 'finally', 'and', 'or', 'not', 'in', 'return',
-        'int', 'str', 'flt', 'var', 'True', 'False'
+        'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'return',
+        'int', 'str', 'flt', 'var', 'True', 'False', 'raise'
     }
     
     # Single character operators and delimiters

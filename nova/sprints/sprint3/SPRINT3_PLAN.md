@@ -101,17 +101,43 @@ The result should be a more stable and feature-complete interpreter capable of h
 
 ## Task 5 — Exception Handling
 
-**Goal:** Add try, except, and finally support to the parser and interpreter.
+**Goal:** Add try, catch, finally, and fade support to the parser and interpreter.
 
 ### Work:
 
-- Extend parser to handle try/except/finally blocks.
-- Interpreter catches runtime errors and executes except or finally blocks accordingly.
-- Errors raised manually with `raise` keyword are caught by except.
+- Extend parser to handle try/catch/finally/fade blocks.
+- **Lexer Changes**: Add `catch` and `fade` keywords, remove `except` keyword
+- **AST Nodes**: Create `TryNode`, `CatchNode`, `FinallyNode`, `RaiseNode`
+- **Syntax**: `try: ... catch: ... finally: ... fade` (no nested try/catch for this sprint)
+- **Scope**: Each block (try, catch, finally) has isolated scope - no variable sharing
+- **Exception Names**: Use Python-style names with Lyric postfix (e.g., `raise IndexErrorLyric`, `raise TypeErrorLyric`)
+- **Raise Syntax**: Simple `raise ExceptionNameLyric` with no message support initially
+- **Finally Behavior**: `finally` always executes after `catch` block; try without catch = syntax error
+- Map to Python's built-in exceptions for error handling
+- Support generic error handling (no specific error types initially)
+- Integrate with existing Lyric error types (RuntimeErrorLyric, SyntaxErrorLyric, ParseError, etc.)
+- example
+```
+def main() {
+    var items = [1, 2, 3]
+
+    try:
+        var x = items[5]         # will raise IndexErrorLyric
+        print("This won't run.")
+    catch:
+        print("An error occurred.")
+    finally:
+        print("Cleanup runs no matter what.")
+    fade
+}
+```
+- Interpreter catches runtime errors and executes catch or finally blocks accordingly.
+- Errors raised manually with `raise` keyword are caught by catch (generic errors only).
+- Existing Lyric error types (RuntimeErrorLyric, SyntaxErrorLyric, ParseError) should be catchable by try/catch blocks.
 
 ### Acceptance Criteria:
 
-- **A14)** try/except/finally blocks function correctly.
+- **A14)** try/catch/finally blocks function correctly.
 - **A15)** Raising a runtime error triggers the correct handler.
 - **A16)** finally always executes regardless of exceptions.
 
