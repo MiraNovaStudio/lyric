@@ -204,17 +204,17 @@ print(result)
 def test_evaluate_complex_nested_structure():
     """Test evaluating a complex nested structure."""
     source = '''def main() {
-x = 10
-if x > 5:
-y = x * 2
-if y > 15:
-print("nested if")
-else:
-print("nested else")
-end
-else:
-print("outer else")
-end
+    x = 10
+    if x > 5:
+        y = x * 2
+        if y > 15:
+            print("nested if")
+        else:
+            print("nested else")
+        end
+    else:
+        print("outer else")
+    end
 }'''
     
     ast = parse(source)
@@ -227,7 +227,7 @@ end
     
     try:
         result = evaluate(ast)
-        assert result is None
+        assert result is None  # main function has no explicit return
         
         # Check that "nested if" was printed (since x=10, y=20, y>15)
         output = captured_output.getvalue().strip()

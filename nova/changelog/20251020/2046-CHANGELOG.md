@@ -14,7 +14,7 @@ Implemented basic type tracking for variables and function returns with C-style 
 Establishes foundational type system for Lyric v0.3.0 with strict typing (int, str, flt) and dynamic typing (var) support.
 
 ## Git Commit Hash
-`TBD` - Sprint3 Task1 Implementation
+`eed9fe5` - Sprint3 Task1 Implementation
 
 ## Status
 ✅ Completed

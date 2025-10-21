@@ -24,16 +24,24 @@ class FunctionNode:
     """Represents a function definition."""
     name: str
     params: List[str]
-    body_statements: List['ASTNode']
+    param_types: Optional[List[str]] = None  # Optional list of parameter types
+    body_statements: List['ASTNode'] = None
+    
+    def __post_init__(self):
+        if self.body_statements is None:
+            self.body_statements = []
+        if self.param_types is None:
+            self.param_types = []
     
     def __repr__(self):
-        return f"FunctionNode(name='{self.name}', params={self.params}, body={len(self.body_statements)})"
+        return f"FunctionNode(name='{self.name}', params={self.params}, param_types={self.param_types}, body={len(self.body_statements)})"
     
     def to_dict(self):
         return {
             'type': 'FunctionNode',
             'name': self.name,
             'params': self.params,
+            'param_types': self.param_types,
             'body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.body_statements]
         }
 

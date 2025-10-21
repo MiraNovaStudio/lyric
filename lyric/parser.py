@@ -99,8 +99,9 @@ class Parser:
         self._consume('LPAREN', "Expected '(' after function name")
         
         params = []
+        param_types = []
         if not self._check('RPAREN'):
-            params = self._parse_param_list()
+            params, param_types = self._parse_param_list()
         
         self._consume('RPAREN', "Expected ')' after parameters")
         self._consume('LBRACE', "Expected '{' after function signature")
@@ -120,26 +121,58 @@ class Parser:
         
         self._consume('RBRACE', "Expected '}' after function body")
         
-        return FunctionNode(name, params, body_statements)
+        return FunctionNode(name, params, param_types, body_statements)
     
-    def _parse_param_list(self) -> List[str]:
-        """Parse parameter list: IDENT ("," IDENT)*"""
+    def _parse_param_list(self) -> tuple[List[str], List[str]]:
+        """Parse parameter list: (TYPE IDENT | IDENT) ("," (TYPE IDENT | IDENT))*"""
         params = []
+        param_types = []
         
-        if self._check('IDENT'):
-            param_token = self._advance()
-            params.append(param_token.value)
+        # Parse first parameter
+        if self._check('TYPE_OR_IDENT', 'IDENT'):
+            if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT':
+                # Typed parameter: TYPE IDENT
+                type_token = self._advance()
+                param_token = self._advance()
+                param_types.append(type_token.value.lower())
+                params.append(param_token.value)
+            elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'RPAREN':
+                # Error: TYPE without parameter name
+                type_token = self._advance()
+                raise ParseError(
+                    f"Expected parameter name after type '{type_token.value}' at line {type_token.line}, "
+                    f"column {type_token.col}")
+            else:
+                # Untyped parameter: IDENT
+                param_token = self._advance()
+                param_types.append('var')  # Default to var type
+                params.append(param_token.value)
             
+            # Parse remaining parameters
             while self._match('COMMA'):
-                if self._check('IDENT'):
+                if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT':
+                    # Typed parameter: TYPE IDENT
+                    type_token = self._advance()
                     param_token = self._advance()
+                    param_types.append(type_token.value.lower())
+                    params.append(param_token.value)
+                elif self._check('TYPE_OR_IDENT') and self._peek_next().type in ('RPAREN', 'COMMA'):
+                    # Error: TYPE without parameter name
+                    type_token = self._advance()
+                    raise ParseError(
+                        f"Expected parameter name after type '{type_token.value}' at line {type_token.line}, "
+                        f"column {type_token.col}")
+                elif self._check('IDENT'):
+                    # Untyped parameter: IDENT
+                    param_token = self._advance()
+                    param_types.append('var')  # Default to var type
                     params.append(param_token.value)
                 else:
                     raise ParseError(
                         f"Expected parameter name after ',' at line {self._peek().line}, "
                         f"column {self._peek().col}")
         
-        return params
+        return params, param_types
     
     def _parse_class_def(self) -> ClassNode:
         """Parse class definition: class IDENT ":" statement* CLASS_END"""

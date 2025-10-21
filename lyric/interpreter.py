@@ -9,6 +9,12 @@ from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
 
 
+class ReturnValue:
+    """Wrapper for return values to distinguish them from normal expression values."""
+    def __init__(self, value):
+        self.value = value
+
+
 class Interpreter:
     """Interpreter for executing Lyric AST nodes."""
     
@@ -32,9 +38,9 @@ class Interpreter:
             for statement in ast.statements:
                 self._evaluate_statement(statement)
             
-            # If there's a main function, call it
+            # If there's a main function, call it and return its result
             if "main" in self.functions:
-                self._call_function("main", [])
+                return self._call_function("main", [])
             
             return None
         except Exception as e:
@@ -47,15 +53,29 @@ class Interpreter:
         if func_name in self.functions:
             func_def = self.functions[func_name]
             params = func_def['params']
+            param_types = func_def.get('param_types', [])
             body = func_def['body']
             
             # Create local scope
             local_scope = {}
             for i, param in enumerate(params):
                 if i < len(args):
-                    local_scope[param] = args[i]
+                    arg_value = args[i]
                 else:
-                    local_scope[param] = None
+                    arg_value = None
+                
+                # Type enforcement for parameters
+                if i < len(param_types) and param_types[i] != 'var':
+                    if arg_value is None:
+                        raise RuntimeErrorLyric(
+                            f"Type error: parameter '{param}' expects {param_types[i]}, got None"
+                        )
+                    elif not self._is_type_compatible(param_types[i], arg_value):
+                        raise RuntimeErrorLyric(
+                            f"Type error: parameter '{param}' expects {param_types[i]}, got {type(arg_value).__name__}"
+                        )
+                
+                local_scope[param] = arg_value
             
             # Save current scope
             old_scope = self.global_scope.copy()
@@ -68,7 +88,10 @@ class Interpreter:
                 result = None
                 for statement in body:
                     result = self._evaluate_statement(statement)
-                return result
+                    if isinstance(result, ReturnValue):
+                        return result.value
+                # If no explicit return, return the last statement result
+                return result if not isinstance(result, ReturnValue) else result.value
             finally:
                 # Restore scope
                 self.global_scope = old_scope
@@ -78,6 +101,7 @@ class Interpreter:
     def _call_method(self, instance: dict, method: dict, args: List[Any]) -> Any:
         """Call a method on an instance."""
         params = method['params']
+        param_types = method.get('param_types', [])
         body = method['body']
         
         # Create local scope with 'self' pointing to the instance
@@ -86,9 +110,22 @@ class Interpreter:
         # Add method parameters
         for i, param in enumerate(params):
             if i < len(args):
-                local_scope[param] = self._evaluate_expression(args[i])
+                arg_value = self._evaluate_expression(args[i])
             else:
-                local_scope[param] = None
+                arg_value = None
+            
+            # Type enforcement for parameters
+            if i < len(param_types) and param_types[i] != 'var':
+                if arg_value is None:
+                    raise RuntimeErrorLyric(
+                        f"Type error: parameter '{param}' expects {param_types[i]}, got None"
+                    )
+                elif not self._is_type_compatible(param_types[i], arg_value):
+                    raise RuntimeErrorLyric(
+                        f"Type error: parameter '{param}' expects {param_types[i]}, got {type(arg_value).__name__}"
+                    )
+            
+            local_scope[param] = arg_value
         
         # Save current scope
         old_scope = self.global_scope.copy()
@@ -101,7 +138,10 @@ class Interpreter:
             result = None
             for statement in body:
                 result = self._evaluate_statement(statement)
-            return result
+                if isinstance(result, ReturnValue):
+                    return result.value
+            # If no explicit return, return the last statement result
+            return result if not isinstance(result, ReturnValue) else result.value
         finally:
             # Restore scope
             self.global_scope = old_scope
@@ -184,11 +224,11 @@ class Interpreter:
         else:
             return False
     
-    def _evaluate_return_statement(self, node: ReturnNode) -> Any:
+    def _evaluate_return_statement(self, node: ReturnNode) -> ReturnValue:
         """Evaluate a return statement."""
         if node.value:
-            return self._evaluate_expression(node.value)
-        return None
+            return ReturnValue(self._evaluate_expression(node.value))
+        return ReturnValue(None)
     
     def _evaluate_list_literal(self, node: ListLiteralNode) -> List[Any]:
         """Evaluate a list literal."""
@@ -198,6 +238,7 @@ class Interpreter:
         """Evaluate a function definition."""
         self.functions[node.name] = {
             'params': node.params,
+            'param_types': node.param_types,
             'body': node.body_statements
         }
     
@@ -215,6 +256,7 @@ class Interpreter:
                 # Class method
                 class_dict[member.name] = {
                     'params': member.params,
+                    'param_types': member.param_types,
                     'body': member.body_statements
                 }
         
@@ -227,20 +269,26 @@ class Interpreter:
         if self._is_truthy(condition):
             # Execute then body
             for statement in node.then_body:
-                self._evaluate_statement(statement)
+                result = self._evaluate_statement(statement)
+                if isinstance(result, ReturnValue):
+                    return result
         else:
             # Check elif clauses
             for elif_condition, elif_body in node.elifs:
                 elif_result = self._evaluate_expression(elif_condition)
                 if self._is_truthy(elif_result):
                     for statement in elif_body:
-                        self._evaluate_statement(statement)
+                        result = self._evaluate_statement(statement)
+                        if isinstance(result, ReturnValue):
+                            return result
                     return None
             
             # Execute else body if it exists
             if node.else_body:
                 for statement in node.else_body:
-                    self._evaluate_statement(statement)
+                    result = self._evaluate_statement(statement)
+                    if isinstance(result, ReturnValue):
+                        return result
         
         return None
     
@@ -416,34 +464,37 @@ class Interpreter:
         left = self._evaluate_expression(node.left)
         right = self._evaluate_expression(node.right)
         
-        if node.op == '+':
-            return left + right
-        elif node.op == '-':
-            return left - right
-        elif node.op == '*':
-            return left * right
-        elif node.op == '/':
-            if right == 0:
-                raise RuntimeErrorLyric("Division by zero")
-            return left / right
-        elif node.op == '==':
-            return left == right
-        elif node.op == '!=':
-            return left != right
-        elif node.op == '<':
-            return left < right
-        elif node.op == '<=':
-            return left <= right
-        elif node.op == '>':
-            return left > right
-        elif node.op == '>=':
-            return left >= right
-        elif node.op == 'and':
-            return self._is_truthy(left) and self._is_truthy(right)
-        elif node.op == 'or':
-            return self._is_truthy(left) or self._is_truthy(right)
-        else:
-            raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}")
+        try:
+            if node.op == '+':
+                return left + right
+            elif node.op == '-':
+                return left - right
+            elif node.op == '*':
+                return left * right
+            elif node.op == '/':
+                if right == 0:
+                    raise RuntimeErrorLyric("Division by zero")
+                return left / right
+            elif node.op == '==':
+                return left == right
+            elif node.op == '!=':
+                return left != right
+            elif node.op == '<':
+                return left < right
+            elif node.op == '<=':
+                return left <= right
+            elif node.op == '>':
+                return left > right
+            elif node.op == '>=':
+                return left >= right
+            elif node.op == 'and':
+                return self._is_truthy(left) and self._is_truthy(right)
+            elif node.op == 'or':
+                return self._is_truthy(left) or self._is_truthy(right)
+            else:
+                raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}")
+        except TypeError as e:
+            raise RuntimeErrorLyric(f"Type error: {str(e)}")
     
     def _evaluate_unary_operation(self, node: UnaryOpNode) -> Any:
         """Evaluate a unary operation."""
