@@ -210,14 +210,14 @@ class Interpreter:
                     try:
                         index = int(index_str)
                         if index < 0 or index >= len(obj):
-                            raise RuntimeErrorLyric(f"List index {index} out of range")
+                            raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
                         obj[index] = value
                     except ValueError:
-                        raise RuntimeErrorLyric(f"List index must be an integer, got '{index_str}'")
+                        raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.")
                 else:
-                    raise RuntimeErrorLyric(f"Cannot assign to indexed expression of type {type(obj).__name__}")
+                    raise RuntimeErrorLyric(f"Cannot assign to indexed expression: '{obj_name}' is of type {type(obj).__name__}, but only lists and dictionaries support indexed assignment")
             else:
-                raise RuntimeErrorLyric(f"Variable '{obj_name}' is not defined")
+                raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first")
         else:
             # Regular assignment
             self.global_scope[node.name] = value
@@ -235,7 +235,9 @@ class Interpreter:
         if node.type_name != 'var':
             if not self._is_type_compatible(node.type_name, value):
                 raise RuntimeErrorLyric(
-                    f"Type error: cannot assign {type(value).__name__} to variable '{node.name}' of type '{node.type_name}'"
+                    f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {node.type_name}. "
+                    f"Expected {node.type_name}, but got {type(value).__name__}. "
+                    f"Use 'var {node.name} = ...' if you need dynamic typing."
                 )
         
         # Store the value
@@ -281,16 +283,20 @@ class Interpreter:
         
         if isinstance(obj, (list, tuple)):
             if not isinstance(index, int):
-                raise RuntimeErrorLyric(f"List index must be an integer, got {type(index).__name__}")
+                raise RuntimeErrorLyric(f"Invalid list index: expected integer, but got {type(index).__name__}. List indices must be integers (0, 1, 2, ...)")
             if index < 0 or index >= len(obj):
-                raise RuntimeErrorLyric(f"List index {index} out of range")
+                raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
             return obj[index]
         elif isinstance(obj, dict):
             if index not in obj:
-                raise RuntimeErrorLyric(f"Key '{index}' not found in dictionary")
+                available_keys = list(obj.keys())[:5]  # Show first 5 keys
+                keys_preview = ", ".join(repr(k) for k in available_keys)
+                if len(obj) > 5:
+                    keys_preview += f" (and {len(obj)-5} more)"
+                raise RuntimeErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
             return obj[index]
         else:
-            raise RuntimeErrorLyric(f"Cannot index object of type {type(obj).__name__}")
+            raise RuntimeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
     
     def _evaluate_function_definition(self, node: FunctionNode) -> None:
         """Evaluate a function definition."""
@@ -434,11 +440,18 @@ class Interpreter:
                         if callable(method):
                             return method(*args)
                         else:
-                            raise RuntimeErrorLyric(f"'{method_name}' is not callable")
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                 else:
-                    raise RuntimeErrorLyric(f"Method '{method_name}' not found in '{obj_name}'")
+                    available_methods = [k for k, v in obj.items() if isinstance(v, dict) and 'params' in v and 'body' in v] if isinstance(obj, dict) else []
+                    if available_methods:
+                        methods_preview = ", ".join(available_methods[:5])
+                        if len(available_methods) > 5:
+                            methods_preview += f" (and {len(available_methods)-5} more)"
+                        raise RuntimeErrorLyric(f"Method not found: '{method_name}' is not a method of '{obj_name}'. Available methods: {methods_preview}")
+                    else:
+                        raise RuntimeErrorLyric(f"Method not found: '{method_name}' is not a method of '{obj_name}'. '{obj_name}' is of type {type(obj).__name__} and has no methods.")
             else:
-                raise RuntimeErrorLyric(f"Variable '{obj_name}' is not defined")
+                raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first")
         elif node.func_name == "print":
             # Built-in print function
             args = [self._evaluate_expression(arg) for arg in node.args]
@@ -454,7 +467,7 @@ class Interpreter:
             elif len(args) == 3:
                 return list(range(args[0], args[1], args[2]))
             else:
-                raise RuntimeErrorLyric(f"range() takes 1-3 arguments, got {len(args)}")
+                raise RuntimeErrorLyric(f"Invalid range() arguments: range() takes 1-3 arguments (start, stop, step), but got {len(args)}. Usage: range(stop) or range(start, stop) or range(start, stop, step)")
         elif node.func_name in self.classes:
             # Class instantiation: ClassName()
             class_def = self.classes[node.func_name]
@@ -479,7 +492,19 @@ class Interpreter:
             args = [self._evaluate_expression(arg) for arg in node.args]
             return self._call_function(node.func_name, args)
         else:
-            raise RuntimeErrorLyric(f"Function '{node.func_name}' is not defined")
+            # Check if it might be a typo or suggest available functions
+            available_functions = list(self.functions.keys())
+            available_builtins = ['print', 'range', 'len', 'int', 'float', 'str', 'open', 'isinstance', 'type', 'append', 'keys', 'values']
+            all_available = available_functions + available_builtins
+            
+            # Find similar function names
+            similar_functions = [f for f in all_available if f.startswith(node.func_name[:3])] if len(node.func_name) >= 3 else []
+            
+            if similar_functions:
+                suggestions = ", ".join(similar_functions[:3])
+                raise RuntimeErrorLyric(f"Function not found: '{node.func_name}' is not defined. Did you mean: {suggestions}? Available functions: {', '.join(available_functions[:5]) if available_functions else 'none defined'}")
+            else:
+                raise RuntimeErrorLyric(f"Function not found: '{node.func_name}' is not defined. Available functions: {', '.join(available_functions[:5]) if available_functions else 'none defined'}. Built-in functions: print, range, len, int, float, str")
     
     def _evaluate_expression(self, expr) -> Any:
         """Evaluate an expression."""
@@ -515,9 +540,16 @@ class Interpreter:
                 if isinstance(obj, dict) and member_name in obj:
                     return obj[member_name]
                 else:
-                    raise RuntimeErrorLyric(f"Member '{member_name}' not found in '{obj_name}'")
+                    available_members = list(obj.keys()) if isinstance(obj, dict) else []
+                    if available_members:
+                        members_preview = ", ".join(available_members[:5])
+                        if len(available_members) > 5:
+                            members_preview += f" (and {len(available_members)-5} more)"
+                        raise RuntimeErrorLyric(f"Member not found: '{member_name}' is not a member of '{obj_name}'. Available members: {members_preview}")
+                    else:
+                        raise RuntimeErrorLyric(f"Member not found: '{member_name}' is not a member of '{obj_name}'. '{obj_name}' is of type {type(obj).__name__} and has no members.")
             else:
-                raise RuntimeErrorLyric(f"Variable '{obj_name}' is not defined")
+                raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first")
         else:
             # Simple identifier
             if node.name in self.global_scope:
@@ -526,7 +558,20 @@ class Interpreter:
                 # Class reference - return the class definition
                 return self.classes[node.name]
             else:
-                raise RuntimeErrorLyric(f"Variable '{node.name}' is not defined")
+                # Check if it might be a typo or suggest available variables
+                available_vars = list(self.global_scope.keys())
+                available_classes = list(self.classes.keys())
+                
+                if available_vars or available_classes:
+                    suggestions = []
+                    if available_vars:
+                        suggestions.append(f"variables: {', '.join(available_vars[:3])}")
+                    if available_classes:
+                        suggestions.append(f"classes: {', '.join(available_classes[:3])}")
+                    suggestions_str = ", ".join(suggestions)
+                    raise RuntimeErrorLyric(f"Undefined variable: '{node.name}' has not been declared. Available {suggestions_str}. Use a type declaration (int, str, flt, var) or assign a value first")
+                else:
+                    raise RuntimeErrorLyric(f"Undefined variable: '{node.name}' has not been declared. No variables are defined yet. Use a type declaration (int, str, flt, var) or assign a value first")
     
     def _evaluate_binary_operation(self, node: BinaryOpNode) -> Any:
         """Evaluate a binary operation."""
@@ -542,7 +587,7 @@ class Interpreter:
                 return left * right
             elif node.op == '/':
                 if right == 0:
-                    raise RuntimeErrorLyric("Division by zero")
+                    raise RuntimeErrorLyric("Division by zero: cannot divide by zero. Check your divisor value before performing division.")
                 return left / right
             elif node.op == '==':
                 return left == right
@@ -563,7 +608,7 @@ class Interpreter:
             else:
                 raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}")
         except TypeError as e:
-            raise RuntimeErrorLyric(f"Type error: {str(e)}")
+            raise RuntimeErrorLyric(f"Type mismatch in operation '{node.op}': {str(e)}. Check that both operands are compatible types for this operation.")
     
     def _evaluate_unary_operation(self, node: UnaryOpNode) -> Any:
         """Evaluate a unary operation."""
@@ -574,7 +619,7 @@ class Interpreter:
         elif node.op == '!' or node.op == 'not':
             return not self._is_truthy(operand)
         else:
-            raise RuntimeErrorLyric(f"Unknown unary operator: {node.op}")
+            raise RuntimeErrorLyric(f"Unknown unary operator: '{node.op}'. Supported unary operators are: -, !, not")
     
     def _evaluate_try_statement(self, node: TryNode) -> Any:
         """Evaluate a try/catch/finally statement."""
@@ -650,7 +695,8 @@ class Interpreter:
             raise exception_map[exception_name](f"{exception_name} raised")
         else:
             # Default to RuntimeErrorLyric for unknown exceptions
-            raise RuntimeErrorLyric(f"Unknown exception: {exception_name}")
+            available_exceptions = list(exception_map.keys())
+            raise RuntimeErrorLyric(f"Unknown exception: '{exception_name}' is not a valid exception type. Available exceptions: {', '.join(available_exceptions[:5])} (and more)")
     
     def _is_truthy(self, value: Any) -> bool:
         """Check if a value is truthy."""

@@ -101,7 +101,7 @@ class Parser:
     
     def _parse_func_def(self) -> FunctionNode:
         """Parse function definition: def IDENT "(" param_list? ")" "{" statement* "}" """
-        self._consume('DEF', "Expected 'def'")
+        def_token = self._consume('DEF', "Expected 'def'")
         
         name_token = self._consume('IDENT', "Expected function name")
         name = name_token.value
@@ -131,7 +131,7 @@ class Parser:
         
         self._consume('RBRACE', "Expected '}' after function body")
         
-        return FunctionNode(name, params, param_types, body_statements)
+        return FunctionNode(name, params, param_types, body_statements, def_token.line, def_token.col)
     
     def _parse_param_list(self) -> tuple[List[str], List[str]]:
         """Parse parameter list: (TYPE IDENT | IDENT) ("," (TYPE IDENT | IDENT))*"""

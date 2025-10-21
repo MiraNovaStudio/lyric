@@ -26,6 +26,8 @@ class FunctionNode:
     params: List[str]
     param_types: Optional[List[str]] = None  # Optional list of parameter types
     body_statements: List['ASTNode'] = None
+    line: int = 0
+    column: int = 0
     
     def __post_init__(self):
         if self.body_statements is None:
@@ -97,6 +99,8 @@ class AssignNode:
     """Represents a variable assignment."""
     name: str
     expr: 'ASTNode'
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"AssignNode(name='{self.name}', expr={self.expr})"
@@ -114,6 +118,8 @@ class CallNode:
     """Represents a function call."""
     func_name: str
     args: List['ASTNode']
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"CallNode(func='{self.func_name}', args={len(self.args)})"
@@ -279,6 +285,8 @@ class TypeDeclarationNode:
     type_name: str
     name: str
     expr: 'ASTNode'
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"TypeDeclarationNode(type='{self.type_name}', name='{self.name}', expr={self.expr})"
