@@ -294,6 +294,21 @@ This project follows a structured sprint-based development approach:
 4. **Version Control**: Structured commits with clear messages
 5. **Testing**: Comprehensive test coverage for all components
 
+### Branching and Tagging Model
+
+MiraNova Studios uses a simple, iterative Git workflow for all open-source projects.  
+Active development occurs in the **`dev-core`** branch, where each completed sprint or milestone is tagged as `dev-core-x.y.z`. Once stable, changes are merged into **`main`**, which serves as the integration and testing branch.
+
+Pre-release builds are marked on `main` using **alpha** and **beta** tags:  
+- `alpha-x.y.z` → internal preview build, partially tested.  
+- `beta-x.y.z` → external or public preview, feature-complete but under evaluation.  
+When a version reaches full stability, it is promoted and tagged as **`rel-x.y.z`** to indicate an official release.
+
+This keeps branches clean, tags meaningful, and the evolution from development to release easy to trace.  
+
+**Flow:** `dev-core → main (alpha → beta) → rel`
+
+
 ## License and Credits
 
 The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
@@ -308,4 +323,7 @@ This project is currently in active development following a structured sprint me
 - Incremental feature development
 - Proper version control practices
 
-For development questions or contributions, please refer to the project's development workflow and sprint documentation.
+There is currenlty no GitHub project page for this project but one is
+planned in the future.
+
+
