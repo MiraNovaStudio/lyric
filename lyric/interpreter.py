@@ -458,6 +458,13 @@ class Interpreter:
             instance = dict(class_def)
             # Add instance class name marker
             instance['__instance_class__'] = node.func_name
+            
+            # Check if class has an init() method and call it
+            if 'init' in instance and isinstance(instance['init'], dict):
+                init_method = instance['init']
+                # Call the init method with the provided arguments
+                self._call_method(instance, init_method, node.args)
+            
             return instance
         elif node.func_name in self.global_scope and callable(self.global_scope[node.func_name]):
             # Built-in function from global scope
