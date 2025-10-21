@@ -1,9 +1,6 @@
 # Changelog - Sprint 3 Task 4: Class Enhancements and Self Behavior
 
-**Date**: 2025-10-20  
-**Time**: 21:45  
-**Sprint**: Sprint 3 Task 4  
-**Status**: ✅ COMPLETED
+**Commit Hash**: d8bee22
 
 ## Summary
 Implemented comprehensive class enhancements including `init()` method support, `self` access within methods, instance method calls, and property assignment. This completes the core class system for the Lyric language.
