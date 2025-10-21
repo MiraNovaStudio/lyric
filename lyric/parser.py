@@ -4,7 +4,8 @@ from typing import List
 from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, TypeDeclarationNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -86,6 +87,11 @@ class Parser:
             return self._parse_return_stmt()
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'ASSIGN':
             return self._parse_type_declaration()
+        elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'ASSIGN':
+            # Error: type keyword followed directly by assignment (missing variable name)
+            type_token = self._advance()
+            self._advance()  # consume '='
+            raise ParseError(f"Expected variable name after type '{type_token.value}' at line {type_token.line}, column {type_token.col}")
         else:
             return self._parse_assignment_or_expr_stmt()
     
@@ -305,7 +311,7 @@ class Parser:
     
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""
-        if self._check('IDENT'):
+        if self._check('IDENT', 'TYPE_OR_IDENT'):
             # Check if it's an assignment
             if self._peek_next().type == 'ASSIGN':
                 # Assignment: IDENT "=" expression
@@ -329,6 +335,23 @@ class Parser:
                 expr = self._parse_expression()
                 
                 return AssignNode(full_name, expr)
+            elif (self._peek_next().type == 'LBRACKET' and 
+                  self._peek_next_next().type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
+                  self._peek_next_next_next().type == 'RBRACKET' and
+                  self._peek_next_next_next_next().type == 'ASSIGN'):
+                # Assignment to indexed expression: obj[index] = expression
+                obj_name = self._advance().value
+                self._advance()  # consume '['
+                index_token = self._advance()
+                self._advance()  # consume ']'
+                self._advance()  # consume '='
+                
+                # Create the indexed assignment
+                index_expr = LiteralNode(index_token.value)
+                indexed_expr = IndexNode(IdentifierNode(obj_name), index_expr)
+                expr = self._parse_expression()
+                
+                return AssignNode(f"{obj_name}[{index_token.value}]", expr)
         
         # Expression statement
         return self._parse_expression()
@@ -461,24 +484,77 @@ class Parser:
                 
                 return IdentifierNode(full_name)
             
-            return IdentifierNode(name)
+            # Start with identifier and check for indexing
+            expr = IdentifierNode(name)
+            return self._parse_indexing_chain(expr)
         
         if self._match('LPAREN'):
             expr = self._parse_expression()
             self._consume('RPAREN', "Expected ')' after expression")
-            return expr
+            return self._parse_indexing_chain(expr)
         
         if self._match('LBRACKET'):
             # List literal: [ expression* ]
             elements = []
             if not self._check('RBRACKET'):
+                # Skip NEWLINE tokens
+                while self._match('NEWLINE'):
+                    pass
+                
                 elements.append(self._parse_expression())
                 while self._match('COMMA'):
+                    # Skip NEWLINE tokens
+                    while self._match('NEWLINE'):
+                        pass
                     elements.append(self._parse_expression())
+            
+            # Skip NEWLINE tokens before closing bracket
+            while self._match('NEWLINE'):
+                pass
+            
             self._consume('RBRACKET', "Expected ']' after list elements")
-            return ListLiteralNode(elements)
+            return self._parse_indexing_chain(ListLiteralNode(elements))
+        
+        if self._match('LBRACE'):
+            # Dictionary literal: { key: value, ... }
+            pairs = []
+            if not self._check('RBRACE'):
+                # Skip NEWLINE tokens
+                while self._match('NEWLINE'):
+                    pass
+                
+                # Parse first key-value pair
+                key = self._parse_expression()
+                self._consume('COLON', "Expected ':' after dictionary key")
+                value = self._parse_expression()
+                pairs.append((key, value))
+                
+                # Parse remaining pairs
+                while self._match('COMMA'):
+                    # Skip NEWLINE tokens
+                    while self._match('NEWLINE'):
+                        pass
+                    key = self._parse_expression()
+                    self._consume('COLON', "Expected ':' after dictionary key")
+                    value = self._parse_expression()
+                    pairs.append((key, value))
+            
+            # Skip NEWLINE tokens before closing brace
+            while self._match('NEWLINE'):
+                pass
+            
+            self._consume('RBRACE', "Expected '}' after dictionary pairs")
+            return self._parse_indexing_chain(DictLiteralNode(pairs))
         
         raise SyntaxErrorLyric("Expected expression", self._peek().line, self._peek().col)
+    
+    def _parse_indexing_chain(self, expr):
+        """Parse chained indexing operations: expr[index][index]..."""
+        while self._match('LBRACKET'):
+            index = self._parse_expression()
+            self._consume('RBRACKET', "Expected ']' after index")
+            expr = IndexNode(expr, index)
+        return expr
     
     def _parse_argument_list(self) -> List:
         """Parse argument list: expression ("," expression)*"""
@@ -526,6 +602,12 @@ class Parser:
         if self.current + 3 >= len(self.tokens):
             return self.tokens[-1]  # Return EOF token
         return self.tokens[self.current + 3]
+    
+    def _peek_next_next_next_next(self) -> Token:
+        """Look at the token 4 positions ahead without advancing."""
+        if self.current + 4 >= len(self.tokens):
+            return self.tokens[-1]  # Return EOF token
+        return self.tokens[self.current + 4]
 
 
 def parse(source: str) -> ProgramNode:

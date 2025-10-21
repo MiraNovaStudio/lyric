@@ -3,7 +3,8 @@
 from typing import Any, List
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, TypeDeclarationNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
@@ -187,6 +188,32 @@ class Interpreter:
                     raise RuntimeErrorLyric(f"Cannot assign to member of non-object '{obj_name}'")
             else:
                 raise RuntimeErrorLyric(f"Variable '{obj_name}' is not defined")
+        elif '[' in node.name and ']' in node.name:
+            # Assignment to indexed expression: obj[index] = value
+            # Parse the indexed assignment
+            bracket_start = node.name.find('[')
+            bracket_end = node.name.find(']')
+            obj_name = node.name[:bracket_start]
+            index_str = node.name[bracket_start+1:bracket_end]
+            
+            if obj_name in self.global_scope:
+                obj = self.global_scope[obj_name]
+                if isinstance(obj, dict):
+                    # For dictionaries, the index is a key
+                    obj[index_str] = value
+                elif isinstance(obj, list):
+                    # For lists, the index should be an integer
+                    try:
+                        index = int(index_str)
+                        if index < 0 or index >= len(obj):
+                            raise RuntimeErrorLyric(f"List index {index} out of range")
+                        obj[index] = value
+                    except ValueError:
+                        raise RuntimeErrorLyric(f"List index must be an integer, got '{index_str}'")
+                else:
+                    raise RuntimeErrorLyric(f"Cannot assign to indexed expression of type {type(obj).__name__}")
+            else:
+                raise RuntimeErrorLyric(f"Variable '{obj_name}' is not defined")
         else:
             # Regular assignment
             self.global_scope[node.name] = value
@@ -233,6 +260,33 @@ class Interpreter:
     def _evaluate_list_literal(self, node: ListLiteralNode) -> List[Any]:
         """Evaluate a list literal."""
         return [self._evaluate_expression(elem) for elem in node.elements]
+    
+    def _evaluate_dict_literal(self, node: DictLiteralNode) -> dict:
+        """Evaluate a dictionary literal."""
+        result = {}
+        for key_expr, value_expr in node.pairs:
+            key = self._evaluate_expression(key_expr)
+            value = self._evaluate_expression(value_expr)
+            result[key] = value
+        return result
+    
+    def _evaluate_index(self, node: IndexNode) -> Any:
+        """Evaluate an indexing operation."""
+        obj = self._evaluate_expression(node.obj)
+        index = self._evaluate_expression(node.index)
+        
+        if isinstance(obj, (list, tuple)):
+            if not isinstance(index, int):
+                raise RuntimeErrorLyric(f"List index must be an integer, got {type(index).__name__}")
+            if index < 0 or index >= len(obj):
+                raise RuntimeErrorLyric(f"List index {index} out of range")
+            return obj[index]
+        elif isinstance(obj, dict):
+            if index not in obj:
+                raise RuntimeErrorLyric(f"Key '{index}' not found in dictionary")
+            return obj[index]
+        else:
+            raise RuntimeErrorLyric(f"Cannot index object of type {type(obj).__name__}")
     
     def _evaluate_function_definition(self, node: FunctionNode) -> None:
         """Evaluate a function definition."""
@@ -430,6 +484,10 @@ class Interpreter:
             return self._evaluate_function_call(expr)
         elif isinstance(expr, ListLiteralNode):
             return self._evaluate_list_literal(expr)
+        elif isinstance(expr, DictLiteralNode):
+            return self._evaluate_dict_literal(expr)
+        elif isinstance(expr, IndexNode):
+            return self._evaluate_index(expr)
         else:
             raise RuntimeErrorLyric(f"Unknown expression type: {type(expr)}")
     

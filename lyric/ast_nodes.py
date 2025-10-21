@@ -240,6 +240,40 @@ class ListLiteralNode:
 
 
 @dataclass
+class DictLiteralNode:
+    """Represents a dictionary literal."""
+    pairs: List[tuple['ASTNode', 'ASTNode']]  # List of (key, value) pairs
+    
+    def __repr__(self):
+        return f"DictLiteralNode(pairs={len(self.pairs)})"
+    
+    def to_dict(self):
+        return {
+            'type': 'DictLiteralNode',
+            'pairs': [(key.to_dict() if hasattr(key, 'to_dict') else str(key),
+                      value.to_dict() if hasattr(value, 'to_dict') else str(value))
+                     for key, value in self.pairs]
+        }
+
+
+@dataclass
+class IndexNode:
+    """Represents an indexing operation (list[index] or dict[key])."""
+    obj: 'ASTNode'  # The object being indexed
+    index: 'ASTNode'  # The index/key
+    
+    def __repr__(self):
+        return f"IndexNode(obj={self.obj}, index={self.index})"
+    
+    def to_dict(self):
+        return {
+            'type': 'IndexNode',
+            'obj': self.obj.to_dict() if hasattr(self.obj, 'to_dict') else str(self.obj),
+            'index': self.index.to_dict() if hasattr(self.index, 'to_dict') else str(self.index)
+        }
+
+
+@dataclass
 class TypeDeclarationNode:
     """Represents a typed variable declaration."""
     type_name: str
@@ -276,5 +310,6 @@ class PrintNode:
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, TypeDeclarationNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, PrintNode
 ]

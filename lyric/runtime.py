@@ -1,6 +1,7 @@
 """Runtime module with built-in functions."""
 
 from typing import Any, Iterator
+from lyric.errors import RuntimeErrorLyric
 
 
 def print_builtin(*args: Any) -> None:
@@ -128,6 +129,30 @@ def type_builtin(obj: Any) -> str:
         return str(type(obj).__name__)
 
 
+def append_builtin(obj: Any, item: Any) -> None:
+    """Built-in append function that adds an item to a list."""
+    if isinstance(obj, list):
+        obj.append(item)
+    else:
+        raise RuntimeErrorLyric(f"append() only works on lists, got {type(obj).__name__}")
+
+
+def keys_builtin(obj: Any) -> list:
+    """Built-in keys function that returns dictionary keys."""
+    if isinstance(obj, dict):
+        return list(obj.keys())
+    else:
+        raise RuntimeErrorLyric(f"keys() only works on dictionaries, got {type(obj).__name__}")
+
+
+def values_builtin(obj: Any) -> list:
+    """Built-in values function that returns dictionary values."""
+    if isinstance(obj, dict):
+        return list(obj.values())
+    else:
+        raise RuntimeErrorLyric(f"values() only works on dictionaries, got {type(obj).__name__}")
+
+
 def register_builtins(env: dict) -> None:
     """Register all built-in functions in the given environment."""
     env['print'] = print_builtin
@@ -140,3 +165,6 @@ def register_builtins(env: dict) -> None:
     env['open'] = open_builtin
     env['isinstance'] = isinstance_builtin
     env['type'] = type_builtin
+    env['append'] = append_builtin
+    env['keys'] = keys_builtin
+    env['values'] = values_builtin
