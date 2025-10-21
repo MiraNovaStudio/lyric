@@ -4,6 +4,7 @@
 **Time**: 22:11  
 **Sprint**: Sprint 3 Task 5  
 **Status**: ✅ COMPLETED
+**Commit Hash**: f7b5bb8
 
 ## Summary
 Implemented comprehensive exception handling in the Lyric language with `try/catch/finally/fade` blocks and `raise` statement support. This adds robust error handling capabilities, allowing developers to gracefully handle runtime errors.
