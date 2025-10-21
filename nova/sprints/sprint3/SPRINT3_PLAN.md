@@ -25,6 +25,7 @@ The result should be a more stable and feature-complete interpreter capable of h
   int x = 5
   str name = "hello"
   flt pi = 3.14
+  var dynamic = "anything"
   def add(int a, int b) { return a + b }
   ```
 - Store type metadata in the interpreter's environment.
@@ -37,11 +38,12 @@ The result should be a more stable and feature-complete interpreter capable of h
 
 ### Acceptance Criteria:
 
-- **A1)** The interpreter correctly records and enforces type declarations for `int`, `str`, `flt`.
+- **A1)** The interpreter correctly records and enforces type declarations for `int`, `str`, `flt`, and `var`.
 - **A2)** Assigning a string to a variable declared as `int` raises a runtime error.
 - **A3)** Functions with typed parameters enforce types when called.
 - **A4)** Type inference assigns correct default types for literals.
 - **A5)** `var` type accepts any value without type checking restrictions.
+- **A6)** Explicit `var` declarations work: `var x = 5` assigns value without type restrictions.
 
 ## Task 2 — Return Statements and Function Values
 
