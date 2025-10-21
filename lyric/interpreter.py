@@ -4,7 +4,7 @@ from typing import Any, List
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, TryNode, RaiseNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
@@ -166,6 +166,10 @@ class Interpreter:
             return self._evaluate_function_call(statement)
         elif isinstance(statement, ReturnNode):
             return self._evaluate_return_statement(statement)
+        elif isinstance(statement, TryNode):
+            return self._evaluate_try_statement(statement)
+        elif isinstance(statement, RaiseNode):
+            return self._evaluate_raise_statement(statement)
         else:
             # Expression statement
             return self._evaluate_expression(statement)
@@ -571,6 +575,82 @@ class Interpreter:
             return not self._is_truthy(operand)
         else:
             raise RuntimeErrorLyric(f"Unknown unary operator: {node.op}")
+    
+    def _evaluate_try_statement(self, node: TryNode) -> Any:
+        """Evaluate a try/catch/finally statement."""
+        result = None
+        exception_occurred = None
+        
+        try:
+            # Execute try body
+            for statement in node.try_body:
+                result = self._evaluate_statement(statement)
+                if isinstance(result, ReturnValue):
+                    # Store result but don't return yet - finally must execute
+                    result = result
+                    break
+        except Exception as e:
+            # Catch any exception that occurs
+            exception_occurred = e
+        
+        # If an exception occurred and there's a catch block, execute it
+        if exception_occurred and node.catch_body:
+            for statement in node.catch_body:
+                result = self._evaluate_statement(statement)
+                if isinstance(result, ReturnValue):
+                    # Store result but don't return yet - finally must execute
+                    result = result
+                    break
+            
+            # Clear the exception since it was caught
+            exception_occurred = None
+        
+        # Execute finally block if it exists (always executes)
+        if node.finally_body:
+            for statement in node.finally_body:
+                finally_result = self._evaluate_statement(statement)
+                if isinstance(finally_result, ReturnValue):
+                    # Finally block return takes precedence
+                    result = finally_result
+        
+        # If exception was not caught, re-raise it
+        if exception_occurred:
+            raise exception_occurred
+        
+        # Return the result (could be from try, catch, or finally)
+        if isinstance(result, ReturnValue):
+            return result
+        
+        return None
+    
+    def _evaluate_raise_statement(self, node: RaiseNode) -> None:
+        """Evaluate a raise statement."""
+        exception_name = node.exception_name
+        
+        # Map exception names to Python exceptions
+        # Support both Lyric-style names (with Lyric suffix) and standard Python names
+        exception_map = {
+            'RuntimeErrorLyric': RuntimeErrorLyric,
+            'IndexErrorLyric': IndexError,
+            'TypeErrorLyric': TypeError,
+            'ValueErrorLyric': ValueError,
+            'KeyErrorLyric': KeyError,
+            'AttributeErrorLyric': AttributeError,
+            'ZeroDivisionErrorLyric': ZeroDivisionError,
+            'RuntimeError': RuntimeErrorLyric,  # Map RuntimeError to RuntimeErrorLyric
+            'IndexError': IndexError,
+            'TypeError': TypeError,
+            'ValueError': ValueError,
+            'KeyError': KeyError,
+            'AttributeError': AttributeError,
+            'ZeroDivisionError': ZeroDivisionError,
+        }
+        
+        if exception_name in exception_map:
+            raise exception_map[exception_name](f"{exception_name} raised")
+        else:
+            # Default to RuntimeErrorLyric for unknown exceptions
+            raise RuntimeErrorLyric(f"Unknown exception: {exception_name}")
     
     def _is_truthy(self, value: Any) -> bool:
         """Check if a value is truthy."""

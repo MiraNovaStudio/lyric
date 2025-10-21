@@ -5,7 +5,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, TryNode, RaiseNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -85,6 +85,10 @@ class Parser:
             return self._parse_loop_block()
         elif self._check('RETURN'):
             return self._parse_return_stmt()
+        elif self._check('TRY'):
+            return self._parse_try_block()
+        elif self._check('RAISE'):
+            return self._parse_raise_stmt()
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'ASSIGN':
             return self._parse_type_declaration()
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'ASSIGN':
@@ -608,6 +612,81 @@ class Parser:
         if self.current + 4 >= len(self.tokens):
             return self.tokens[-1]  # Return EOF token
         return self.tokens[self.current + 4]
+
+    def _parse_try_block(self) -> TryNode:
+        """Parse try/catch/finally block: try: ... catch: ... finally: ... fade"""
+        self._consume('TRY', "Expected 'try'")
+        self._consume('COLON', "Expected ':' after try")
+        
+        # Parse try body
+        try_body = []
+        while not self._check('CATCH', 'FINALLY', 'FADE') and not self._is_at_end():
+            # Skip NEWLINE tokens
+            while self._match('NEWLINE'):
+                pass
+            
+            if self._check('CATCH', 'FINALLY', 'FADE'):
+                break
+                
+            stmt = self._parse_statement()
+            if stmt:
+                try_body.append(stmt)
+        
+        # Parse catch block (optional)
+        catch_body = None
+        if self._match('CATCH'):
+            self._consume('COLON', "Expected ':' after catch")
+            
+            catch_body = []
+            while not self._check('FINALLY', 'FADE') and not self._is_at_end():
+                # Skip NEWLINE tokens
+                while self._match('NEWLINE'):
+                    pass
+                
+                if self._check('FINALLY', 'FADE'):
+                    break
+                    
+                stmt = self._parse_statement()
+                if stmt:
+                    catch_body.append(stmt)
+        
+        # Parse finally block (optional)
+        finally_body = None
+        if self._match('FINALLY'):
+            self._consume('COLON', "Expected ':' after finally")
+            
+            finally_body = []
+            while not self._check('FADE') and not self._is_at_end():
+                # Skip NEWLINE tokens
+                while self._match('NEWLINE'):
+                    pass
+                
+                if self._check('FADE'):
+                    break
+                    
+                stmt = self._parse_statement()
+                if stmt:
+                    finally_body.append(stmt)
+        
+        # Consume fade
+        self._consume('FADE', "Expected 'fade' to end try block")
+        
+        # Validate: try without catch is a syntax error
+        if catch_body is None:
+            raise ParseError("try block must have a catch block at line {}, column {}".format(
+                self._peek().line, self._peek().col))
+        
+        return TryNode(try_body, catch_body, finally_body)
+
+    def _parse_raise_stmt(self) -> RaiseNode:
+        """Parse raise statement: raise ExceptionName"""
+        self._consume('RAISE', "Expected 'raise'")
+        
+        # Parse exception name
+        exception_token = self._consume('IDENT', "Expected exception name after 'raise'")
+        exception_name = exception_token.value
+        
+        return RaiseNode(exception_name)
 
 
 def parse(source: str) -> ProgramNode:

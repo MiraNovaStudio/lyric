@@ -307,9 +307,46 @@ class PrintNode:
         }
 
 
+@dataclass
+class TryNode:
+    """Represents a try/catch/finally statement."""
+    try_body: List['ASTNode']
+    catch_body: Optional[List['ASTNode']]
+    finally_body: Optional[List['ASTNode']]
+    
+    def __repr__(self):
+        catch_present = self.catch_body is not None
+        finally_present = self.finally_body is not None
+        return f"TryNode(try={len(self.try_body)}, catch={catch_present}, finally={finally_present})"
+    
+    def to_dict(self):
+        return {
+            'type': 'TryNode',
+            'try_body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.try_body],
+            'catch_body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.catch_body] if self.catch_body else None,
+            'finally_body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.finally_body] if self.finally_body else None
+        }
+
+
+@dataclass
+class RaiseNode:
+    """Represents a raise statement."""
+    exception_name: str
+    
+    def __repr__(self):
+        return f"RaiseNode(exception='{self.exception_name}')"
+    
+    def to_dict(self):
+        return {
+            'type': 'RaiseNode',
+            'exception_name': self.exception_name
+        }
+
+
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, PrintNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, PrintNode,
+    TryNode, RaiseNode
 ]

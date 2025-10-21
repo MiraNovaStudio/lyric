@@ -174,7 +174,7 @@ def test_unexpected_character_error():
 
 def test_keywords():
     """Test that all keywords are properly recognized."""
-    keywords = ['def', 'class', 'if', 'else', 'given', 'done', 'end', 'try', 'except', 'finally']
+    keywords = ['def', 'class', 'if', 'else', 'given', 'done', 'end', 'try', 'catch', 'finally', 'fade', 'raise']
     
     for keyword in keywords:
         tokens = tokenize(keyword)
