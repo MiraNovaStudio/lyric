@@ -10,7 +10,7 @@ from unittest.mock import patch
 def test_cli_class_test_output():
     """Test CLI run of class_test.ly produces correct greeting (A19)."""
     # Get the path to the class_test.ly file
-    class_test_path = os.path.join(os.path.dirname(__file__), 'examples', 'class_test.ly')
+    class_test_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'class_test.ly')
     
     # Run the CLI command
     result = subprocess.run(['lyric', 'run', class_test_path], 
@@ -31,7 +31,7 @@ def test_cli_class_test_output():
 def test_cli_error_demo_output():
     """Test CLI run of error_demo.ly produces expected error messages without Python tracebacks (A20)."""
     # Get the path to the error_demo.ly file
-    error_demo_path = os.path.join(os.path.dirname(__file__), 'examples', 'error_demo.ly')
+    error_demo_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'error_demo.ly')
     
     # Run the CLI command
     result = subprocess.run(['lyric', 'run', error_demo_path], 
@@ -56,7 +56,7 @@ def test_cli_error_demo_output():
 def test_cli_nested_flow_output():
     """Test CLI run of nested_flow.ly produces correct output."""
     # Get the path to the nested_flow.ly file
-    nested_flow_path = os.path.join(os.path.dirname(__file__), 'examples', 'nested_flow.ly')
+    nested_flow_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'nested_flow.ly')
     
     # Run the CLI command
     result = subprocess.run(['lyric', 'run', nested_flow_path], 

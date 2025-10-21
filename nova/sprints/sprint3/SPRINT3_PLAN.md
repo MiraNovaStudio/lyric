@@ -161,6 +161,7 @@ def main() {
 
 **Goal:** Extend test coverage for all new Sprint 3 features and reorganize
 our unit test structure
+
 ### Work:
 - Add new test files:
   - `type_tests.ly`
@@ -173,6 +174,13 @@ our unit test structure
 defined in the document nova/sprints/TEST_STRUCTURE.md
 - Update your CLAUDE_CONFIG.md to remember to conform to the new 
 unit test structure document
+
+### Implementation Decisions:
+- **Location**: Create `lyric/tests/core-0.3.0/` directory for Sprint 3 tests
+- **Migration Strategy**: Option B - Move existing tests and reorganize them by sprint functionality
+- **Examples Directory**: Lyric source examples live in `lyric/tests/examples/` (flat structure, no subfolders)
+- **Version Targeting**: Unit tests target Sprint 3 version (0.3.0)
+- **Sprint Completion**: Directory will contain all Sprint 3 tests and remain available for Sprint 4
 
 ### Acceptance Criteria:
 

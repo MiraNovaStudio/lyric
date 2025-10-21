@@ -12,15 +12,13 @@ This model aligns with the MiraNova Rapid Sprint philosophy:
 
 ## Directory Layout
 
-
 ```
-tests/
+lyric/tests/
 ├─ core-0.1.0/
 ├─ core-0.2.0/
 ├─ core-0.3.0/
 └─ core-0.4.0/
 ```
-
 
 ### Folder Descriptions
 - **core-0.x.x/**  
@@ -28,6 +26,13 @@ tests/
   Tests validate all new or modified functionality introduced during that sprint.
 
 Older sprint folders remain permanently in the repository as historical validation checkpoints.
+
+### Implementation Decisions
+- **Location**: Test directories are created within `lyric/tests/core-0.x.x/`
+- **Migration Strategy**: Option B - Move existing tests and reorganize them by sprint functionality
+- **Examples Directory**: Lyric source examples for testing live in `lyric/tests/examples/` (flat structure, no subfolders)
+- **Version Targeting**: Unit tests for each sprint target the current sprint version number
+- **Sprint Completion**: When a sprint is done, the directory contains all tests for that sprint and remains available for subsequent sprints
 
 ---
 
@@ -44,13 +49,13 @@ the cumulative collection of sprint folders *is* the shared validation baseline.
 
 Run all tests (recommended):
 ```bash
-pytest tests/
+pytest lyric/tests/
 ```
 
 Run tests for a specific sprint:
 
 ```
-pytest tests/core-0.3.0
+pytest lyric/tests/core-0.3.0
 ```
 
 
@@ -58,6 +63,15 @@ Run a specific module:
 
 
 ```
-pytest tests/core-0.3.0/test_types.py
+pytest lyric/tests/core-0.3.0/test_types.py
 ```
+
+
+## Older tests handling failures
+If we make significant changes to the code older tests may need to be updated
+to work with our changes
+
+## THE GOAL
+Our goal is to have all unit tests 100% passing at the end of each iteration (at the completion of each Task in a Sprint)
+
 

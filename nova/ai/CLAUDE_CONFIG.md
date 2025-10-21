@@ -48,6 +48,7 @@ Claude will:
 - Maintain imports and Python package integrity.
 - Ensure new modules import cleanly.
 - **IMPORTANT**: When instructed to iterate on a specific task (e.g., "SPRINT3_PLAN.md Task 1"), only implement that specific task and its requirements. Do not implement other tasks from the sprint unless explicitly instructed.
+- **TEST STRUCTURE**: Conform to the unit test structure defined in `nova/sprints/TEST_STRUCTURE.md` - organize tests by sprint version in `lyric/tests/core-0.x.x/` directories
 
 ### 3. Write Summary (Conditional)
 If **Git Commit Toggle = YES**, Claude writes a changelog entry **AFTER** completing the task implementation:
