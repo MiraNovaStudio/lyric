@@ -115,6 +115,46 @@ rel-1.0.0 tag
 | **DoD** | Definition of Done document marking yield completion |
 | **Plan** | The blueprint for work performed during that yield |
 
+
+### ⚠️ NOVA and SUPERNOVA Events
+
+| Event | Scope | Description | Typical Response |
+|--------|--------|--------------|------------------|
+| **NOVA** | Localized failure | A single catastrophic defect (e.g., infinite loop or control flow bug) that halts yield progression but remains contained. | Isolate, debug, and resume trajectory once fixed. |
+| **SUPERNOVA** | Systemic failure | A full regression or multi-module breakdown (e.g., parser, CLI, and type system failing simultaneously). | Freeze all development, run rollback analysis, and perform structured remediation. |
+
+### 🔁 Pivot
+
+A **Pivot** is a short, focused deviation from the main sprint plan.  
+It’s used to address an unexpected issue, explore an idea, or implement a targeted improvement that directly supports the sprint’s objectives without creating a new yield.
+
+Pivots are documented as `PIVOTx.y_SUMMARY.md` files within the active yield directory and merge back into the sprint’s Definition of Done once complete.
+
+> **Purpose:** Adapt quickly without breaking momentum.
+
+
+### 🚀 Sprint
+
+A **Sprint** is a structured development cycle composed of **small, iterable tasks** executed by both human and AI contributors.  
+Each sprint represents a focused, time-bound effort toward delivering a measurable improvement to the system — such as a feature, subsystem, or stability milestone.
+
+In MiraNova’s process model, sprints are:
+- **Atomic:** Each sprint delivers one cohesive version increment.
+- **AI-Driven:** Tasks are intentionally small and modular to enable rapid iteration with AI assistance.
+- **Traceable:** Every sprint contains its plan, task summaries, and a Definition of Done (DoD).
+- **Yield-Producing:** When complete, the sprint’s output becomes a new yield (e.g., `yield-0.3.0`).
+
+> **Purpose:**  
+> To create a repeatable loop of ideation, implementation, and validation — enabling AI-assisted development to evolve predictably and transparently.
+
+
+All NOVA and SUPERNOVA events are recorded in their respective trajectory under `NOVA_EVENTS.md` or `SUPERNOVA_REMEDIATION.md`.  
+
+> **Symbolism:**  
+> - *NOVA* — a contained eruption, forcing correction and refinement.  
+> - *SUPERNOVA* — a total collapse, demanding systemic renewal.
+
+
 ---
 
 ## ✨ Design Philosophy
@@ -124,8 +164,8 @@ from internal dev builds to public releases — forming a complete living histor
 
 ---
 
-**Author:** Michael “Aeonath” Emch  
-**Architectural Documentation:** ChatGPT  
+**Authors:** Michael (Aeonath) Emch and ChatGPT
+**Architectural Documentation:** Michael and ChatGPT  
 **Engineering Implementation:** Claude  
 **Last Updated:** October 2025
 
