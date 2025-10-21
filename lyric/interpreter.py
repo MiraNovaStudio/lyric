@@ -3,7 +3,7 @@
 from typing import Any, List
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, TypeDeclarationNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
@@ -18,6 +18,8 @@ class Interpreter:
             'false': False,
             'None': None
         }
+        # Track variable types
+        self.variable_types = {}
         # Register built-in functions
         register_builtins(self.global_scope)
         self.functions = {}
@@ -107,7 +109,9 @@ class Interpreter:
     
     def _evaluate_statement(self, statement) -> Any:
         """Evaluate a single statement."""
-        if isinstance(statement, AssignNode):
+        if isinstance(statement, TypeDeclarationNode):
+            return self._evaluate_type_declaration(statement)
+        elif isinstance(statement, AssignNode):
             return self._evaluate_assignment(statement)
         elif isinstance(statement, FunctionNode):
             return self._evaluate_function_definition(statement)
@@ -148,6 +152,37 @@ class Interpreter:
             self.global_scope[node.name] = value
         
         return value
+    
+    def _evaluate_type_declaration(self, node: TypeDeclarationNode) -> Any:
+        """Evaluate a type declaration statement."""
+        value = self._evaluate_expression(node.expr)
+        
+        # Store the variable type
+        self.variable_types[node.name] = node.type_name
+        
+        # Type enforcement for strict types
+        if node.type_name != 'var':
+            if not self._is_type_compatible(node.type_name, value):
+                raise RuntimeErrorLyric(
+                    f"Type error: cannot assign {type(value).__name__} to variable '{node.name}' of type '{node.type_name}'"
+                )
+        
+        # Store the value
+        self.global_scope[node.name] = value
+        return value
+    
+    def _is_type_compatible(self, expected_type: str, value: Any) -> bool:
+        """Check if a value is compatible with the expected type."""
+        if expected_type == 'var':
+            return True  # var accepts any type
+        elif expected_type == 'int':
+            return isinstance(value, int) and not isinstance(value, bool)
+        elif expected_type == 'str':
+            return isinstance(value, str)
+        elif expected_type == 'flt':
+            return isinstance(value, (int, float)) and not isinstance(value, bool)
+        else:
+            return False
     
     def _evaluate_return_statement(self, node: ReturnNode) -> Any:
         """Evaluate a return statement."""

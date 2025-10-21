@@ -4,7 +4,7 @@ from typing import List
 from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, TypeDeclarationNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -84,6 +84,8 @@ class Parser:
             return self._parse_loop_block()
         elif self._check('RETURN'):
             return self._parse_return_stmt()
+        elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'ASSIGN':
+            return self._parse_type_declaration()
         else:
             return self._parse_assignment_or_expr_stmt()
     
@@ -395,7 +397,10 @@ class Parser:
         if self._match('STRING'):
             return LiteralNode(self._previous().value)
         
-        if self._match('IDENT'):
+        if self._match('BOOLEAN'):
+            return LiteralNode(self._previous().value)
+        
+        if self._match('IDENT', 'TYPE_OR_IDENT'):
             name = self._previous().value
             
             # Check if it's a function call
@@ -452,6 +457,20 @@ class Parser:
             args.append(self._parse_expression())
         
         return args
+    
+    def _parse_type_declaration(self) -> TypeDeclarationNode:
+        """Parse type declaration: TYPE IDENT "=" expression"""
+        type_token = self._advance()  # Consume the type token (INT, STR, FLT, VAR)
+        type_name = type_token.value.lower()  # Convert to lowercase (int, str, flt, var)
+        
+        name_token = self._consume('IDENT', "Expected variable name after type")
+        name = name_token.value
+        
+        self._consume('ASSIGN', "Expected '=' after variable name")
+        
+        expr = self._parse_expression()
+        
+        return TypeDeclarationNode(type_name, name, expr)
     
     def _previous(self) -> Token:
         """Get the previous token."""

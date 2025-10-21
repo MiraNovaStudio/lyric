@@ -47,9 +47,10 @@ Claude will:
 - Create or update files inside `/lyric/`, `/tests/`, and `/examples/`.
 - Maintain imports and Python package integrity.
 - Ensure new modules import cleanly.
+- **IMPORTANT**: When instructed to iterate on a specific task (e.g., "SPRINT3_PLAN.md Task 1"), only implement that specific task and its requirements. Do not implement other tasks from the sprint unless explicitly instructed.
 
 ### 3. Write Summary (Conditional)
-If **Git Commit Toggle = YES**, Claude writes a changelog entry:
+If **Git Commit Toggle = YES**, Claude writes a changelog entry **AFTER** completing the task implementation:
 
 **MANDATORY REQUIREMENT**: Always get the current date and time before creating changelog files.
 
@@ -66,7 +67,7 @@ nova/changelog/YYYYMMDD/TIME_HHMM-CHANGELOG.md
 - Relevant sprint and task references
 
 ### 4. Write Sprint Task Summary (Conditional)
-If **Git Commit Toggle = YES**, Claude writes a sprint task summary:
+If **Git Commit Toggle = YES**, Claude writes a sprint task summary **AFTER** completing the task implementation:
 
 
 nova/sprints/sprintX/SPRINTX_TASKX_SUMMARY.md
@@ -82,7 +83,7 @@ nova/sprints/sprintX/SPRINTX_TASKX_SUMMARY.md
 - Reference to changelog for details
 
 ### 5. Write Sprint DOD Summary (Conditional)
-If **Git Commit Toggle = YES** and sprint is complete, Claude writes a sprint definition of done summary:
+If **Git Commit Toggle = YES** and sprint is complete, Claude writes a sprint definition of done summary **AFTER** completing all sprint tasks:
 
 
 nova/sprints/sprintX/SPRINTX_DOD_SUMMARY.md

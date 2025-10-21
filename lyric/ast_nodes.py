@@ -232,6 +232,25 @@ class ListLiteralNode:
 
 
 @dataclass
+class TypeDeclarationNode:
+    """Represents a typed variable declaration."""
+    type_name: str
+    name: str
+    expr: 'ASTNode'
+    
+    def __repr__(self):
+        return f"TypeDeclarationNode(type='{self.type_name}', name='{self.name}', expr={self.expr})"
+    
+    def to_dict(self):
+        return {
+            'type': 'TypeDeclarationNode',
+            'type_name': self.type_name,
+            'name': self.name,
+            'expr': self.expr.to_dict() if hasattr(self.expr, 'to_dict') else str(self.expr)
+        }
+
+
+@dataclass
 class PrintNode:
     """Represents a print statement (convenience node)."""
     args: List['ASTNode']
@@ -249,5 +268,5 @@ class PrintNode:
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, PrintNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, ListLiteralNode, TypeDeclarationNode, PrintNode
 ]

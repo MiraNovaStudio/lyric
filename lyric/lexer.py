@@ -20,7 +20,8 @@ class Lexer:
     # Keywords
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'given', 'done', 'end', 
-        'try', 'except', 'finally', 'and', 'or', 'not', 'in', 'return'
+        'try', 'except', 'finally', 'and', 'or', 'not', 'in', 'return',
+        'int', 'str', 'flt', 'var', 'True', 'False'
     }
     
     # Single character operators and delimiters
@@ -207,7 +208,16 @@ class Lexer:
         
         # Check if it's a keyword
         if value in self.KEYWORDS:
-            self.tokens.append(Token(value.upper(), value, start_line, start_col))
+            if value in ('True', 'False'):
+                # Convert boolean keywords to actual boolean values
+                bool_value = value == 'True'
+                self.tokens.append(Token('BOOLEAN', bool_value, start_line, start_col))
+            elif value in ('int', 'str', 'flt', 'var'):
+                # Type keywords can also be used as identifiers in expressions
+                # We'll let the parser decide based on context
+                self.tokens.append(Token('TYPE_OR_IDENT', value, start_line, start_col))
+            else:
+                self.tokens.append(Token(value.upper(), value, start_line, start_col))
         else:
             self.tokens.append(Token('IDENT', value, start_line, start_col))
     
