@@ -59,15 +59,6 @@ When **Nova** runs in full orchestration mode, it will:
 
 ---
 
-## 🧠 Historical Context
-
-Earlier Lyric development stored all sprint files flatly in `/docs/` (e.g. `SPRINT3_TASK1_SUMMARY.md`).
-This trajectory-based system introduces clarity, automation readiness, and improved traceability.
-Each sprint is now self-contained — including its plan, implementation notes, and verification logs.
-
-The trajectory structure allows for clear version targeting, with each trajectory representing a complete development cycle leading to a specific release milestone.
-
----
 
 ## 📜 Naming and Versioning
 
