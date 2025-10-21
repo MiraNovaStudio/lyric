@@ -3,16 +3,15 @@
 **Version:** 0.1.6  
 **Authors:** Michael (Aeonath), ChatGPT, and Claude  
 **Project:** MiraNova Studios Initiative  
-**Date:** December 2024  
+**Date:** December 2025  
 
 ---
 
 ## 🌙 Overview
 
-**Lyric** is a modern, beginner-friendly programming language designed for simplicity, readability, and elegance.  
-It blends Python's clean structure with a touch of natural language rhythm — code that reads like thought and feels like poetry.  
-
-Lyric minimizes syntax noise, avoids redundant symbols, and introduces symbolic elegance (`+++`, `done`, `end`) to clarify program flow.
+**Lyric** is a modern, beginner-friendly programming language designed for simplicity, readability, and elegance.
+It blends Python’s clean structure with a clear, expressive syntax that emphasizes understanding over complexity.
+Lyric is intended for use in introductory computer science courses, helping students learn core programming concepts through an approachable and consistent language design.
 
 The language is implemented in Python and currently supports core programming constructs including functions, conditionals, loops, classes, and built-in data structures with comprehensive error handling and performance optimizations.  
 
@@ -25,27 +24,25 @@ The language is implemented in Python and currently supports core programming co
 1. **Clarity before cleverness** — syntax must express intent plainly.  
 2. **Simplicity over completeness** — features exist only when they add clarity.  
 3. **Visual harmony** — indentation and rhythm matter.  
-4. **Consistency** — similar constructs end with parallel patterns (`end`, `done`, `+++`).  
+4. **Consistency** — similar constructs end with parallel patterns (`end`, `done`, `fade`, `+++`).  
 5. **Braces only where needed** — functions use braces; everything else uses natural terminators.
 
 ---
 
 ## 🧩 Syntax Summary
+| **Construct**         | **Summary**                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| **Conditional**       | Opens with `if`, `else if`, or `else`; closes with `end`. Replaces Python’s `elif`.           |
+| **Loop**              | Opens with `given`, closes with `done`. Unifies both `for` and `while` behavior.              |
+| **Function**          | Defined with `def` and enclosed in `{ ... }`. Only construct using braces.                    |
+| **Class**             | Declared with `class`, closed by symbolic `+++` marker. Adds the class to program scope.      |
+| **Try / Except**      | Structured with `try`, `except`, `finally`, closed by `fade`. Handles exceptions inside `{}`. |
+| **Import System**     | Uses `import` for Lyric modules and `importpy` for Python bridges. Single-line syntax.        |
+| **Entry Point**       | Always begins with `def main()`. Acts as the mandatory starting function.                     |
+| **Lists**             | Declared with `[ ... ]`. Built-in sequence type.                                              |
+| **Dictionaries**      | Declared with `{ ... }`. Built-in key/value data type.                                        |
+| **Type Declarations** | Supports `int`, `str`, `god`, `bin`, `flt`, and `var`. `var` enables dynamic typing.          |
 
-| Construct | Open | Close | Status | Notes |
-|------------|-------|--------|--------|-------|
-| Conditional | `if`, `else if`, `else` | `end` | ✅ Implemented | Replaces `elif` with `else if` |
-| Loop | `given` | `done` | ✅ Implemented | Unifies `for` and `while` |
-| Function | `def` | `{ ... }` | ✅ Implemented | Only construct using braces |
-| Class | `class` | `+++` | ✅ Implemented | Symbolic closure (adds class to program) |
-| Try/Except | `try`, `except`, `finally` | implicit | 🚧 Planned | Structured inside `{}` |
-| Import | `import` | — | 🚧 Planned | Simplified single-line import |
-| Entry Point | `main()` | — | ✅ Implemented | Required start of every program |
-| Lists | `[ ... ]` | `[ ... ]` | ✅ Implemented | Built-in data structures |
-| Dictionaries | `{ ... }` | `{ ... }` | ✅ Implemented | Built-in data structures |
-| Type Declarations | `int name` | — | ✅ Implemented | Optional C-style type declarations |
-
----
 
 ## 🔹 Basic Structure
 
@@ -56,7 +53,7 @@ There is no `__name__` or hidden runtime boilerplate.
 def main() {
     print("Hello, world!")
 }
-
+```
 
 ## ⚙️ Core Constructs
 
@@ -109,6 +106,7 @@ def greet(name) {
 
 - `+++` closes a class, symbolizing addition of a structure to the program
 - Classes are lightweight containers for variables and functions
+- `+++` is supposed to symbolize attaching a data structure to a program
 
 ```lyric
 class Player:
@@ -174,12 +172,29 @@ def main() {
         print("Invalid input")
     finally:
         print("Done")
+    fade
 }
 ```
 
 ### Variable Declaration and Assignment
 
-Lyric supports both dynamic and static typing with strict declaration enforcement. All variables must be explicitly declared before use to prevent implicit variable creation.
+Lyric supports both static and dynamic typing through explicit declarations.
+All variables must be declared before use, preventing implicit variable creation or shadowing.
+
+- Static typing is achieved by declaring a variable with a specific type (int, str, bool, etc.). Once declared, its type cannot change.
+
+```
+int count = 10
+count = "ten"  # ❌ TypeError
+```
+
+- Dynamic typing is enabled through the var keyword, which allows the variable’s type to change at runtime.
+
+```
+var value = 10
+value = "ten"  # ✅ Allowed
+```
+
 
 #### Declaration Syntax
 

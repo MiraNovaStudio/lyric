@@ -22,19 +22,26 @@ The result should be a more stable and feature-complete interpreter capable of h
 - Allow optional type declaration syntax in assignments and function parameters.
 - Examples:
   ```lyric
-  x:int = 5
-  def add(a:int, b:int) { return a + b }
+  int x = 5
+  str name = "hello"
+  flt pi = 3.14
+  def add(int a, int b) { return a + b }
   ```
 - Store type metadata in the interpreter's environment.
 - Implement runtime enforcement for type mismatches when enabled.
 - Add simple type inference for obvious numeric and string assignments.
+- **Type System Hierarchy:**
+  - **Strict Types:** `int`, `str`, `flt` (with strict enforcement)
+  - **Dynamic Type:** `var` (can hold any type, no restrictions)
+  - **Future Types:** `rex` (regex), `bin`/`god` (boolean)
 
 ### Acceptance Criteria:
 
-- **A1)** The interpreter correctly records and enforces type declarations.
-- **A2)** Assigning a string to a variable declared as int raises a runtime error.
+- **A1)** The interpreter correctly records and enforces type declarations for `int`, `str`, `flt`.
+- **A2)** Assigning a string to a variable declared as `int` raises a runtime error.
 - **A3)** Functions with typed parameters enforce types when called.
 - **A4)** Type inference assigns correct default types for literals.
+- **A5)** `var` type accepts any value without type checking restrictions.
 
 ## Task 2 — Return Statements and Function Values
 
