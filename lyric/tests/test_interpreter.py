@@ -508,7 +508,8 @@ def test_evaluate_error_reporting():
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         evaluate(ast)
     
-    assert "Variable 'undefined_variable' is not defined" in str(exc_info.value)
+    assert "Undefined variable" in str(exc_info.value)
+    assert "'undefined_variable' has not been declared" in str(exc_info.value)
 
 
 def test_evaluate_isinstance_function():
@@ -647,7 +648,8 @@ def test_evaluate_method_call_errors():
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         evaluate(ast)
     
-    assert "Method 'non_existent_method' not found" in str(exc_info.value)
+    assert "Method not found" in str(exc_info.value)
+    assert "'non_existent_method' is not a method" in str(exc_info.value)
 
 
 def test_evaluate_class_instantiation_errors():
@@ -661,4 +663,5 @@ def test_evaluate_class_instantiation_errors():
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         evaluate(ast)
     
-    assert "Function 'NonExistentClass' is not defined" in str(exc_info.value)
+    assert "Function not found" in str(exc_info.value)
+    assert "'NonExistentClass' is not defined" in str(exc_info.value)

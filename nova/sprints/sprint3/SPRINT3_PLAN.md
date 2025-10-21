@@ -159,10 +159,9 @@ def main() {
 
 ## Task 7 — Test Suite Expansion
 
-**Goal:** Extend test coverage for all new Sprint 3 features.
-
+**Goal:** Extend test coverage for all new Sprint 3 features and reorganize
+our unit test structure
 ### Work:
-
 - Add new test files:
   - `type_tests.ly`
   - `list_dict_tests.ly`
@@ -170,12 +169,17 @@ def main() {
   - `class_init_tests.ly`
 - Add corresponding pytest files to verify runtime and error outputs.
 - Confirm all tests pass cleanly before tagging.
+- Reorganize the existing unit test structure to conform to the method
+defined in the document nova/sprints/TEST_STRUCTURE.md
+- Update your CLAUDE_CONFIG.md to remember to conform to the new 
+unit test structure document
 
 ### Acceptance Criteria:
 
 - **A20)** All new test files run successfully through the CLI.
-- **A21)** pytest returns all tests passed.
-- **A22)** All previously implemented features remain functional.
+- **A21)** The unit test directory in lyric test conforms to the structure
+defined in the nova/sprints/TEST_STRUCTURE.md document
+- **A22)** All tests are passing 100%
 
 ## Task 8 — Documentation and Version Update
 

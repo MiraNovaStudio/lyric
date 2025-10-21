@@ -115,8 +115,9 @@ def test_type_error_int_assignment():
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         interpreter.evaluate(parse(source))
     
-    assert "Type error" in str(exc_info.value)
-    assert "cannot assign str to variable 'x' of type 'int'" in str(exc_info.value)
+    assert "Type mismatch" in str(exc_info.value)
+    assert "cannot assign str to variable 'x' declared as int" in str(exc_info.value)
+    assert "Expected int, but got str" in str(exc_info.value)
 
 
 def test_type_error_str_assignment():
@@ -127,8 +128,9 @@ def test_type_error_str_assignment():
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         interpreter.evaluate(parse(source))
     
-    assert "Type error" in str(exc_info.value)
-    assert "cannot assign int to variable 'name' of type 'str'" in str(exc_info.value)
+    assert "Type mismatch" in str(exc_info.value)
+    assert "cannot assign int to variable 'name' declared as str" in str(exc_info.value)
+    assert "Expected str, but got int" in str(exc_info.value)
 
 
 def test_type_error_flt_assignment():
@@ -139,8 +141,9 @@ def test_type_error_flt_assignment():
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         interpreter.evaluate(parse(source))
     
-    assert "Type error" in str(exc_info.value)
-    assert "cannot assign str to variable 'pi' of type 'flt'" in str(exc_info.value)
+    assert "Type mismatch" in str(exc_info.value)
+    assert "cannot assign str to variable 'pi' declared as flt" in str(exc_info.value)
+    assert "Expected flt, but got str" in str(exc_info.value)
 
 
 def test_var_accepts_any_type():

@@ -45,7 +45,8 @@ def test_cli_error_demo_output():
     assert "Testing error handling in Lyric" in output
     assert "This will cause an error:" in output
     assert "Runtime error:" in output
-    assert "Variable 'undefined_variable' is not defined" in output
+    assert "Undefined variable" in output
+    assert "'undefined_variable' has not been declared" in output
     
     # Ensure no Python traceback appears
     assert "Traceback (most recent call last):" not in output

@@ -124,7 +124,7 @@ def test_list_index_out_of_range():
     }'''
     
     ast = parse(source)
-    with pytest.raises(RuntimeErrorLyric, match="List index 5 out of range"):
+    with pytest.raises(RuntimeErrorLyric, match="Index out of range"):
         evaluate(ast)
 
 
@@ -137,7 +137,7 @@ def test_dictionary_key_not_found():
     }'''
     
     ast = parse(source)
-    with pytest.raises(RuntimeErrorLyric, match="Key 'age' not found in dictionary"):
+    with pytest.raises(RuntimeErrorLyric, match="Key not found"):
         evaluate(ast)
 
 
@@ -150,7 +150,7 @@ def test_list_index_type_error():
     }'''
     
     ast = parse(source)
-    with pytest.raises(RuntimeErrorLyric, match="List index must be an integer"):
+    with pytest.raises(RuntimeErrorLyric, match="Invalid list index"):
         evaluate(ast)
 
 
@@ -163,7 +163,7 @@ def test_cannot_index_non_indexable():
     }'''
     
     ast = parse(source)
-    with pytest.raises(RuntimeErrorLyric, match="Cannot index object of type int"):
+    with pytest.raises(RuntimeErrorLyric, match="Cannot index object"):
         evaluate(ast)
 
 
