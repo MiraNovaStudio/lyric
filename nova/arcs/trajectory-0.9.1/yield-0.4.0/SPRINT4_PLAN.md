@@ -1,5 +1,8 @@
 # 🎵 Lyric — Sprint 4
 
+**Target Version:** 0.4.0
+
+
 **Goal:**  
 Introduce improved variable handling and declaration syntax to make Lyric cleaner, more expressive, and optionally dynamic where appropriate.
 
@@ -87,7 +90,7 @@ Verify correctness through dedicated test scripts covering:
 - All acceptance criteria met for each task.  
 - `CHANGELOG.md` and `README.md` updated to reflect new syntax.  
 - Sprint reviewed and merged to `main` branch.  
-- Version tag: **`dev-0.0.6`**
+
 
 ---
 
