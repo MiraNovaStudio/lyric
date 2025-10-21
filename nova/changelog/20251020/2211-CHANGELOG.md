@@ -234,7 +234,7 @@ def main() {
 
 ## Files Created
 - `lyric/tests/test_exception_handling.py` - Comprehensive exception handling tests
-- `nova/sprints/sprint3/SPRINT3_TASK5_SUMMARY.md` - Task summary
+- `nova/arcs/trajectory-1.0.0/sprint3/SPRINT3_TASK5_SUMMARY.md` - Task summary
 - `nova/changelog/20251020/2211-CHANGELOG.md` - This changelog
 
 ## Performance Impact

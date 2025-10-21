@@ -41,8 +41,8 @@ Successfully implemented Sprint 3 Task 7: Test Suite Expansion and Reorganizatio
 - These are minor issues that don't affect core functionality testing
 
 ## Documentation Updates
-- Updated `nova/sprints/TEST_STRUCTURE.md` with implementation decisions
-- Updated `nova/sprints/sprint3/SPRINT3_PLAN.md` with implementation decisions for Task 7
+- Updated `nova/arcs/trajectory-1.0.0/TEST_STRUCTURE.md` with implementation decisions
+- Updated `nova/arcs/trajectory-1.0.0/sprint3/SPRINT3_PLAN.md` with implementation decisions for Task 7
 - Updated `nova/ai/CLAUDE_CONFIG.md` with test structure reference
 
 ## Status

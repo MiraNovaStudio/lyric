@@ -46,7 +46,7 @@ Implemented comprehensive runtime safety improvements and enhanced error message
 
 ## Files Created
 - `lyric/tests/test_runtime_safety.py`: Complete test suite for runtime safety features
-- `nova/sprints/sprint3/SPRINT3_TASK6_SUMMARY.md`: Task completion summary
+- `nova/arcs/trajectory-1.0.0/sprint3/SPRINT3_TASK6_SUMMARY.md`: Task completion summary
 
 ## Technical Details
 - **Approach**: Enhanced error message strings rather than adding line/column info to AST nodes

@@ -1,14 +1,16 @@
-# Nova Sprint Directory
+# Nova Trajectory 1.0.0 Directory
 
-The **`/nova/sprints/`** directory contains the full record of Nova's AI-driven sprint history — including plans, task summaries, definitions of done, and retrospectives.  
+The **`/nova/arcs/trajectory-1.0.0/`** directory contains the full record of Nova's AI-driven sprint history for Trajectory 1.0.0 — including plans, task summaries, definitions of done, and retrospectives.  
 Each sprint lives in its **own subdirectory** (e.g. `sprint1/`, `sprint2/`, etc.) to maintain organization, readability, and automation-friendly consistency.
+
+This trajectory represents the complete development cycle leading to Lyric version 1.0.0.
 
 ---
 
 ## 🧭 Directory Structure
 
 ```
-/nova/sprints/
+/nova/arcs/trajectory-1.0.0/
 ├── sprint1/
 │ ├── SPRINT_PLAN.md
 │ ├── SPRINT_TASK1_SUMMARY.md
@@ -58,8 +60,10 @@ When **Nova** runs in full orchestration mode, it will:
 ## 🧠 Historical Context
 
 Earlier Lyric development stored all sprint files flatly in `/docs/` (e.g. `SPRINT3_TASK1_SUMMARY.md`).
-This new hierarchical system introduces clarity, automation readiness, and improved traceability.
+This trajectory-based system introduces clarity, automation readiness, and improved traceability.
 Each sprint is now self-contained — including its plan, implementation notes, and verification logs.
+
+The trajectory structure allows for clear version targeting, with each trajectory representing a complete development cycle leading to a specific release milestone.
 
 ---
 

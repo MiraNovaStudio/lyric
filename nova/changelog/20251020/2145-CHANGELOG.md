@@ -139,7 +139,7 @@ class BankAccount:
 - `lyric/tests/test_class_enhancements.py` - New comprehensive test suite
 
 ## Files Created
-- `nova/sprints/sprint3/SPRINT3_TASK4_SUMMARY.md` - Detailed task summary
+- `nova/arcs/trajectory-1.0.0/sprint3/SPRINT3_TASK4_SUMMARY.md` - Detailed task summary
 - `nova/changelog/20251020/2145-CHANGELOG.md` - This changelog entry
 
 ## Performance Impact

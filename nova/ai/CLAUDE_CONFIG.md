@@ -48,7 +48,7 @@ Claude will:
 - Maintain imports and Python package integrity.
 - Ensure new modules import cleanly.
 - **IMPORTANT**: When instructed to iterate on a specific task (e.g., "SPRINT3_PLAN.md Task 1"), only implement that specific task and its requirements. Do not implement other tasks from the sprint unless explicitly instructed.
-- **TEST STRUCTURE**: Conform to the unit test structure defined in `nova/sprints/TEST_STRUCTURE.md` - organize tests by sprint version in `lyric/tests/core-0.x.x/` directories
+- **TEST STRUCTURE**: Conform to the unit test structure defined in `nova/arcs/trajectory-1.0.0/TEST_STRUCTURE.md` - organize tests by sprint version in `lyric/tests/core-0.x.x/` directories
 - **🚨 CRITICAL TEST REQUIREMENT 🚨**: **ALL UNIT TESTS MUST PASS 100% BEFORE TASK COMPLETION!** This is the END GOAL specified in TEST_STRUCTURE.md. If you cannot achieve 100% test pass rate in a reasonable amount of time (typically 3-5 attempts), PAUSE EXECUTION and ask the user what should be done next. Do not consider any task complete until all tests are passing.
 
 ### 3. Write Summary (Conditional)
@@ -72,7 +72,7 @@ nova/changelog/YYYYMMDD/TIME_HHMM-CHANGELOG.md
 If **Git Commit Toggle = YES**, Claude writes a sprint task summary **AFTER** completing the task implementation:
 
 
-nova/sprints/sprintX/SPRINTX_TASKX_SUMMARY.md
+nova/arcs/trajectory-1.0.0/sprintX/SPRINTX_TASKX_SUMMARY.md
 
 
 **Naming Convention**: Always use SPRINTX_TASKX_SUMMARY.md format (e.g., SPRINT1_TASK1_SUMMARY.md, SPRINT1_TASK2_SUMMARY.md)
@@ -88,7 +88,7 @@ nova/sprints/sprintX/SPRINTX_TASKX_SUMMARY.md
 If **Git Commit Toggle = YES** and sprint is complete, Claude writes a sprint definition of done summary **AFTER** completing all sprint tasks:
 
 
-nova/sprints/sprintX/SPRINTX_DOD_SUMMARY.md
+nova/arcs/trajectory-1.0.0/sprintX/SPRINTX_DOD_SUMMARY.md
 
 
 **Include**

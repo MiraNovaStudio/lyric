@@ -17,8 +17,8 @@ Successfully implemented Sprint 3 Task 7: Test Suite Expansion and Reorganizatio
 - **Created**: `lyric/tests/core-0.3.0/test_class_init_tests.py` - pytest file for class and constructor testing
 - **Moved**: All existing test files reorganized by sprint functionality
 - **Updated**: `lyric/tests/core-0.1.0/test_cli_integration.py` - Fixed path references for examples
-- **Updated**: `nova/sprints/TEST_STRUCTURE.md` - Added implementation decisions
-- **Updated**: `nova/sprints/sprint3/SPRINT3_PLAN.md` - Added implementation decisions for Task 7
+- **Updated**: `nova/arcs/trajectory-1.0.0/TEST_STRUCTURE.md` - Added implementation decisions
+- **Updated**: `nova/arcs/trajectory-1.0.0/sprint3/SPRINT3_PLAN.md` - Added implementation decisions for Task 7
 - **Updated**: `nova/ai/CLAUDE_CONFIG.md` - Added test structure reference
 
 ## Reason

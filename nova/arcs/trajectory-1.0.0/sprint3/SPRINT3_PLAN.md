@@ -171,7 +171,7 @@ our unit test structure
 - Add corresponding pytest files to verify runtime and error outputs.
 - Confirm all tests pass cleanly before tagging.
 - Reorganize the existing unit test structure to conform to the method
-defined in the document nova/sprints/TEST_STRUCTURE.md
+defined in the document nova/arcs/trajectory-1.0.0/TEST_STRUCTURE.md
 - Update your CLAUDE_CONFIG.md to remember to conform to the new 
 unit test structure document
 
@@ -186,7 +186,7 @@ unit test structure document
 
 - **A20)** All new test files run successfully through the CLI.
 - **A21)** The unit test directory in lyric test conforms to the structure
-defined in the nova/sprints/TEST_STRUCTURE.md document
+defined in the nova/arcs/trajectory-1.0.0/TEST_STRUCTURE.md document
 - **A22)** All tests are passing 100%
 
 ## Task 8 — Documentation and Version Update
