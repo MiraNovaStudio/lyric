@@ -14,7 +14,7 @@ class TestClassInitTests:
     
     def test_class_init_tests_ly_runs_successfully(self):
         """Test that class_init_tests.ly runs successfully through CLI."""
-        class_init_tests_path = os.path.join(os.path.dirname(__file__), '..', '..', 'examples', 'class_init_tests.ly')
+        class_init_tests_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'class_init_tests.ly')
         
         # Run the CLI command
         result = subprocess.run(['lyric', 'run', class_init_tests_path],

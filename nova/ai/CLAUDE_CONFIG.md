@@ -49,6 +49,7 @@ Claude will:
 - Ensure new modules import cleanly.
 - **IMPORTANT**: When instructed to iterate on a specific task (e.g., "SPRINT3_PLAN.md Task 1"), only implement that specific task and its requirements. Do not implement other tasks from the sprint unless explicitly instructed.
 - **TEST STRUCTURE**: Conform to the unit test structure defined in `nova/sprints/TEST_STRUCTURE.md` - organize tests by sprint version in `lyric/tests/core-0.x.x/` directories
+- **🚨 CRITICAL TEST REQUIREMENT 🚨**: **ALL UNIT TESTS MUST PASS 100% BEFORE TASK COMPLETION!** This is the END GOAL specified in TEST_STRUCTURE.md. If you cannot achieve 100% test pass rate in a reasonable amount of time (typically 3-5 attempts), PAUSE EXECUTION and ask the user what should be done next. Do not consider any task complete until all tests are passing.
 
 ### 3. Write Summary (Conditional)
 If **Git Commit Toggle = YES**, Claude writes a changelog entry **AFTER** completing the task implementation:

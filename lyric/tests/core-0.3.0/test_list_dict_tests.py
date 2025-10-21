@@ -14,7 +14,7 @@ class TestListDictTests:
     
     def test_list_dict_tests_ly_runs_successfully(self):
         """Test that list_dict_tests.ly runs successfully through CLI."""
-        list_dict_tests_path = os.path.join(os.path.dirname(__file__), '..', '..', 'examples', 'list_dict_tests.ly')
+        list_dict_tests_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'list_dict_tests.ly')
         
         # Run the CLI command
         result = subprocess.run(['lyric', 'run', list_dict_tests_path],

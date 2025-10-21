@@ -2,7 +2,7 @@
 
 Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. This project is being developed from scratch to test our development processes and create a clean, educational programming language implementation.
 
-**Status**: Active Development - Version 0.2.0 (Pre-Alpha)
+**Status**: Active Development - Version 0.3.0 (Pre-Alpha)
 
 ## Project Goals
 
@@ -14,17 +14,22 @@ This iteration of Lyric is being built from the ground up to:
 
 ## Current State
 
-The project has completed Sprint 1 and Sprint 2 with:
+The project has completed Sprint 1, Sprint 2, and Sprint 3 with:
 - ✅ Complete lexer implementation with tokenization
 - ✅ Recursive descent parser with AST generation
 - ✅ Interpreter with scope management and built-in functions
 - ✅ CLI interface for running Lyric programs
-- ✅ Comprehensive test suite (132 tests)
+- ✅ Comprehensive test suite (286 tests)
 - ✅ Class definitions and instantiation
 - ✅ Nested control flow (if/else, given/done)
 - ✅ Error reporting with line numbers
 - ✅ Built-in functions (print, input, int, float, str, range, len, isinstance, type)
 - ✅ List literals and None support
+- ✅ Typed variable declarations (int, str, flt, var)
+- ✅ Dictionary literals and indexing
+- ✅ Class constructors with init() methods
+- ✅ Exception handling (try/catch/finally)
+- ✅ Return statements and function parameters
 
 ## How to Run
 
@@ -49,27 +54,129 @@ def main() {
 }
 ```
 
-**Class Example** (`lyric/tests/examples/class_test.ly`):
+**Typed Variables** (`lyric/tests/examples/type_tests.ly`):
+```lyric
+# Type declarations with enforcement
+int age = 25
+str name = "Alice"
+flt pi = 3.14159
+var dynamic = "anything"
+
+# Type enforcement prevents mismatches
+# int count = "hello"  # This would cause a type error
+
+print("Name:", name, "Age:", age, "PI:", pi)
+```
+
+**Lists and Dictionaries** (`lyric/tests/examples/list_dict_tests.ly`):
+```lyric
+# List literals and operations
+var numbers = [1, 2, 3, 4, 5]
+var fruits = ["apple", "banana", "cherry"]
+
+# Dictionary literals and access
+var person = {"name": "Alice", "age": 30, "city": "New York"}
+var settings = {"theme": "dark", "language": "en"}
+
+# Indexing and modification
+numbers[0] = 10
+person["age"] = 31
+
+print("First number:", numbers[0])
+print("Person name:", person["name"])
+print("List length:", len(numbers))
+```
+
+**Class with Constructor** (`lyric/tests/examples/class_init_tests.ly`):
 ```lyric
 class Person:
-    name = "Guest"
-    age = 25
-    
-    def greet() {
-        print("Hello, I'm", self.name)
-        print("I am", self.age, "years old")
+    def init(str name, int age) {
+        self.name = name
+        self.age = age
+        self.greeting = "Hello, I'm " + name
     }
     
-    def set_name(new_name) {
-        self.name = new_name
+    def greet() {
+        print(self.greeting)
+        print("I am", self.age, "years old")
     }
 +++
 
 def main() {
-    person = Person()
+    var person = Person("Alice", 30)
     person.greet()
-    person.set_name("Alice")
-    person.greet()
+    
+    # Access instance variables
+    print("Name:", person.name)
+    print("Age:", person.age)
+}
+```
+
+**Exception Handling** (`lyric/tests/examples/exception_tests.ly`):
+```lyric
+# Basic try/catch/finally
+try:
+    var result = 10 / 0
+    print("Result:", result)
+catch:
+    print("Division by zero caught!")
+finally:
+    print("Cleanup completed")
+fade
+
+# Exception handling in functions
+def safe_divide(int a, int b) {
+    try:
+        return a / b
+    catch:
+        print("Division failed, returning 0")
+        return 0
+    finally:
+        print("Division attempt completed")
+    fade
+}
+
+var result = safe_divide(10, 0)
+print("Safe result:", result)
+```
+
+**Complex Example** (combining all features):
+```lyric
+class BankAccount:
+    def init(str owner, flt initial_balance) {
+        self.owner = owner
+        self.balance = initial_balance
+        self.transactions = []
+    }
+    
+    def deposit(flt amount) {
+        self.balance = self.balance + amount
+        append(self.transactions, "Deposit: " + str(amount))
+    }
+    
+    def withdraw(flt amount) {
+        try:
+            if self.balance >= amount:
+                self.balance = self.balance - amount
+                append(self.transactions, "Withdrawal: " + str(amount))
+            else:
+                raise ValueErrorLyric
+        catch:
+            print("Insufficient funds!")
+        finally:
+            print("Transaction attempt completed")
+        end
+    }
++++
+
+def main() {
+    var account = BankAccount("Alice", 1000.0)
+    account.deposit(500.0)
+    account.withdraw(200.0)
+    
+    print("Account owner:", account.owner)
+    print("Current balance:", account.balance)
+    print("Transaction count:", len(account.transactions))
 }
 ```
 
@@ -152,7 +259,9 @@ pip install pytest flake8 setuptools
 - **Loops**: `given variable in iterable: ... done` or `given condition: ... done` ✅
 - **Classes**: `class Name: ... +++` with instantiation, methods, and member access ✅
 - **Variables**: Dynamic typing with `name = value` assignment ✅
-- **Data Structures**: `[item1, item2, ...]` for lists ✅
+- **Typed Variables**: `int name = value`, `str name = value`, `flt name = value`, `var name = value` ✅
+- **Data Structures**: `[item1, item2, ...]` for lists and `{"key": value}` for dictionaries ✅
+- **Exception Handling**: `try: ... catch: ... finally: ... fade` with error propagation ✅
 - **Comments**: `# comment text` (full-line and inline comments) ✅
 
 ### Built-in Functions (Implemented)
@@ -161,17 +270,19 @@ pip install pytest flake8 setuptools
 - `input(prompt?)` — Read from stdin with optional prompt ✅
 - `int(value)`, `float(value)`, `str(value)` — Type conversions ✅
 - `range(start?, stop, step?)` — Integer sequence generation ✅
-- `len(sequence)` — Length calculation for strings, lists ✅
+- `len(sequence)` — Length calculation for strings, lists, dictionaries ✅
 - `isinstance(obj, type)` — Type checking for classes and built-in types ✅
 - `type(obj)` — Get type name of objects ✅
+- `append(list, item)` — Add items to lists ✅
+- `keys(dict)` — Get dictionary keys ✅
+- `values(dict)` — Get dictionary values ✅
 
 ### Planned Features (Future Sprints)
 
-- **Exception Handling**: `try: ... except: ... finally: ... end`
-- **Dictionaries**: `{"key": value, ...}` data structures
-- **Static Type Declarations**: `type name = value` syntax
-- **File I/O**: Enhanced file operations
 - **Modules**: Import/export system
+- **File I/O**: Enhanced file operations
+- **Advanced Type System**: Generic types and type inference
+- **Standard Library**: Extended built-in functions and utilities
 
 ## Development Process
 

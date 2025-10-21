@@ -15,7 +15,7 @@ class TestExceptionTests:
     
     def test_exception_tests_ly_runs_successfully(self):
         """Test that exception_tests.ly runs successfully through CLI."""
-        exception_tests_path = os.path.join(os.path.dirname(__file__), '..', '..', 'examples', 'exception_tests.ly')
+        exception_tests_path = os.path.join(os.path.dirname(__file__), '..', 'examples', 'exception_tests.ly')
         
         # Run the CLI command
         result = subprocess.run(['lyric', 'run', exception_tests_path],
