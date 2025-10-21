@@ -72,7 +72,7 @@ nova/changelog/YYYYMMDD/TIME_HHMM-CHANGELOG.md
 If **Git Commit Toggle = YES**, Claude writes a sprint task summary **AFTER** completing the task implementation:
 
 
-nova/arcs/trajectory-1.0.0/sprintX/SPRINTX_TASKX_SUMMARY.md
+nova/arcs/trajectory-1.0.0/sprint-0.x.x/SPRINTX_TASKX_SUMMARY.md
 
 
 **Naming Convention**: Always use SPRINTX_TASKX_SUMMARY.md format (e.g., SPRINT1_TASK1_SUMMARY.md, SPRINT1_TASK2_SUMMARY.md)
@@ -88,7 +88,7 @@ nova/arcs/trajectory-1.0.0/sprintX/SPRINTX_TASKX_SUMMARY.md
 If **Git Commit Toggle = YES** and sprint is complete, Claude writes a sprint definition of done summary **AFTER** completing all sprint tasks:
 
 
-nova/arcs/trajectory-1.0.0/sprintX/SPRINTX_DOD_SUMMARY.md
+nova/arcs/trajectory-1.0.0/sprint-0.x.x/SPRINTX_DOD_SUMMARY.md
 
 
 **Include**

@@ -1,7 +1,7 @@
 # Nova Trajectory 1.0.0 Directory
 
 The **`/nova/arcs/trajectory-1.0.0/`** directory contains the full record of Nova's AI-driven sprint history for Trajectory 1.0.0 — including plans, task summaries, definitions of done, and retrospectives.  
-Each sprint lives in its **own subdirectory** (e.g. `sprint1/`, `sprint2/`, etc.) to maintain organization, readability, and automation-friendly consistency.
+Each sprint lives in its **own subdirectory** named after the target version (e.g. `sprint-0.1.0/`, `sprint-0.2.0/`, etc.) to maintain organization, readability, and automation-friendly consistency.
 
 This trajectory represents the complete development cycle leading to Lyric version 1.0.0.
 
@@ -11,21 +11,23 @@ This trajectory represents the complete development cycle leading to Lyric versi
 
 ```
 /nova/arcs/trajectory-1.0.0/
-├── sprint1/
-│ ├── SPRINT_PLAN.md
-│ ├── SPRINT_TASK1_SUMMARY.md
-│ ├── SPRINT_TASK2_SUMMARY.md
-│ ├── SPRINT_DOD_SUMMARY.md
+├── sprint-0.1.0/
+│ ├── SPRINT1_PLAN.md
+│ ├── SPRINT1_TASK1_SUMMARY.md
+│ ├── SPRINT1_TASK2_SUMMARY.md
+│ ├── SPRINT1_DOD_SUMMARY.md
 │ └── README.md
-├── sprint2/
-│ ├── SPRINT_PLAN.md
-│ ├── SPRINT_TASK1_SUMMARY.md
-│ ├── SPRINT_TASK2_SUMMARY.md
-│ ├── SPRINT_TASK3_SUMMARY.md
-│ ├── SPRINT_DOD_SUMMARY.md
+├── sprint-0.2.0/
+│ ├── SPRINT2_PLAN.md
+│ ├── SPRINT2_TASK1_SUMMARY.md
+│ ├── SPRINT2_TASK2_SUMMARY.md
+│ ├── SPRINT2_TASK3_SUMMARY.md
+│ ├── SPRINT2_DOD_SUMMARY.md
 │ └── README.md
-├── sprint3/
+├── sprint-0.3.0/
 │ └── ...
+├── sprint-0.3.4/
+│ └── SPRINT3_PLAN_PART_2.md
 └── README.md ← (this file)
 ```
 
@@ -69,20 +71,21 @@ The trajectory structure allows for clear version targeting, with each trajector
 
 ## 📜 Naming and Versioning
 
-- Sprint directories should be lowercase: `sprint1/`, `sprint2/`, `sprint3/`, etc.
+- Sprint directories are named after their target version: `sprint-0.1.0/`, `sprint-0.2.0/`, `sprint-0.3.0/`, `sprint-0.3.4/`, etc.
+- Each sprint directly targets a specific release milestone (e.g., sprint-0.3.4 targets version 0.3.4)
 - Tags and changelog entries in Git will reference sprint completion (e.g. `dev-core@SPRINT1_COMPLETE`).
 - Major NOVA events (e.g. SUPERNOVA or PIVOT) will have their own markdown notes inside the relevant sprint folder.
 
 ---
 
-## 🧩 Example: `sprint1/` Contents
+## 🧩 Example: `sprint-0.1.0/` Contents
 
 ```
-sprint1/
-├── SPRINT_PLAN.md
-├── SPRINT_TASK1_SUMMARY.md
-├── SPRINT_TASK2_SUMMARY.md
-├── SPRINT_DOD_SUMMARY.md
+sprint-0.1.0/
+├── SPRINT1_PLAN.md
+├── SPRINT1_TASK1_SUMMARY.md
+├── SPRINT1_TASK2_SUMMARY.md
+├── SPRINT1_DOD_SUMMARY.md
 └── README.md
 ```
 
