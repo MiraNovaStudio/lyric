@@ -33,9 +33,9 @@ def main() {
     print("y = " + y)
 
     # Conditionals with end
-    if y > 10
+    if y > 10:
         print("Branch: y > 10")
-    else if y == 10
+    else if y == 10:
         print("Branch: y == 10")
     else
         print("Branch: y < 10")

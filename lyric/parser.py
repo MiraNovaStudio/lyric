@@ -196,7 +196,7 @@ class Parser:
     
     def _parse_class_def(self) -> ClassNode:
         """Parse class definition: class IDENT ":" statement* CLASS_END"""
-        self._consume('CLASS', "Expected 'class'")
+        class_token = self._consume('CLASS', "Expected 'class'")
         
         name_token = self._consume('IDENT', "Expected class name")
         name = name_token.value
@@ -218,11 +218,11 @@ class Parser:
         
         self._consume('CLASS_END', "Expected '+++' after class body")
         
-        return ClassNode(name, members_statements)
+        return ClassNode(name, members_statements, class_token.line, class_token.col)
     
     def _parse_if_block(self) -> IfNode:
         """Parse if block: if expression ":" statement* ("else" "if" expression ":" statement*)* ("else" ":" statement*)? "end" """
-        self._consume('IF', "Expected 'if'")
+        if_token = self._consume('IF', "Expected 'if'")
         
         condition = self._parse_expression()
         self._consume('COLON', "Expected ':' after if condition")
@@ -283,11 +283,11 @@ class Parser:
         
         self._consume('END', "Expected 'end' after if block")
         
-        return IfNode(condition, then_body, elifs, else_body)
+        return IfNode(condition, then_body, elifs, else_body, if_token.line, if_token.col)
     
     def _parse_loop_block(self) -> LoopNode:
         """Parse loop block: given expression ":" statement* "done" """
-        self._consume('GIVEN', "Expected 'given'")
+        given_token = self._consume('GIVEN', "Expected 'given'")
         
         iterator_var = None
         
@@ -321,7 +321,7 @@ class Parser:
         
         self._consume('DONE', "Expected 'done' after loop body")
         
-        return LoopNode(condition_or_iter, loop_kind, body, iterator_var)
+        return LoopNode(condition_or_iter, loop_kind, body, iterator_var, given_token.line, given_token.col)
     
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""
@@ -335,12 +335,13 @@ class Parser:
                 self._advance()  # consume '='
                 expr = self._parse_expression()
                 
-                return AssignNode(name, expr)
+                return AssignNode(name, expr, name_token.line, name_token.col)
             elif (self._peek_next().type == 'DOT' and 
                   self._peek_next_next().type == 'IDENT' and 
                   self._peek_next_next_next().type == 'ASSIGN'):
                 # Assignment to member: obj.attr = expression
-                obj_name = self._advance().value
+                obj_token = self._advance()
+                obj_name = obj_token.value
                 self._advance()  # consume '.'
                 member_name = self._advance().value
                 self._advance()  # consume '='
@@ -348,13 +349,14 @@ class Parser:
                 full_name = f"{obj_name}.{member_name}"
                 expr = self._parse_expression()
                 
-                return AssignNode(full_name, expr)
+                return AssignNode(full_name, expr, obj_token.line, obj_token.col)
             elif (self._peek_next().type == 'LBRACKET' and 
                   self._peek_next_next().type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
                   self._peek_next_next_next().type == 'RBRACKET' and
                   self._peek_next_next_next_next().type == 'ASSIGN'):
                 # Assignment to indexed expression: obj[index] = expression
-                obj_name = self._advance().value
+                obj_token = self._advance()
+                obj_name = obj_token.value
                 self._advance()  # consume '['
                 index_token = self._advance()
                 self._advance()  # consume ']'
@@ -365,20 +367,20 @@ class Parser:
                 indexed_expr = IndexNode(IdentifierNode(obj_name), index_expr)
                 expr = self._parse_expression()
                 
-                return AssignNode(f"{obj_name}[{index_token.value}]", expr)
+                return AssignNode(f"{obj_name}[{index_token.value}]", expr, obj_token.line, obj_token.col)
         
         # Expression statement
         return self._parse_expression()
     
     def _parse_return_stmt(self) -> ReturnNode:
         """Parse return statement: return expression? """
-        self._consume('RETURN', "Expected 'return'")
+        return_token = self._consume('RETURN', "Expected 'return'")
         
         value = None
         if not self._check('NEWLINE') and not self._check('EOF'):
             value = self._parse_expression()
         
-        return ReturnNode(value)
+        return ReturnNode(value, return_token.line, return_token.col)
     
     def _parse_expression(self):
         """Parse an expression with proper precedence."""
@@ -402,7 +404,8 @@ class Parser:
         while self._match('AND'):
             operator = self._previous().value
             right = self._parse_equality()
-            expr = BinaryOpNode(operator, expr, right)
+            line, col = self._get_position_from_token(self._previous())
+            expr = BinaryOpNode(operator, expr, right, line, col)
         
         return expr
     
@@ -413,7 +416,8 @@ class Parser:
         while self._match('==', '!='):
             operator = self._previous().value
             right = self._parse_comparison()
-            expr = BinaryOpNode(operator, expr, right)
+            line, col = self._get_position_from_token(self._previous())
+            expr = BinaryOpNode(operator, expr, right, line, col)
         
         return expr
     
@@ -424,7 +428,8 @@ class Parser:
         while self._match('LT', '<=', 'GT', '>='):
             operator = self._previous().value
             right = self._parse_term()
-            expr = BinaryOpNode(operator, expr, right)
+            line, col = self._get_position_from_token(self._previous())
+            expr = BinaryOpNode(operator, expr, right, line, col)
         
         return expr
     
@@ -435,7 +440,8 @@ class Parser:
         while self._match('PLUS', 'MINUS'):
             operator = self._previous().value
             right = self._parse_factor()
-            expr = BinaryOpNode(operator, expr, right)
+            line, col = self._get_position_from_token(self._previous())
+            expr = BinaryOpNode(operator, expr, right, line, col)
         
         return expr
     
@@ -446,7 +452,8 @@ class Parser:
         while self._match('MULTIPLY', 'DIVIDE'):
             operator = self._previous().value
             right = self._parse_unary()
-            expr = BinaryOpNode(operator, expr, right)
+            line, col = self._get_position_from_token(self._previous())
+            expr = BinaryOpNode(operator, expr, right, line, col)
         
         return expr
     
@@ -455,26 +462,32 @@ class Parser:
         if self._match('MINUS', 'NOT'):
             operator = self._previous().value
             right = self._parse_unary()
-            return UnaryOpNode(operator, right)
+            line, col = self._get_position_from_token(self._previous())
+            return UnaryOpNode(operator, right, line, col)
         
         return self._parse_primary()
     
     def _parse_primary(self):
         """Parse primary expressions."""
         if self._match('INT', 'FLOAT'):
-            return LiteralNode(self._previous().value)
+            token = self._previous()
+            return LiteralNode(token.value, token.line, token.col)
         
         if self._match('STRING'):
-            return LiteralNode(self._previous().value)
+            token = self._previous()
+            return LiteralNode(token.value, token.line, token.col)
         
         if self._match('BOOLEAN'):
-            return LiteralNode(self._previous().value)
+            token = self._previous()
+            return LiteralNode(token.value, token.line, token.col)
         
         if self._match('NONE'):
-            return LiteralNode(None)
+            token = self._previous()
+            return LiteralNode(None, token.line, token.col)
         
         if self._match('IDENT', 'TYPE_OR_IDENT'):
-            name = self._previous().value
+            name_token = self._previous()
+            name = name_token.value
             
             # Check if it's a function call
             if self._match('LPAREN'):
@@ -483,7 +496,7 @@ class Parser:
                     args = self._parse_argument_list()
                 
                 self._consume('RPAREN', "Expected ')' after arguments")
-                return CallNode(name, args)
+                return CallNode(name, args, name_token.line, name_token.col)
             
             # Handle member access: obj.member
             if self._match('DOT'):
@@ -502,21 +515,25 @@ class Parser:
                         args = self._parse_argument_list()
                     
                     self._consume('RPAREN', "Expected ')' after arguments")
-                    return CallNode(full_name, args)
+                    return CallNode(full_name, args, name_token.line, name_token.col)
                 
-                return IdentifierNode(full_name)
+                return IdentifierNode(full_name, name_token.line, name_token.col)
             
             # Start with identifier and check for indexing
-            expr = IdentifierNode(name)
+            expr = IdentifierNode(name, name_token.line, name_token.col)
             return self._parse_indexing_chain(expr)
         
         if self._match('LPAREN'):
+            lparen_token = self._previous()
             expr = self._parse_expression()
             self._consume('RPAREN', "Expected ')' after expression")
+            # Use the position of the opening parenthesis
+            expr.line, expr.column = lparen_token.line, lparen_token.col
             return self._parse_indexing_chain(expr)
         
         if self._match('LBRACKET'):
             # List literal: [ expression* ]
+            lbracket_token = self._previous()
             elements = []
             if not self._check('RBRACKET'):
                 # Skip NEWLINE tokens
@@ -535,10 +552,11 @@ class Parser:
                 pass
             
             self._consume('RBRACKET', "Expected ']' after list elements")
-            return self._parse_indexing_chain(ListLiteralNode(elements))
+            return self._parse_indexing_chain(ListLiteralNode(elements, lbracket_token.line, lbracket_token.col))
         
         if self._match('LBRACE'):
             # Dictionary literal: { key: value, ... }
+            lbrace_token = self._previous()
             pairs = []
             if not self._check('RBRACE'):
                 # Skip NEWLINE tokens
@@ -566,16 +584,17 @@ class Parser:
                 pass
             
             self._consume('RBRACE', "Expected '}' after dictionary pairs")
-            return self._parse_indexing_chain(DictLiteralNode(pairs))
+            return self._parse_indexing_chain(DictLiteralNode(pairs, lbrace_token.line, lbrace_token.col))
         
         raise SyntaxErrorLyric("Expected expression", self._peek().line, self._peek().col)
     
     def _parse_indexing_chain(self, expr):
         """Parse chained indexing operations: expr[index][index]..."""
         while self._match('LBRACKET'):
+            lbracket_token = self._previous()
             index = self._parse_expression()
             self._consume('RBRACKET', "Expected ']' after index")
-            expr = IndexNode(expr, index)
+            expr = IndexNode(expr, index, lbracket_token.line, lbracket_token.col)
         return expr
     
     def _parse_argument_list(self) -> List:
@@ -607,6 +626,10 @@ class Parser:
         """Get the previous token."""
         return self.tokens[self.current - 1]
     
+    def _get_position_from_token(self, token: Token) -> tuple[int, int]:
+        """Get line and column position from a token."""
+        return (token.line, token.col)
+    
     def _peek_next(self) -> Token:
         """Look at the next token without advancing."""
         if self.current + 1 >= len(self.tokens):
@@ -633,7 +656,7 @@ class Parser:
 
     def _parse_try_block(self) -> TryNode:
         """Parse try/catch/finally block: try: ... catch: ... finally: ... fade"""
-        self._consume('TRY', "Expected 'try'")
+        try_token = self._consume('TRY', "Expected 'try'")
         self._consume('COLON', "Expected ':' after try")
         
         # Parse try body
@@ -694,17 +717,17 @@ class Parser:
             raise ParseError("try block must have a catch block at line {}, column {}".format(
                 self._peek().line, self._peek().col))
         
-        return TryNode(try_body, catch_body, finally_body)
+        return TryNode(try_body, catch_body, finally_body, try_token.line, try_token.col)
 
     def _parse_raise_stmt(self) -> RaiseNode:
         """Parse raise statement: raise ExceptionName"""
-        self._consume('RAISE', "Expected 'raise'")
+        raise_token = self._consume('RAISE', "Expected 'raise'")
         
         # Parse exception name
         exception_token = self._consume('IDENT', "Expected exception name after 'raise'")
         exception_name = exception_token.value
         
-        return RaiseNode(exception_name)
+        return RaiseNode(exception_name, raise_token.line, raise_token.col)
 
     def _parse_type_declaration(self) -> TypeDeclarationNode:
         """Parse type declaration: TYPE IDENT "=" expression"""
@@ -726,7 +749,7 @@ class Parser:
         self._consume('ASSIGN', "Expected '=' after variable name")
         expr = self._parse_expression()
         
-        return TypeDeclarationNode(type_name, name, expr)
+        return TypeDeclarationNode(type_name, name, expr, type_token.line, type_token.col)
     
     def _parse_multi_declaration(self) -> MultiDeclarationNode:
         """Parse multi-variable declaration: TYPE IDENT "," TYPE IDENT "," ... """

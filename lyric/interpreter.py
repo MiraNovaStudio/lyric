@@ -214,14 +214,14 @@ class Interpreter:
                     try:
                         index = int(index_str)
                         if index < 0 or index >= len(obj):
-                            raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
+                            raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}", node.line, node.column)
                         obj[index] = value
                     except ValueError:
-                        raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.")
+                        raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
                 else:
-                    raise RuntimeErrorLyric(f"Cannot assign to indexed expression: '{obj_name}' is of type {type(obj).__name__}, but only lists and dictionaries support indexed assignment")
+                    raise RuntimeErrorLyric(f"Cannot assign to indexed expression: '{obj_name}' is of type {type(obj).__name__}, but only lists and dictionaries support indexed assignment", node.line, node.column)
             else:
-                raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first")
+                raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first", node.line, node.column)
         else:
             # Regular assignment
             # Check type enforcement if variable was declared with a type
@@ -231,7 +231,8 @@ class Interpreter:
                     raise RuntimeErrorLyric(
                         f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {expected_type}. "
                         f"Expected {expected_type}, but got {type(value).__name__}. "
-                        f"Use 'var {node.name} = ...' if you need dynamic typing."
+                        f"Use 'var {node.name} = ...' if you need dynamic typing.",
+                        node.line, node.column
                     )
             
             self.global_scope[node.name] = value
@@ -251,7 +252,8 @@ class Interpreter:
                 raise RuntimeErrorLyric(
                     f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {node.type_name}. "
                     f"Expected {node.type_name}, but got {type(value).__name__}. "
-                    f"Use 'var {node.name} = ...' if you need dynamic typing."
+                    f"Use 'var {node.name} = ...' if you need dynamic typing.",
+                    node.line, node.column
                 )
         
         # Store the value
