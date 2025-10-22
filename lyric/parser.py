@@ -5,7 +5,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, TryNode, RaiseNode, ImportPyNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -91,8 +91,16 @@ class Parser:
             return self._parse_importpy_stmt()
         elif self._check('RAISE'):
             return self._parse_raise_stmt()
+        elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'COMMA':
+            return self._parse_multi_declaration()
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'ASSIGN':
             return self._parse_type_declaration()
+        elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT':
+            # Single variable declaration without assignment
+            return self._parse_multi_declaration()
+        elif self._check('IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'COMMA':
+            # Multi-declaration with invalid type - let multi-declaration parser handle the error
+            return self._parse_multi_declaration()
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'ASSIGN':
             # Error: type keyword followed directly by assignment (missing variable name)
             type_token = self._advance()
@@ -719,6 +727,44 @@ class Parser:
         expr = self._parse_expression()
         
         return TypeDeclarationNode(type_name, name, expr)
+    
+    def _parse_multi_declaration(self) -> MultiDeclarationNode:
+        """Parse multi-variable declaration: TYPE IDENT "," TYPE IDENT "," ... """
+        declarations = []
+        line = self._peek().line
+        column = self._peek().col
+        
+        while True:
+            # Parse type and variable name
+            # Handle both TYPE_OR_IDENT and IDENT (for invalid types)
+            if self._check('TYPE_OR_IDENT'):
+                type_token = self._consume('TYPE_OR_IDENT', "Expected type keyword")
+            else:
+                type_token = self._consume('IDENT', "Expected type keyword")
+            
+            type_name = type_token.value.lower()
+            
+            # Validate that pyobject is not allowed as explicit type declaration
+            if type_name == 'pyobject':
+                raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
+            
+            # Validate that the type is a known type
+            valid_types = {'int', 'str', 'flt', 'var'}
+            if type_name not in valid_types:
+                raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
+            
+            name_token = self._consume('IDENT', "Expected variable name after type")
+            name = name_token.value
+            
+            declarations.append((type_name, name))
+            
+            # Check if there's another declaration
+            if self._match('COMMA'):
+                continue
+            else:
+                break
+        
+        return MultiDeclarationNode(declarations, line, column)
     
     def _parse_importpy_stmt(self) -> ImportPyNode:
         """Parse importpy statement: importpy IDENT"""

@@ -352,6 +352,23 @@ class RaiseNode:
 
 
 @dataclass
+class MultiDeclarationNode:
+    """Represents multiple variable declarations in a single line."""
+    declarations: List[tuple[str, str]]  # List of (type_name, variable_name) tuples
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"MultiDeclarationNode(declarations={self.declarations})"
+    
+    def to_dict(self):
+        return {
+            'type': 'MultiDeclarationNode',
+            'declarations': self.declarations
+        }
+
+
+@dataclass
 class ImportPyNode:
     """Represents an importpy statement."""
     module_name: str
@@ -372,6 +389,6 @@ class ImportPyNode:
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, PrintNode,
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
     TryNode, RaiseNode, ImportPyNode
 ]

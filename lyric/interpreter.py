@@ -4,7 +4,7 @@ from typing import Any, List
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, TryNode, RaiseNode, ImportPyNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
@@ -152,6 +152,8 @@ class Interpreter:
         """Evaluate a single statement."""
         if isinstance(statement, TypeDeclarationNode):
             return self._evaluate_type_declaration(statement)
+        elif isinstance(statement, MultiDeclarationNode):
+            return self._evaluate_multi_declaration(statement)
         elif isinstance(statement, AssignNode):
             return self._evaluate_assignment(statement)
         elif isinstance(statement, FunctionNode):
@@ -222,6 +224,16 @@ class Interpreter:
                 raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first")
         else:
             # Regular assignment
+            # Check type enforcement if variable was declared with a type
+            if node.name in self.variable_types:
+                expected_type = self.variable_types[node.name]
+                if expected_type != 'var' and not self._is_type_compatible(expected_type, value):
+                    raise RuntimeErrorLyric(
+                        f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {expected_type}. "
+                        f"Expected {expected_type}, but got {type(value).__name__}. "
+                        f"Use 'var {node.name} = ...' if you need dynamic typing."
+                    )
+            
             self.global_scope[node.name] = value
         
         return value
@@ -245,6 +257,18 @@ class Interpreter:
         # Store the value
         self.global_scope[node.name] = value
         return value
+    
+    def _evaluate_multi_declaration(self, node: MultiDeclarationNode) -> Any:
+        """Evaluate a multi-variable declaration statement."""
+        # Declare all variables as uninitialized
+        for type_name, var_name in node.declarations:
+            # Store the variable type
+            self.variable_types[var_name] = type_name
+            
+            # Declare the variable as uninitialized (None)
+            self.global_scope[var_name] = None
+        
+        return None
     
     def _is_type_compatible(self, expected_type: str, value: Any) -> bool:
         """Check if a value is compatible with the expected type."""
@@ -321,6 +345,10 @@ class Interpreter:
                 # Class member assignment
                 value = self._evaluate_expression(member.expr)
                 class_dict[member.name] = value
+            elif isinstance(member, MultiDeclarationNode):
+                # Multi-variable declaration in class
+                for type_name, var_name in member.declarations:
+                    class_dict[var_name] = None  # Declare as uninitialized
             elif isinstance(member, FunctionNode):
                 # Class method
                 class_dict[member.name] = {

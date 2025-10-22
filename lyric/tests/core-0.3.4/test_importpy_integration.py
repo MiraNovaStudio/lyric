@@ -18,11 +18,6 @@ from lyric.lexer import Lexer
 class TestImportPyIntegration:
     """Test the importpy_tests.ly example file integration."""
 
-    def test_importpy_tests_ly_execution(self):
-        """Test that importpy_tests.ly runs successfully through CLI."""
-        # Skip this test due to subprocess buffering issues on Windows
-        # The CLI functionality is tested in other integration tests
-        pytest.skip("CLI execution test skipped due to subprocess buffering issues")
 
     def test_importpy_basic_functionality(self):
         """Test basic importpy functionality through interpreter."""
