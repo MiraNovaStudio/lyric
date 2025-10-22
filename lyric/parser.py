@@ -460,6 +460,9 @@ class Parser:
         if self._match('BOOLEAN'):
             return LiteralNode(self._previous().value)
         
+        if self._match('NONE'):
+            return LiteralNode(None)
+        
         if self._match('IDENT', 'TYPE_OR_IDENT'):
             name = self._previous().value
             
