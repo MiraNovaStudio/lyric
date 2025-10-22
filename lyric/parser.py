@@ -688,6 +688,28 @@ class Parser:
         
         return RaiseNode(exception_name)
 
+    def _parse_type_declaration(self) -> TypeDeclarationNode:
+        """Parse type declaration: TYPE IDENT "=" expression"""
+        type_token = self._advance()
+        type_name = type_token.value.lower()
+        
+        # Validate that pyobject is not allowed as explicit type declaration
+        if type_name == 'pyobject':
+            raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
+        
+        # Validate that the type is a known type
+        valid_types = {'int', 'str', 'flt', 'var'}
+        if type_name not in valid_types:
+            raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
+        
+        name_token = self._consume('IDENT', "Expected variable name after type")
+        name = name_token.value
+        
+        self._consume('ASSIGN', "Expected '=' after variable name")
+        expr = self._parse_expression()
+        
+        return TypeDeclarationNode(type_name, name, expr)
+
 
 def parse(source: str) -> ProgramNode:
     """Parse source code and return a ProgramNode."""

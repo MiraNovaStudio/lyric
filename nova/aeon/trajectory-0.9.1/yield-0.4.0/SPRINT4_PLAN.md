@@ -84,7 +84,33 @@ Verify correctness through dedicated test scripts covering:
 - All tests pass without regression.  
 - Manual and automated verification complete.
 
----
+
+### **TASK 6 - AST Position Tracking & Structured Error Reporting**
+
+**Goal:**  
+Refactor `ast_node.py` and related parser components so each AST node stores `line` and `column` metadata, enabling precise source-level error reporting.
+
+ Scope of Work
+
+- Update `ASTNode` base class to include `line` and `column` attributes.  
+- Modify the parser to attach position information during tokenization and node construction.  
+- Update error and exception handling logic to use this metadata when displaying messages.  
+- Ensure backward compatibility with existing interpreter behavior.  
+- Add regression tests for error locations and messages.  
+
+
+ Acceptance Criteria
+
+- All syntax and runtime errors include **file, line, and column** in their output.  
+- Existing tests pass with **no behavioral regressions**.  
+- New test suite for **error positioning** passes.  
+- Developer documentation updated (e.g., `/docs/errors.md`).  
+
+Impact
+
+This change requires a **major refactor** of the parser and AST node structures.  
+While complex, it lays the foundation for advanced IDE integrations and precise debugging support in futu
+
 
 ## 📅 Definition of Done
 - All acceptance criteria met for each task.  

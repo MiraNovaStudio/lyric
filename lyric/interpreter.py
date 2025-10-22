@@ -247,7 +247,10 @@ class Interpreter:
     def _is_type_compatible(self, expected_type: str, value: Any) -> bool:
         """Check if a value is compatible with the expected type."""
         if expected_type == 'var':
-            return True  # var accepts any type
+            return True  # var accepts any type, including pyobject
+        elif expected_type == 'pyobject':
+            # pyobject internally maps to var in Lyric syntax
+            return True  # pyobject can hold any Python value
         elif expected_type == 'int':
             return isinstance(value, int) and not isinstance(value, bool)
         elif expected_type == 'str':
