@@ -2,7 +2,7 @@
 # Tests class definitions, init() methods, and instance creation
 
 # Test 1: Basic class with init() method
-class Person:
+class Person
     def init(str name, int age) {
         self.name = name
         self.age = age
@@ -20,7 +20,7 @@ var alice_age = person1.age
 var alice_greeting = person1.greeting
 
 # Test 4: Class with multiple methods
-class BankAccount:
+class BankAccount
     def init(str owner, flt initial_balance) {
         self.owner = owner
         self.balance = initial_balance
@@ -49,7 +49,7 @@ account.withdraw(200.0)
 var current_balance = account.balance
 
 # Test 6: Class with typed parameters
-class Calculator:
+class Calculator
     def init(str name) {
         self.name = name
         self.history = []
@@ -75,7 +75,7 @@ var product_result = calc.multiply(3, 7)
 var history_length = len(calc.history)
 
 # Test 8: Class with complex init()
-class Student:
+class Student
     def init(str name, int student_id, var grades) {
         self.name = name
         self.id = student_id
@@ -102,7 +102,7 @@ var student_id = student.id
 var student_avg = student.average
 
 # Test 10: Class inheritance simulation (using composition)
-class Employee:
+class Employee
     def init(str name, int employee_id, flt salary) {
         self.name = name
         self.id = employee_id

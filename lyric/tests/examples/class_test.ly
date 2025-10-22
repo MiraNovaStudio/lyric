@@ -1,4 +1,4 @@
-class Person:
+class Person
     name = "Guest"
     age = 25
     
@@ -16,7 +16,7 @@ class Person:
     }
 +++
 
-class Student:
+class Student
     name = "Student"
     grade = "A"
     
