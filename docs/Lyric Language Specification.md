@@ -1,9 +1,9 @@
 # Lyric Language Specification
 
-**Version:** 0.1.6  
+**Version:** 0.4.0  
 **Authors:** Michael (Aeonath), ChatGPT, and Claude  
 **Project:** MiraNova Studios Initiative  
-**Date:** December 2025  
+**Date:** October 2025  
 
 ---
 
@@ -41,7 +41,7 @@ The language is implemented in Python and currently supports core programming co
 | **Entry Point**       | Always begins with `def main()`. Acts as the mandatory starting function.                     |
 | **Lists**             | Declared with `[ ... ]`. Built-in sequence type.                                              |
 | **Dictionaries**      | Declared with `{ ... }`. Built-in key/value data type.                                        |
-| **Type Declarations** | Supports `int`, `str`, `god`, `bin`, `flt`, and `var`. `var` enables dynamic typing.          |
+| **Type Declarations** | Supports `int`, `str`, `flt`, `var`, and `pyobject`. `var` enables dynamic typing.          |
 
 
 ## 🔹 Basic Structure
@@ -209,9 +209,8 @@ x = "hello"          # Type change allowed for var variables
 ```lyric
 int count = 5        # Integer variable
 str message = "Hi"   # String variable  
-god active = true   # Boolean variable (named in honor of logician Kurt Gödel)
-float pi = 3.14      # Float variable
-None value = None    # None variable
+flt pi = 3.14        # Float variable
+var dynamic = true   # Dynamic variable (can change type)
 ```
 
 **Multi-Variable Declarations:**
@@ -223,7 +222,7 @@ str name, message
 
 # Mixed-type multi-declarations
 var x, int y, str z
-int count, var temp, god flag
+int count, var temp, flt pi
 ```
 
 #### Declaration and Initialization Rules
@@ -256,7 +255,21 @@ def main() {
 ```lyric
 def main() {
     int x = 10
-    x = "hello"  # Error: Type mismatch for variable 'x': expected int, got str
+    x = "hello"  # Error: Type mismatch: cannot assign str to variable 'x' declared as int. Expected int, but got str. Use 'var x = ...' if you need dynamic typing.
+}
+```
+
+**Invalid Type in Multi-Declaration:**
+```lyric
+def main() {
+    invalid_type x, int y  # Error: Unknown type 'invalid_type' at line 1, column 1. Valid types are: int, str, flt, var
+}
+```
+
+**PyObject Restriction:**
+```lyric
+def main() {
+    pyobject x, int y  # Error: Type 'pyobject' is internal only and cannot be used in explicit declarations at line 1, column 1
 }
 ```
 
@@ -309,16 +322,14 @@ base_type :=
     | 'var'
     | 'int'
     | 'str'
-    | 'god'
-    | 'float'
-    | 'None'
+    | 'flt'
+    | 'pyobject'
 
 type_annotation :=
     | 'int'
     | 'str'
-    | 'god'
-    | 'float'
-    | 'None'
+    | 'flt'
+    | 'var'
 
 identifier := [a-zA-Z_][a-zA-Z0-9_]*
 ```
@@ -336,13 +347,13 @@ int a, b, c
 
 # Multi-declarations (mixed types)
 var x, int y, str z
-int count, var temp, god flag
+int count, var temp, flt pi
 ```
 
 ### Advanced Class Example
 
 ```lyric
-class Counter:
+class Counter
     value = 0
 
     def Counter(start) {
@@ -360,7 +371,7 @@ class Counter:
 
 def main() {
     c = Counter()
-    given i in range(3):
+    given i in range(3)
         c.increment()
     done
     print("Count:", c)
@@ -383,7 +394,7 @@ Lyric is about learning and clarity, not syntax density.
 
 ## 📋 Current Implementation Status
 
-### ✅ Implemented Features (v0.1.6)
+### ✅ Implemented Features (v0.4.0)
 - Core language constructs (functions, conditionals, loops)
 - Class system with `+++` terminator
 - Built-in data structures (lists, dictionaries)
@@ -396,14 +407,13 @@ Lyric is about learning and clarity, not syntax density.
 - **Declaration enforcement (all variables must be declared)**
 - **Multi-variable declarations with comma-separated syntax**
 - **Mixed-type multi-declarations support**
-- Comprehensive test suite (226+ tests)
+- Comprehensive test suite (334+ tests)
 
 ### 🚧 Planned Features
-- Import system
-- Exception handling (try/catch/finally)
+- Advanced exception handling enhancements
 - File I/O operations
 - Advanced type system features
-- Module system
+- Module system expansion
 - Standard library expansion
 
 ## 💡 Example Program
@@ -413,14 +423,14 @@ Lyric is about learning and clarity, not syntax density.
 var x, int y, str name
 
 # Static type declarations
-float pi = 3.14159
-god active = true
+flt pi = 3.14159
+var active = true
 
-def float calculate_area(float radius) {
+def flt calculate_area(flt radius) {
     return pi * radius * radius
 }
 
-def str format_result(float area, str shape) {
+def str format_result(flt area, str shape) {
     return "Area of " + shape + ": " + str(area)
 }
 
