@@ -5,7 +5,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, TryNode, RaiseNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, TryNode, RaiseNode, ImportPyNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -87,6 +87,8 @@ class Parser:
             return self._parse_return_stmt()
         elif self._check('TRY'):
             return self._parse_try_block()
+        elif self._check('IMPORTPY'):
+            return self._parse_importpy_stmt()
         elif self._check('RAISE'):
             return self._parse_raise_stmt()
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'ASSIGN':
@@ -480,6 +482,11 @@ class Parser:
                 member_name = self._consume('IDENT', "Expected member name after '.'").value
                 full_name = f"{name}.{member_name}"
                 
+                # Handle chained member access: obj.member.member
+                while self._match('DOT'):
+                    next_member = self._consume('IDENT', "Expected member name after '.'").value
+                    full_name = f"{full_name}.{next_member}"
+                
                 # Check if it's a method call: obj.method()
                 if self._match('LPAREN'):
                     args = []
@@ -712,6 +719,13 @@ class Parser:
         expr = self._parse_expression()
         
         return TypeDeclarationNode(type_name, name, expr)
+    
+    def _parse_importpy_stmt(self) -> ImportPyNode:
+        """Parse importpy statement: importpy IDENT"""
+        importpy_token = self._consume('IMPORTPY', "Expected 'importpy'")
+        module_token = self._consume('IDENT', "Expected module name after 'importpy'")
+        
+        return ImportPyNode(module_token.value, importpy_token.line, importpy_token.col)
 
 
 def parse(source: str) -> ProgramNode:

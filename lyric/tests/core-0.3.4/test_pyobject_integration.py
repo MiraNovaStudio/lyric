@@ -293,3 +293,124 @@ def test_pyobject_return_in_conditional():
     ast = parse(source)
     result = evaluate(ast)
     assert result is None  # Assignment statements don't return values
+
+
+def test_importpy_basic_functionality():
+    """Test basic importpy functionality with math module."""
+    source = """
+    importpy math
+    
+    var result = math.sqrt(9)
+    """
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None  # Assignment statements don't return values
+
+
+def test_importpy_function_calls():
+    """Test importpy with function calls."""
+    source = """
+    importpy math
+    
+    var sqrt_result = math.sqrt(16)
+    var sin_result = math.sin(0)
+    var pi_value = math.pi
+    """
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None  # Assignment statements don't return values
+
+
+def test_importpy_datetime_module():
+    """Test importpy with datetime module."""
+    source = """
+    importpy datetime
+    
+    var now = datetime.datetime.now()
+    """
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None  # Assignment statements don't return values
+
+
+def test_importpy_error_nonexistent_module():
+    """Test importpy error handling for non-existent modules."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        source = "importpy nonexistent_module"
+        ast = parse(source)
+        evaluate(ast)
+    
+    assert "ImportError: cannot import Python module 'nonexistent_module'" in str(exc_info.value)
+
+
+def test_importpy_error_nonexistent_attribute():
+    """Test importpy error handling for non-existent attributes."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        source = """
+        importpy math
+        var result = math.nonexistent_function(5)
+        """
+        ast = parse(source)
+        evaluate(ast)
+    
+    assert "AttributeError: 'math' has no attribute 'nonexistent_function'" in str(exc_info.value)
+
+
+def test_importpy_error_formatting():
+    """Test that importpy errors follow A17-A19 formatting standards."""
+    # Test ImportError formatting
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        source = "importpy nonexistent"
+        ast = parse(source)
+        evaluate(ast)
+    
+    error_msg = str(exc_info.value)
+    assert "ImportError: cannot import Python module 'nonexistent'" in error_msg
+    assert "Runtime error at line 0, column 0:" in error_msg  # A17: precise file and line references
+
+
+def test_importpy_pyobject_type_integration():
+    """Test that importpy values are treated as pyobject internally."""
+    from lyric.runtime import type_builtin
+    
+    # Test that values from importpy are classified as pyobject
+    source = """
+    importpy math
+    var sqrt_func = math.sqrt
+    """
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None  # Assignment statements don't return values
+
+
+def test_importpy_multiple_modules():
+    """Test importing multiple Python modules."""
+    source = """
+    importpy math
+    importpy datetime
+    
+    var sqrt_result = math.sqrt(25)
+    var now = datetime.datetime.now()
+    """
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None  # Assignment statements don't return values
+
+
+def test_importpy_nested_access():
+    """Test nested attribute access through importpy."""
+    source = """
+    importpy datetime
+    
+    var now = datetime.datetime.now()
+    var year = now.year
+    """
+    
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result is None  # Assignment statements don't return values

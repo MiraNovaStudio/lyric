@@ -351,10 +351,27 @@ class RaiseNode:
         }
 
 
+@dataclass
+class ImportPyNode:
+    """Represents an importpy statement."""
+    module_name: str
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"ImportPyNode(module='{self.module_name}')"
+    
+    def to_dict(self):
+        return {
+            'type': 'ImportPyNode',
+            'module_name': self.module_name
+        }
+
+
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
     ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, PrintNode,
-    TryNode, RaiseNode
+    TryNode, RaiseNode, ImportPyNode
 ]
