@@ -30,6 +30,8 @@ The project has completed Sprint 1, Sprint 2, and Sprint 3 with:
 - ✅ Class constructors with init() methods
 - ✅ Exception handling (try/catch/finally)
 - ✅ Return statements and function parameters
+- ✅ Python interoperability with `importpy` statement
+- ✅ `pyobject` type system integration
 
 ## How to Run
 
@@ -110,6 +112,39 @@ def main() {
     print("Name:", person.name)
     print("Age:", person.age)
 }
+```
+
+**Python Interoperability** (`lyric/tests/examples/importpy_tests.ly`):
+```lyric
+# Import Python modules using importpy
+importpy math
+importpy datetime
+
+# Use Python functions and constants
+var result = math.sqrt(16)
+print(result)  # prints 4.0
+
+var pi = math.pi
+print(pi)      # prints 3.141592653589793
+
+# Access Python classes and methods
+var now = datetime.datetime.now()
+print(now.year)  # prints current year
+
+# Chained member access works
+var today = datetime.date.today()
+print(today)
+
+# Multiple modules
+importpy os
+var current_dir = os.getcwd()
+print(current_dir)
+
+# pyobject values work seamlessly with var type
+var math_obj = math
+var sqrt_func = math_obj.sqrt
+var result2 = sqrt_func(25)
+print(result2)  # prints 5.0
 ```
 
 **Exception Handling** (`lyric/tests/examples/exception_tests.ly`):
@@ -263,6 +298,7 @@ pip install pytest flake8 setuptools
 - **Data Structures**: `[item1, item2, ...]` for lists and `{"key": value}` for dictionaries ✅
 - **Exception Handling**: `try: ... catch: ... finally: ... fade` with error propagation ✅
 - **Comments**: `# comment text` (full-line and inline comments) ✅
+- **Python Interoperability**: `importpy module` for seamless Python library access ✅
 
 ### Built-in Functions (Implemented)
 

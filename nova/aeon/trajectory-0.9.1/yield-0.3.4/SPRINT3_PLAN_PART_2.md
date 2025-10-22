@@ -39,7 +39,7 @@ print(now.year)
 
 ## Language & Runtime Design
 
-### 1) Syntax
+### Task 1) Syntax
 
 ```lyric
 importpy <identifier>
@@ -51,7 +51,7 @@ importpy math
 importpy datetime
 ```
 
-### 2) Semantics
+### Task 2) Semantics
 
 On `importpy NAME`, Lyric binds `NAME` in the global environment to a module proxy that forwards attribute access and calls to the actual Python module.
 
