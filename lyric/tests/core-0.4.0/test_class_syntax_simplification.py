@@ -28,8 +28,8 @@ def main() {
     assert result == "Hello from test"
 
 
-def test_class_with_colon_syntax_rejected():
-    """Test that class declarations with colons are properly rejected."""
+def test_class_with_colon_syntax_works():
+    """Test that class declarations with colons work without warnings."""
     source = """class TestClass:
     name = "test"
     def greet() {
@@ -37,8 +37,12 @@ def test_class_with_colon_syntax_rejected():
     }
 +++"""
     
-    with pytest.raises(SyntaxErrorLyric, match="Expected expression"):
-        parse(source)
+    # Should parse successfully without any warnings
+    ast = parse(source)
+    
+    # Should be a class with the correct name
+    assert isinstance(ast.statements[0], ClassNode)
+    assert ast.statements[0].name == "TestClass"
 
 
 def test_class_syntax_does_not_affect_other_constructs():

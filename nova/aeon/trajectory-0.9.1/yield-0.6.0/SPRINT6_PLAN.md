@@ -34,43 +34,48 @@ Verify that declared types (`int`, `flt`, `str`, `rex`, `god`, `var`) are enforc
 - No silent type coercions unless explicitly handled.
 - Unit tests pass for mixed type assignment and function returns.
 
-## Task 3 — Implement Try / Catch / Finally / Fade Syntax
+## Task 3 — Optional Colon Syntax for Core Language Constructs
 
-Add structured exception handling using the following grammar:
+- Modify grammar rules and parser logic to treat the colon token as optional for:
 
-```lyric
-try:
-    <code block>
-catch:
-    <code block>
-finally:
-    <code block>
-fade
+``
+class declarations
+
+def functions
+
+if, else if, and else blocks
+
+given / done loops
+
+try, catch, and finally constructs
 ```
 
-**Key Points:**
-- The `fade` keyword terminates the entire exception block.
-- Both `catch` and `finally` are optional.
-- The interpreter executes `catch` when an error occurs in `try`, then executes `finally` (if present), and ends the block on `fade`.
+- Ensure colon and non-colon variants produce identical AST nodes.
 
-**Example:**
-```lyric
-try:
-    int x = 10
-    x = "bad"
-catch:
-    print("Type error caught")
-finally:
-    print("Cleanup complete")
-fade
-```
+- Maintain consistent indentation and block parsing regardless of colon usage.
 
-### Acceptance Criteria:
-- Parser recognizes `try`, `catch`, `finally`, and `fade` as block keywords.
-- Runtime correctly executes `try`, optional `catch`, optional `finally`, then resumes after `fade`.
-- Nested try blocks handled correctly.
-- `fade` required to close any try/catch/finally sequence.
-- Errors raised in `catch` or `finally` propagate outward unless handled.
+- Add or update test cases covering both syntaxes.
+
+- Review sample programs to confirm backward compatibility.
+
+### Implementation Notes
+
+- Adjust the parser’s header rules, e.g. if match(COLON): advance() instead of requiring it.
+
+- Update error messages to suggest a colon when missing but not fail without one.
+
+- AST and interpreter layers require no structural change; only the parser and tokenizer are affected.
+
+### Acceptance Criteria
+
+- All constructs listed above compile successfully with and without colons.
+- Unit tests verify identical AST output for both syntaxes.
+- No regressions in existing programs or core/full test suites.
+- tests/examples/ updated to demonstrate mixed colon usage.
+- pytest unit test both pass 100%.
+
+
+
 
 ## Task 4 — Add Raise Keyword and Error Hierarchy
 

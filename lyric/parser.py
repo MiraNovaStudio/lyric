@@ -110,7 +110,7 @@ class Parser:
             return self._parse_assignment_or_expr_stmt()
     
     def _parse_func_def(self) -> FunctionNode:
-        """Parse function definition: def IDENT "(" param_list? ")" "{" statement* "}" """
+        """Parse function definition: def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
         def_token = self._consume('DEF', "Expected 'def'")
         
         name_token = self._consume('IDENT', "Expected function name")
@@ -124,6 +124,10 @@ class Parser:
             params, param_types = self._parse_param_list()
         
         self._consume('RPAREN', "Expected ')' after parameters")
+        
+        # Make colon optional after function signature
+        self._match('COLON')  # Optional colon
+        
         self._consume('LBRACE', "Expected '{' after function signature")
         
         body_statements = []
@@ -195,11 +199,14 @@ class Parser:
         return params, param_types
     
     def _parse_class_def(self) -> ClassNode:
-        """Parse class definition: class IDENT statement* CLASS_END"""
+        """Parse class definition: class IDENT [":"] statement* CLASS_END"""
         class_token = self._consume('CLASS', "Expected 'class'")
         
         name_token = self._consume('IDENT', "Expected class name")
         name = name_token.value
+        
+        # Make colon optional after class name
+        self._match('COLON')  # Optional colon
         
         members_statements = []
         while not self._check('CLASS_END') and not self._is_at_end():
@@ -224,11 +231,8 @@ class Parser:
         
         condition = self._parse_expression()
         
-        # Check if colon is present and emit deprecation warning
-        if self._match('COLON'):
-            # Deprecation warning for colon form
-            import warnings
-            warnings.warn(f"Colons after control structures will be removed in a future version. Use 'if condition' instead of 'if condition:' at line {if_token.line}, column {if_token.col}", DeprecationWarning, stacklevel=2)
+        # Make colon optional after if condition
+        self._match('COLON')  # Optional colon
         
         then_body = []
         while not self._check('ELSE', 'END') and not self._is_at_end():
@@ -251,10 +255,8 @@ class Parser:
                 # elif clause
                 elif_condition = self._parse_expression()
                 
-                # Check if colon is present and emit deprecation warning
-                if self._match('COLON'):
-                    import warnings
-                    warnings.warn(f"Colons after control structures will be removed in a future version. Use 'else if condition' instead of 'else if condition:' at line {if_token.line}, column {if_token.col}", DeprecationWarning, stacklevel=2)
+                # Make colon optional after elif condition
+                self._match('COLON')  # Optional colon
                 
                 elif_body = []
                 while not self._check('ELSE', 'END') and not self._is_at_end():
@@ -272,10 +274,8 @@ class Parser:
                 elifs.append((elif_condition, elif_body))
             else:
                 # else clause
-                # Check if colon is present and emit deprecation warning
-                if self._match('COLON'):
-                    import warnings
-                    warnings.warn(f"Colons after control structures will be removed in a future version. Use 'else' instead of 'else:' at line {if_token.line}, column {if_token.col}", DeprecationWarning, stacklevel=2)
+                # Make colon optional after else
+                self._match('COLON')  # Optional colon
                 
                 else_body = []
                 while not self._check('END') and not self._is_at_end():
@@ -314,10 +314,8 @@ class Parser:
             condition_or_iter = self._parse_expression()
             loop_kind = "while"
         
-        # Check if colon is present and emit deprecation warning
-        if self._match('COLON'):
-            import warnings
-            warnings.warn(f"Colons after control structures will be removed in a future version. Use 'given condition' instead of 'given condition:' at line {given_token.line}, column {given_token.col}", DeprecationWarning, stacklevel=2)
+        # Make colon optional after given expression
+        self._match('COLON')  # Optional colon
         
         body = []
         while not self._check('DONE') and not self._is_at_end():
@@ -668,9 +666,11 @@ class Parser:
         return self.tokens[self.current + 4]
 
     def _parse_try_block(self) -> TryNode:
-        """Parse try/catch/finally block: try: ... catch: ... finally: ... fade"""
+        """Parse try/catch/finally block: try [":"] ... catch [":"] ... finally [":"] ... fade"""
         try_token = self._consume('TRY', "Expected 'try'")
-        self._consume('COLON', "Expected ':' after try")
+        
+        # Make colon optional after try
+        self._match('COLON')  # Optional colon
         
         # Parse try body
         try_body = []
@@ -689,7 +689,8 @@ class Parser:
         # Parse catch block (optional)
         catch_body = None
         if self._match('CATCH'):
-            self._consume('COLON', "Expected ':' after catch")
+            # Make colon optional after catch
+            self._match('COLON')  # Optional colon
             
             catch_body = []
             while not self._check('FINALLY', 'FADE') and not self._is_at_end():
@@ -707,7 +708,8 @@ class Parser:
         # Parse finally block (optional)
         finally_body = None
         if self._match('FINALLY'):
-            self._consume('COLON', "Expected ':' after finally")
+            # Make colon optional after finally
+            self._match('COLON')  # Optional colon
             
             finally_body = []
             while not self._check('FADE') and not self._is_at_end():

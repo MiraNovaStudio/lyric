@@ -185,8 +185,8 @@ done
         finally:
             sys.stdout = old_stdout
 
-    def test_if_statement_with_colon_shows_deprecation_warning(self):
-        """Test that if statements with colons show deprecation warnings."""
+    def test_if_statement_with_colon_works_without_warning(self):
+        """Test that if statements with colons work without deprecation warnings."""
         source = '''def main() {
 x = 5
 if x > 0:
@@ -194,10 +194,8 @@ print("positive")
 end
 }'''
         
-        # Use pytest's warning capture - warnings are emitted during parsing
-        with pytest.warns(DeprecationWarning, match="Colons after control structures will be removed"):
-            ast = parse(source)
-        
+        # Should work without any warnings
+        ast = parse(source)
         interpreter = Interpreter()
         
         # Capture print output
@@ -214,18 +212,16 @@ end
         finally:
             sys.stdout = old_stdout
 
-    def test_given_loop_with_colon_shows_deprecation_warning(self):
-        """Test that given loops with colons show deprecation warnings."""
+    def test_given_loop_with_colon_works_without_warning(self):
+        """Test that given loops with colons work without deprecation warnings."""
         source = '''def main() {
 given i in range(2):
 print("iteration")
 done
 }'''
         
-        # Use pytest's warning capture - warnings are emitted during parsing
-        with pytest.warns(DeprecationWarning, match="Colons after control structures will be removed"):
-            ast = parse(source)
-        
+        # Should work without any warnings
+        ast = parse(source)
         interpreter = Interpreter()
         
         # Capture print output
@@ -242,8 +238,8 @@ done
         finally:
             sys.stdout = old_stdout
 
-    def test_else_with_colon_shows_deprecation_warning(self):
-        """Test that else statements with colons show deprecation warnings."""
+    def test_else_with_colon_works_without_warning(self):
+        """Test that else statements with colons work without deprecation warnings."""
         source = '''def main() {
 x = -1
 if x > 0:
@@ -253,10 +249,8 @@ print("non-positive")
 end
 }'''
         
-        # Use pytest's warning capture - warnings are emitted during parsing
-        with pytest.warns(DeprecationWarning, match="Colons after control structures will be removed"):
-            ast = parse(source)
-        
+        # Should work without any warnings
+        ast = parse(source)
         interpreter = Interpreter()
         
         # Capture print output
@@ -273,8 +267,8 @@ end
         finally:
             sys.stdout = old_stdout
 
-    def test_elif_with_colon_shows_deprecation_warning(self):
-        """Test that elif statements with colons show deprecation warnings."""
+    def test_elif_with_colon_works_without_warning(self):
+        """Test that elif statements with colons work without deprecation warnings."""
         source = '''def main() {
 x = 0
 if x > 0:
@@ -286,10 +280,8 @@ print("negative")
 end
 }'''
         
-        # Use pytest's warning capture - warnings are emitted during parsing
-        with pytest.warns(DeprecationWarning, match="Colons after control structures will be removed"):
-            ast = parse(source)
-        
+        # Should work without any warnings
+        ast = parse(source)
         interpreter = Interpreter()
         
         # Capture print output
@@ -303,6 +295,176 @@ end
             # Check that "zero" was printed
             output = captured_output.getvalue().strip()
             assert "zero" in output
+        finally:
+            sys.stdout = old_stdout
+
+    def test_function_with_colon_works_without_warning(self):
+        """Test that function definitions with colons work without warnings."""
+        source = '''def main(): {
+print("hello")
+}'''
+        
+        # Should work without any warnings
+        ast = parse(source)
+        interpreter = Interpreter()
+        
+        # Capture print output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+        
+        try:
+            result = interpreter.evaluate(ast)
+            assert result is None
+            
+            # Check that "hello" was printed
+            output = captured_output.getvalue().strip()
+            assert "hello" in output
+        finally:
+            sys.stdout = old_stdout
+
+    def test_function_without_colon_works(self):
+        """Test that function definitions without colons work."""
+        source = '''def main() {
+print("hello")
+}'''
+        
+        # Should work without any warnings
+        ast = parse(source)
+        interpreter = Interpreter()
+        
+        # Capture print output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+        
+        try:
+            result = interpreter.evaluate(ast)
+            assert result is None
+            
+            # Check that "hello" was printed
+            output = captured_output.getvalue().strip()
+            assert "hello" in output
+        finally:
+            sys.stdout = old_stdout
+
+    def test_try_catch_with_colon_works_without_warning(self):
+        """Test that try/catch blocks with colons work without warnings."""
+        source = '''def main() {
+try:
+print("in try")
+raise TestError
+catch:
+print("in catch")
+fade
+}'''
+        
+        # Should work without any warnings
+        ast = parse(source)
+        interpreter = Interpreter()
+        
+        # Capture print output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+        
+        try:
+            result = interpreter.evaluate(ast)
+            assert result is None
+            
+            # Check that both messages were printed
+            output = captured_output.getvalue().strip()
+            assert "in try" in output
+            assert "in catch" in output
+        finally:
+            sys.stdout = old_stdout
+
+    def test_try_catch_without_colon_works(self):
+        """Test that try/catch blocks without colons work."""
+        source = '''def main() {
+try
+print("in try")
+raise TestError
+catch
+print("in catch")
+fade
+}'''
+        
+        # Should work without any warnings
+        ast = parse(source)
+        interpreter = Interpreter()
+        
+        # Capture print output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+        
+        try:
+            result = interpreter.evaluate(ast)
+            assert result is None
+            
+            # Check that both messages were printed
+            output = captured_output.getvalue().strip()
+            assert "in try" in output
+            assert "in catch" in output
+        finally:
+            sys.stdout = old_stdout
+
+    def test_class_with_colon_works_without_warning(self):
+        """Test that class definitions with colons work without warnings."""
+        source = '''class TestClass:
+def init() {
+self.value = 42
+}
++++
+
+def main() {
+var obj = TestClass()
+print("class created")
+}'''
+        
+        # Should work without any warnings
+        ast = parse(source)
+        interpreter = Interpreter()
+        
+        # Capture print output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+        
+        try:
+            result = interpreter.evaluate(ast)
+            assert result is None
+            
+            # Check that "class created" was printed
+            output = captured_output.getvalue().strip()
+            assert "class created" in output
+        finally:
+            sys.stdout = old_stdout
+
+    def test_class_without_colon_works(self):
+        """Test that class definitions without colons work."""
+        source = '''class TestClass
+def init() {
+self.value = 42
+}
++++
+
+def main() {
+var obj = TestClass()
+print("class created")
+}'''
+        
+        # Should work without any warnings
+        ast = parse(source)
+        interpreter = Interpreter()
+        
+        # Capture print output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+        
+        try:
+            result = interpreter.evaluate(ast)
+            assert result is None
+            
+            # Check that "class created" was printed
+            output = captured_output.getvalue().strip()
+            assert "class created" in output
         finally:
             sys.stdout = old_stdout
 

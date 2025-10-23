@@ -162,57 +162,45 @@ done
 - All language examples and documentation are updated to reflect the new syntax style.
 - The removal of colons does not affect unrelated constructs (`def`, `class`, etc.).
 
-### **Task 7 - Exception Handling Syntax Simplification**
+### **Task 7 - Optional Colon Syntax for Core Language Constructs** 
 
-- Update the parser to remove the required colon (`:`) after `try`, `catch`, and `finally` statements.
-- The new valid syntax should be:
+- Modify grammar rules and parser logic to treat the colon token as optional for:
 
 ```
-try
-...
-catch 
-...
-finally
-...
-fade
+class declarations
 
-instead of 
+def functions
 
-try:
-...
-catch:
-...
-finally:
-...
-fade
+if, else if, and else blocks
+
+given / done loops
+
+try, catch, and finally constructs
 ```
 
+- Ensure colon and non-colon variants produce identical AST nodes.
 
-- Update all existing test files and example programs to use the colonless form.
-- Add new tests verifying that both forms currently parse correctly and that the deprecation warning is displayed.
-- Ensure this change does not affect the `fade` terminator or existing runtime behavior.
-- Update documentation and example code accordingly.
+- Maintain consistent indentation and block parsing regardless of colon usage.
 
+- Add or update test cases covering both syntaxes.
 
+- Review sample programs to confirm backward compatibility.
 
-#### Acceptance Criteria
+### Implementation Notes
 
-- The following code executes successfully:
-```
-try
-var x = items[5]
-catch IndexError as e
-print("Caught:", e)
-finally
-print("Always runs")
-```
+- Adjust the parser’s header rules, e.g. if match(COLON): advance() instead of requiring it.
 
+- Update error messages to suggest a colon when missing but not fail without one.
 
-- The parser accepts both the colon and non-colon forms without syntax errors.
-- Using a colon produces a deprecation warning.
-- No regressions in existing exception-handling tests.
-- All example programs and documentation updated to reflect the simplified syntax.
-- Exception handling structure remains unchanged beyond syntax cleanup.
+- AST and interpreter layers require no structural change; only the parser and tokenizer are affected.
+
+### Acceptance Criteria
+
+- All constructs listed above compile successfully with and without colons.
+- Unit tests verify identical AST output for both syntaxes.
+- No regressions in existing programs or core/full test suites.
+- tests/examples/ updated to demonstrate mixed colon usage.
+- pytest unit test both pass 100%.
 
 
 ## 📅 Definition of Done
