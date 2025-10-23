@@ -9,7 +9,7 @@ import sys
 
 def test_isinstance_function_a15():
     """Test isinstance built-in function (A15)."""
-    source = """class Person:
+    source = """class Person
     name = "Guest"
 +++
 
@@ -40,7 +40,7 @@ def main() {
 
 def test_type_function_a15():
     """Test type built-in function (A15)."""
-    source = """class Person:
+    source = """class Person
     name = "Guest"
 +++
 

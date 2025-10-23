@@ -4,7 +4,7 @@ from typing import Any, List
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, TryNode, RaiseNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
@@ -152,6 +152,8 @@ class Interpreter:
         """Evaluate a single statement."""
         if isinstance(statement, TypeDeclarationNode):
             return self._evaluate_type_declaration(statement)
+        elif isinstance(statement, MultiDeclarationNode):
+            return self._evaluate_multi_declaration(statement)
         elif isinstance(statement, AssignNode):
             return self._evaluate_assignment(statement)
         elif isinstance(statement, FunctionNode):
@@ -170,6 +172,8 @@ class Interpreter:
             return self._evaluate_try_statement(statement)
         elif isinstance(statement, RaiseNode):
             return self._evaluate_raise_statement(statement)
+        elif isinstance(statement, ImportPyNode):
+            return self._evaluate_importpy_statement(statement)
         else:
             # Expression statement
             return self._evaluate_expression(statement)
@@ -210,16 +214,27 @@ class Interpreter:
                     try:
                         index = int(index_str)
                         if index < 0 or index >= len(obj):
-                            raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
+                            raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}", node.line, node.column)
                         obj[index] = value
                     except ValueError:
-                        raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.")
+                        raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
                 else:
-                    raise RuntimeErrorLyric(f"Cannot assign to indexed expression: '{obj_name}' is of type {type(obj).__name__}, but only lists and dictionaries support indexed assignment")
+                    raise RuntimeErrorLyric(f"Cannot assign to indexed expression: '{obj_name}' is of type {type(obj).__name__}, but only lists and dictionaries support indexed assignment", node.line, node.column)
             else:
-                raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first")
+                raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first", node.line, node.column)
         else:
             # Regular assignment
+            # Check type enforcement if variable was declared with a type
+            if node.name in self.variable_types:
+                expected_type = self.variable_types[node.name]
+                if expected_type != 'var' and not self._is_type_compatible(expected_type, value):
+                    raise RuntimeErrorLyric(
+                        f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {expected_type}. "
+                        f"Expected {expected_type}, but got {type(value).__name__}. "
+                        f"Use 'var {node.name} = ...' if you need dynamic typing.",
+                        node.line, node.column
+                    )
+            
             self.global_scope[node.name] = value
         
         return value
@@ -237,17 +252,33 @@ class Interpreter:
                 raise RuntimeErrorLyric(
                     f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {node.type_name}. "
                     f"Expected {node.type_name}, but got {type(value).__name__}. "
-                    f"Use 'var {node.name} = ...' if you need dynamic typing."
+                    f"Use 'var {node.name} = ...' if you need dynamic typing.",
+                    node.line, node.column
                 )
         
         # Store the value
         self.global_scope[node.name] = value
         return value
     
+    def _evaluate_multi_declaration(self, node: MultiDeclarationNode) -> Any:
+        """Evaluate a multi-variable declaration statement."""
+        # Declare all variables as uninitialized
+        for type_name, var_name in node.declarations:
+            # Store the variable type
+            self.variable_types[var_name] = type_name
+            
+            # Declare the variable as uninitialized (None)
+            self.global_scope[var_name] = None
+        
+        return None
+    
     def _is_type_compatible(self, expected_type: str, value: Any) -> bool:
         """Check if a value is compatible with the expected type."""
         if expected_type == 'var':
-            return True  # var accepts any type
+            return True  # var accepts any type, including pyobject
+        elif expected_type == 'pyobject':
+            # pyobject internally maps to var in Lyric syntax
+            return True  # pyobject can hold any Python value
         elif expected_type == 'int':
             return isinstance(value, int) and not isinstance(value, bool)
         elif expected_type == 'str':
@@ -316,6 +347,10 @@ class Interpreter:
                 # Class member assignment
                 value = self._evaluate_expression(member.expr)
                 class_dict[member.name] = value
+            elif isinstance(member, MultiDeclarationNode):
+                # Multi-variable declaration in class
+                for type_name, var_name in member.declarations:
+                    class_dict[var_name] = None  # Declare as uninitialized
             elif isinstance(member, FunctionNode):
                 # Class method
                 class_dict[member.name] = {
@@ -422,18 +457,48 @@ class Interpreter:
     def _evaluate_function_call(self, node: CallNode) -> Any:
         """Evaluate a function call."""
         if '.' in node.func_name:
-            # Method call: obj.method()
+            # Method call: obj.method() or obj.member.method()
             parts = node.func_name.split('.')
             obj_name = parts[0]
-            method_name = parts[1]
+            member_path = parts[1:-1]  # All parts except the last one
+            method_name = parts[-1]    # The last part is the method name
             
             if obj_name in self.global_scope:
                 obj = self.global_scope[obj_name]
-                if isinstance(obj, dict) and method_name in obj:
-                    method = obj[method_name]
+                
+                # Navigate through the member path
+                current_obj = obj
+                for member_name in member_path:
+                    if isinstance(current_obj, dict) and member_name in current_obj:
+                        current_obj = current_obj[member_name]
+                    elif hasattr(current_obj, '__getattr__'):
+                        # Handle PyModuleProxy and similar objects
+                        try:
+                            current_obj = getattr(current_obj, member_name)
+                        except AttributeError:
+                            raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{member_name}'")
+                    elif callable(current_obj):
+                        # Handle classes and callable objects
+                        try:
+                            current_obj = getattr(current_obj, member_name)
+                        except AttributeError:
+                            raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{member_name}'")
+                    else:
+                        available_members = list(current_obj.keys()) if isinstance(current_obj, dict) else []
+                        if available_members:
+                            members_preview = ", ".join(available_members[:5])
+                            if len(available_members) > 5:
+                                members_preview += f" (and {len(available_members)-5} more)"
+                            raise RuntimeErrorLyric(f"Member not found: '{member_name}' is not a member of '{current_obj}'. Available members: {members_preview}")
+                        else:
+                            raise RuntimeErrorLyric(f"Member not found: '{member_name}' is not a member of '{current_obj}'. '{current_obj}' is of type {type(current_obj).__name__} and has no members.")
+                
+                # Now get the method from the final object
+                if isinstance(current_obj, dict) and method_name in current_obj:
+                    method = current_obj[method_name]
                     if isinstance(method, dict) and 'params' in method and 'body' in method:
                         # It's a method definition
-                        return self._call_method(obj, method, node.args)
+                        return self._call_method(current_obj, method, node.args)
                     else:
                         # It's a regular attribute, call it if callable
                         args = [self._evaluate_expression(arg) for arg in node.args]
@@ -441,15 +506,37 @@ class Interpreter:
                             return method(*args)
                         else:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                elif hasattr(current_obj, '__getattr__'):
+                    # Handle PyModuleProxy and similar objects
+                    try:
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    except AttributeError:
+                        raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{method_name}'")
+                elif callable(current_obj):
+                    # Handle classes and callable objects
+                    try:
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    except AttributeError:
+                        raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{method_name}'")
                 else:
-                    available_methods = [k for k, v in obj.items() if isinstance(v, dict) and 'params' in v and 'body' in v] if isinstance(obj, dict) else []
+                    available_methods = [k for k, v in current_obj.items() if isinstance(v, dict) and 'params' in v and 'body' in v] if isinstance(current_obj, dict) else []
                     if available_methods:
                         methods_preview = ", ".join(available_methods[:5])
                         if len(available_methods) > 5:
                             methods_preview += f" (and {len(available_methods)-5} more)"
-                        raise RuntimeErrorLyric(f"Method not found: '{method_name}' is not a method of '{obj_name}'. Available methods: {methods_preview}")
+                        raise RuntimeErrorLyric(f"Method not found: '{method_name}' is not a method of '{current_obj}'. Available methods: {methods_preview}")
                     else:
-                        raise RuntimeErrorLyric(f"Method not found: '{method_name}' is not a method of '{obj_name}'. '{obj_name}' is of type {type(obj).__name__} and has no methods.")
+                        raise RuntimeErrorLyric(f"Method not found: '{method_name}' is not a method of '{current_obj}'. '{current_obj}' is of type {type(current_obj).__name__} and has no methods.")
             else:
                 raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first")
         elif node.func_name == "print":
@@ -530,24 +617,42 @@ class Interpreter:
     def _evaluate_identifier(self, node: IdentifierNode) -> Any:
         """Evaluate an identifier."""
         if '.' in node.name:
-            # Member access: obj.member
+            # Member access: obj.member or obj.member.member
             parts = node.name.split('.')
             obj_name = parts[0]
-            member_name = parts[1]
+            member_path = parts[1:]
             
             if obj_name in self.global_scope:
                 obj = self.global_scope[obj_name]
-                if isinstance(obj, dict) and member_name in obj:
-                    return obj[member_name]
-                else:
-                    available_members = list(obj.keys()) if isinstance(obj, dict) else []
-                    if available_members:
-                        members_preview = ", ".join(available_members[:5])
-                        if len(available_members) > 5:
-                            members_preview += f" (and {len(available_members)-5} more)"
-                        raise RuntimeErrorLyric(f"Member not found: '{member_name}' is not a member of '{obj_name}'. Available members: {members_preview}")
+                
+                # Navigate through the member path
+                current_obj = obj
+                for member_name in member_path:
+                    if isinstance(current_obj, dict) and member_name in current_obj:
+                        current_obj = current_obj[member_name]
+                    elif hasattr(current_obj, '__getattr__'):
+                        # Handle PyModuleProxy and similar objects
+                        try:
+                            current_obj = getattr(current_obj, member_name)
+                        except AttributeError:
+                            raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{member_name}'")
+                    elif hasattr(current_obj, member_name):
+                        # Handle Python objects with attributes
+                        try:
+                            current_obj = getattr(current_obj, member_name)
+                        except AttributeError:
+                            raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{member_name}'")
                     else:
-                        raise RuntimeErrorLyric(f"Member not found: '{member_name}' is not a member of '{obj_name}'. '{obj_name}' is of type {type(obj).__name__} and has no members.")
+                        available_members = list(current_obj.keys()) if isinstance(current_obj, dict) else []
+                        if available_members:
+                            members_preview = ", ".join(available_members[:5])
+                            if len(available_members) > 5:
+                                members_preview += f" (and {len(available_members)-5} more)"
+                            raise RuntimeErrorLyric(f"Member not found: '{member_name}' is not a member of '{current_obj}'. Available members: {members_preview}")
+                        else:
+                            raise RuntimeErrorLyric(f"Member not found: '{member_name}' is not a member of '{current_obj}'. '{current_obj}' is of type {type(current_obj).__name__} and has no members.")
+                
+                return current_obj
             else:
                 raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first")
         else:
@@ -697,6 +802,16 @@ class Interpreter:
             # Default to RuntimeErrorLyric for unknown exceptions
             available_exceptions = list(exception_map.keys())
             raise RuntimeErrorLyric(f"Unknown exception: '{exception_name}' is not a valid exception type. Available exceptions: {', '.join(available_exceptions[:5])} (and more)")
+    
+    def _evaluate_importpy_statement(self, node: ImportPyNode) -> None:
+        """Evaluate an importpy statement."""
+        from lyric.pyproxy import PyModuleProxy
+        
+        # Create the module proxy and bind it to the global scope
+        proxy = PyModuleProxy(node.module_name)
+        self.global_scope[node.module_name] = proxy
+        
+        return None
     
     def _is_truthy(self, value: Any) -> bool:
         """Check if a value is truthy."""

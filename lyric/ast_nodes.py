@@ -4,10 +4,20 @@ from dataclasses import dataclass
 from typing import List, Optional, Any, Union
 
 
+class ASTNode:
+    """Base class for all AST nodes with position tracking."""
+    
+    def get_position(self) -> tuple[int, int]:
+        """Get the line and column position of this node."""
+        return (getattr(self, 'line', 0), getattr(self, 'column', 0))
+
+
 @dataclass
-class ProgramNode:
+class ProgramNode(ASTNode):
     """Represents the root of a Lyric program."""
     statements: List['ASTNode']
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"ProgramNode(statements={len(self.statements)})"
@@ -20,7 +30,7 @@ class ProgramNode:
 
 
 @dataclass
-class FunctionNode:
+class FunctionNode(ASTNode):
     """Represents a function definition."""
     name: str
     params: List[str]
@@ -49,12 +59,14 @@ class FunctionNode:
 
 
 @dataclass
-class IfNode:
+class IfNode(ASTNode):
     """Represents an if/elif/else statement."""
     condition: 'ASTNode'
     then_body: List['ASTNode']
     elifs: List[tuple['ASTNode', List['ASTNode']]]  # List of (condition, body) tuples
     else_body: Optional[List['ASTNode']]
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         elif_count = len(self.elifs)
@@ -74,12 +86,14 @@ class IfNode:
 
 
 @dataclass
-class LoopNode:
+class LoopNode(ASTNode):
     """Represents a loop statement (given/done)."""
     condition_or_iter: 'ASTNode'
     loop_kind: str  # "iterator" or "while"
     body: List['ASTNode']
     iterator_var: Optional[str] = None  # Variable name for iterator loops
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"LoopNode(kind='{self.loop_kind}', condition={self.condition_or_iter}, body={len(self.body)}, iterator_var={self.iterator_var})"
@@ -95,7 +109,7 @@ class LoopNode:
 
 
 @dataclass
-class AssignNode:
+class AssignNode(ASTNode):
     """Represents a variable assignment."""
     name: str
     expr: 'ASTNode'
@@ -114,7 +128,7 @@ class AssignNode:
 
 
 @dataclass
-class CallNode:
+class CallNode(ASTNode):
     """Represents a function call."""
     func_name: str
     args: List['ASTNode']
@@ -133,11 +147,13 @@ class CallNode:
 
 
 @dataclass
-class BinaryOpNode:
+class BinaryOpNode(ASTNode):
     """Represents a binary operation."""
     op: str
     left: 'ASTNode'
     right: 'ASTNode'
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"BinaryOpNode(op='{self.op}', left={self.left}, right={self.right})"
@@ -152,10 +168,12 @@ class BinaryOpNode:
 
 
 @dataclass
-class UnaryOpNode:
+class UnaryOpNode(ASTNode):
     """Represents a unary operation."""
     op: str
     operand: 'ASTNode'
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"UnaryOpNode(op='{self.op}', operand={self.operand})"
@@ -169,9 +187,11 @@ class UnaryOpNode:
 
 
 @dataclass
-class LiteralNode:
+class LiteralNode(ASTNode):
     """Represents a literal value."""
     value: Any
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"LiteralNode(value={repr(self.value)})"
@@ -184,9 +204,11 @@ class LiteralNode:
 
 
 @dataclass
-class IdentifierNode:
+class IdentifierNode(ASTNode):
     """Represents an identifier (variable name)."""
     name: str
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"IdentifierNode(name='{self.name}')"
@@ -199,10 +221,12 @@ class IdentifierNode:
 
 
 @dataclass
-class ClassNode:
+class ClassNode(ASTNode):
     """Represents a class definition."""
     name: str
     members_statements: List['ASTNode']
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"ClassNode(name='{self.name}', members={len(self.members_statements)})"
@@ -216,9 +240,11 @@ class ClassNode:
 
 
 @dataclass
-class ReturnNode:
+class ReturnNode(ASTNode):
     """Represents a return statement."""
     value: Optional['ASTNode']
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"ReturnNode(value={self.value})"
@@ -231,9 +257,11 @@ class ReturnNode:
 
 
 @dataclass
-class ListLiteralNode:
+class ListLiteralNode(ASTNode):
     """Represents a list literal."""
     elements: List['ASTNode']
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"ListLiteralNode(elements={len(self.elements)})"
@@ -246,9 +274,11 @@ class ListLiteralNode:
 
 
 @dataclass
-class DictLiteralNode:
+class DictLiteralNode(ASTNode):
     """Represents a dictionary literal."""
     pairs: List[tuple['ASTNode', 'ASTNode']]  # List of (key, value) pairs
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"DictLiteralNode(pairs={len(self.pairs)})"
@@ -263,10 +293,12 @@ class DictLiteralNode:
 
 
 @dataclass
-class IndexNode:
+class IndexNode(ASTNode):
     """Represents an indexing operation (list[index] or dict[key])."""
     obj: 'ASTNode'  # The object being indexed
     index: 'ASTNode'  # The index/key
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"IndexNode(obj={self.obj}, index={self.index})"
@@ -280,7 +312,7 @@ class IndexNode:
 
 
 @dataclass
-class TypeDeclarationNode:
+class TypeDeclarationNode(ASTNode):
     """Represents a typed variable declaration."""
     type_name: str
     name: str
@@ -301,9 +333,11 @@ class TypeDeclarationNode:
 
 
 @dataclass
-class PrintNode:
+class PrintNode(ASTNode):
     """Represents a print statement (convenience node)."""
     args: List['ASTNode']
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"PrintNode(args={len(self.args)})"
@@ -316,11 +350,13 @@ class PrintNode:
 
 
 @dataclass
-class TryNode:
+class TryNode(ASTNode):
     """Represents a try/catch/finally statement."""
     try_body: List['ASTNode']
     catch_body: Optional[List['ASTNode']]
     finally_body: Optional[List['ASTNode']]
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         catch_present = self.catch_body is not None
@@ -337,9 +373,11 @@ class TryNode:
 
 
 @dataclass
-class RaiseNode:
+class RaiseNode(ASTNode):
     """Represents a raise statement."""
     exception_name: str
+    line: int = 0
+    column: int = 0
     
     def __repr__(self):
         return f"RaiseNode(exception='{self.exception_name}')"
@@ -351,10 +389,44 @@ class RaiseNode:
         }
 
 
+@dataclass
+class MultiDeclarationNode(ASTNode):
+    """Represents multiple variable declarations in a single line."""
+    declarations: List[tuple[str, str]]  # List of (type_name, variable_name) tuples
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"MultiDeclarationNode(declarations={self.declarations})"
+    
+    def to_dict(self):
+        return {
+            'type': 'MultiDeclarationNode',
+            'declarations': self.declarations
+        }
+
+
+@dataclass
+class ImportPyNode(ASTNode):
+    """Represents an importpy statement."""
+    module_name: str
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"ImportPyNode(module='{self.module_name}')"
+    
+    def to_dict(self):
+        return {
+            'type': 'ImportPyNode',
+            'module_name': self.module_name
+        }
+
+
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, PrintNode,
-    TryNode, RaiseNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
+    TryNode, RaiseNode, ImportPyNode
 ]

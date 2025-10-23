@@ -31,7 +31,7 @@ class TestClassInitTests:
     def test_basic_class_with_init(self):
         """Test basic class with init() method."""
         source = """
-        class Person:
+        class Person
             def init(str name, int age) {
                 self.name = name
                 self.age = age
@@ -66,7 +66,7 @@ class TestClassInitTests:
     def test_access_instance_variables(self):
         """Test accessing instance variables."""
         source = """
-        class Person:
+        class Person
             def init(str name, int age) {
                 self.name = name
                 self.age = age
@@ -96,7 +96,7 @@ class TestClassInitTests:
     def test_class_with_multiple_methods(self):
         """Test class with multiple methods."""
         source = """
-        class BankAccount:
+        class BankAccount
             def init(str owner, flt initial_balance) {
                 self.owner = owner
                 self.balance = initial_balance
@@ -142,7 +142,7 @@ class TestClassInitTests:
     def test_class_with_typed_parameters(self):
         """Test class with typed parameters."""
         source = """
-        class Calculator:
+        class Calculator
             def init(str name) {
                 self.name = name
                 self.history = []
@@ -186,7 +186,7 @@ class TestClassInitTests:
     def test_class_with_complex_init(self):
         """Test class with complex init() method."""
         source = """
-        class Student:
+        class Student
             def init(str name, int student_id, var grades) {
                 self.name = name
                 self.id = student_id
@@ -233,7 +233,7 @@ class TestClassInitTests:
     def test_class_inheritance_simulation(self):
         """Test class inheritance simulation using composition."""
         source = """
-        class Employee:
+        class Employee
             def init(str name, int employee_id, flt salary) {
                 self.name = name
                 self.id = employee_id
@@ -271,7 +271,7 @@ class TestClassInitTests:
     def test_class_method_call_with_self_access(self):
         """Test class method calls with self access."""
         source = """
-        class Counter:
+        class Counter
             def init() {
                 self.count = 0
             }
@@ -311,7 +311,7 @@ class TestClassInitTests:
     def test_class_with_property_assignment(self):
         """Test class with property assignment."""
         source = """
-        class Config:
+        class Config
             def init() {
                 self.debug = False
                 self.version = "0.3.0"

@@ -210,7 +210,7 @@ class TestExceptionTests:
     def test_exception_with_method_calls(self):
         """Test exception handling with method calls."""
         source = """
-        class Calculator:
+        class Calculator
             def divide(int a, int b) {
                 try:
                     return a / b

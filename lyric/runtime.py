@@ -86,6 +86,9 @@ def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
             return isinstance(obj, bool)
         elif class_or_type == "None":
             return obj is None
+        elif class_or_type == "pyobject":
+            # pyobject represents any Python object that's not a basic Lyric type
+            return not (isinstance(obj, dict) and '__instance_class__' in obj)
     
     # Handle when class_or_type is a built-in function (int_builtin, str_builtin, etc.)
     # Map built-in functions to their corresponding Python types
@@ -112,8 +115,10 @@ def type_builtin(obj: Any) -> str:
     if isinstance(obj, dict) and '__instance_class__' in obj:
         return obj['__instance_class__']
     
-    # Handle Python built-in types
-    if isinstance(obj, int):
+    # Handle Python built-in types (check bool first since it's a subclass of int)
+    if isinstance(obj, bool):
+        return "bool"
+    elif isinstance(obj, int):
         return "int"
     elif isinstance(obj, float):
         return "float"
@@ -121,12 +126,11 @@ def type_builtin(obj: Any) -> str:
         return "str"
     elif isinstance(obj, list):
         return "list"
-    elif isinstance(obj, bool):
-        return "bool"
     elif obj is None:
         return "None"
     else:
-        return str(type(obj).__name__)
+        # For any other Python object, return "pyobject"
+        return "pyobject"
 
 
 def append_builtin(obj: Any, item: Any) -> None:

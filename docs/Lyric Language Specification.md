@@ -1,9 +1,9 @@
 # Lyric Language Specification
 
-**Version:** 0.1.6  
+**Version:** 0.4.0  
 **Authors:** Michael (Aeonath), ChatGPT, and Claude  
 **Project:** MiraNova Studios Initiative  
-**Date:** December 2025  
+**Date:** October 2025  
 
 ---
 
@@ -41,7 +41,7 @@ The language is implemented in Python and currently supports core programming co
 | **Entry Point**       | Always begins with `def main()`. Acts as the mandatory starting function.                     |
 | **Lists**             | Declared with `[ ... ]`. Built-in sequence type.                                              |
 | **Dictionaries**      | Declared with `{ ... }`. Built-in key/value data type.                                        |
-| **Type Declarations** | Supports `int`, `str`, `god`, `bin`, `flt`, and `var`. `var` enables dynamic typing.          |
+| **Type Declarations** | Supports `int`, `str`, `flt`, `var`, and `pyobject`. `var` enables dynamic typing.          |
 
 
 ## 🔹 Basic Structure
@@ -60,14 +60,15 @@ def main() {
 ### Conditionals
 
 - Uses `else if` instead of `elif`
-- Block introduced by `:` and closed by `end`
+- Block introduced by optional `:` and closed by `end`
+- Both `if condition:` and `if condition` are valid
 
 ```lyric
 if x > 0:
     print("positive")
 else if x < 0:
     print("negative")
-else:
+else
     print("zero")
 end
 ```
@@ -75,7 +76,8 @@ end
 ### Loops
 
 - `given` replaces both `for` and `while`
-- Ends with `done`
+- Block introduced by optional `:` and closed by `done`
+- Both `given condition:` and `given condition` are valid
 
 ```lyric
 # Iterator loop
@@ -84,7 +86,7 @@ given i in range(5):
 done
 
 # While loop
-given n > 0:
+given n > 0
     print(n)
     n -= 1
 done
@@ -94,11 +96,17 @@ done
 ### Functions
 
 - Braces used only for functions
+- Block introduced by optional `:` after function signature
+- Both `def name(): {` and `def name() {` are valid
 - Indentation purely stylistic, not structural
 
 ```lyric
-def greet(name) {
+def greet(name): {
     print("Hello,", name)
+}
+
+def calculate(x) {
+    return x * 2
 }
 ```
 
@@ -106,6 +114,8 @@ def greet(name) {
 
 - `+++` closes a class, symbolizing addition of a structure to the program
 - Classes are lightweight containers for variables and functions
+- Block introduced by optional `:` after class name
+- Both `class Name:` and `class Name` are valid
 - `+++` is supposed to symbolize attaching a data structure to a program
 
 ```lyric
@@ -114,6 +124,14 @@ class Player:
 
     def greet() {
         print("Hello,", self.name)
+    }
++++
+
+class Game
+    score = 0
+    
+    def update_score(points) {
+        self.score += points
     }
 +++
 ```
@@ -161,16 +179,18 @@ def main() {
 
 ### Error Handling (Planned)
 - Uses familiar Python-style exception handling
-- Syntax simplified: `except: ErrorType:`
+- Block introduced by optional `:` after try, catch, and finally keywords
+- Both `try:`, `catch:`, `finally:` and `try`, `catch`, `finally` are valid
+- Syntax simplified: `catch: ErrorType:`
 
 ```lyric
 def main() {
     try:
         n = int(input("Enter a number: "))
         print("Half:", n / 2)
-    except: ValueError:
+    catch:
         print("Invalid input")
-    finally:
+    finally
         print("Done")
     fade
 }
@@ -209,9 +229,8 @@ x = "hello"          # Type change allowed for var variables
 ```lyric
 int count = 5        # Integer variable
 str message = "Hi"   # String variable  
-god active = true   # Boolean variable (named in honor of logician Kurt Gödel)
-float pi = 3.14      # Float variable
-None value = None    # None variable
+flt pi = 3.14        # Float variable
+var dynamic = true   # Dynamic variable (can change type)
 ```
 
 **Multi-Variable Declarations:**
@@ -223,7 +242,7 @@ str name, message
 
 # Mixed-type multi-declarations
 var x, int y, str z
-int count, var temp, god flag
+int count, var temp, flt pi
 ```
 
 #### Declaration and Initialization Rules
@@ -256,7 +275,21 @@ def main() {
 ```lyric
 def main() {
     int x = 10
-    x = "hello"  # Error: Type mismatch for variable 'x': expected int, got str
+    x = "hello"  # Error: Type mismatch: cannot assign str to variable 'x' declared as int. Expected int, but got str. Use 'var x = ...' if you need dynamic typing.
+}
+```
+
+**Invalid Type in Multi-Declaration:**
+```lyric
+def main() {
+    invalid_type x, int y  # Error: Unknown type 'invalid_type' at line 1, column 1. Valid types are: int, str, flt, var
+}
+```
+
+**PyObject Restriction:**
+```lyric
+def main() {
+    pyobject x, int y  # Error: Type 'pyobject' is internal only and cannot be used in explicit declarations at line 1, column 1
 }
 ```
 
@@ -309,16 +342,14 @@ base_type :=
     | 'var'
     | 'int'
     | 'str'
-    | 'god'
-    | 'float'
-    | 'None'
+    | 'flt'
+    | 'pyobject'
 
 type_annotation :=
     | 'int'
     | 'str'
-    | 'god'
-    | 'float'
-    | 'None'
+    | 'flt'
+    | 'var'
 
 identifier := [a-zA-Z_][a-zA-Z0-9_]*
 ```
@@ -336,7 +367,107 @@ int a, b, c
 
 # Multi-declarations (mixed types)
 var x, int y, str z
-int count, var temp, god flag
+int count, var temp, flt pi
+```
+
+#### Core Construct Grammar Rules
+
+**Class Declaration Grammar:**
+```
+class_decl := "class" IDENT [":"] class_body "+++"
+
+class_body := 
+    | class_member*
+    
+class_member :=
+    | variable_declaration
+    | function_declaration
+```
+
+**Function Declaration Grammar:**
+```
+function_decl := "def" IDENT "(" param_list ")" [":"] "{" function_body "}"
+
+param_list :=
+    | empty
+    | param ("," param)*
+    
+param :=
+    | IDENT                    # Untyped parameter (defaults to var)
+    | type_annotation IDENT    # Typed parameter
+```
+
+**Control Structure Grammar:**
+```
+if_statement := "if" expression [":"] statement* elif_clause* else_clause? "end"
+
+elif_clause := "else" "if" expression [":"] statement*
+
+else_clause := "else" [":"] statement*
+
+loop_statement := "given" expression [":"] statement* "done"
+```
+
+**Exception Handling Grammar:**
+```
+try_statement := "try" [":"] statement* catch_clause* finally_clause? "fade"
+
+catch_clause := "catch" [":"] statement*
+
+finally_clause := "finally" [":"] statement*
+```
+
+**Notes:**
+- The colon `:` is optional in all constructs listed above
+- Both `if condition:` and `if condition` produce identical AST nodes
+- Both `def name(): {` and `def name() {` are functionally equivalent
+- Mixed colon usage is supported and encouraged for style flexibility
+
+#### Style Recommendations
+
+**Colon Usage:**
+The colon is optional in all core language constructs. Both syntax variants are functionally identical and compile to the same AST. Choose the style that best fits your project's needs:
+
+- **Consistent Style**: Use colons consistently throughout your codebase for visual clarity
+- **Minimal Style**: Omit colons for a cleaner, more concise appearance  
+- **Mixed Style**: Combine both approaches based on context and readability
+
+**Examples:**
+```lyric
+# Consistent colon style
+class Person:
+    def greet(): {
+        if self.name:
+            print("Hello", self.name)
+        else
+            print("Hello stranger")
+        end
+    }
++++
+
+# Minimal colon style
+class Game
+    def play() {
+        given i in range(5)
+            print("Round", i)
+        done
+    }
++++
+
+# Mixed style (recommended for flexibility)
+class Player:
+    def init() {
+        self.score = 0
+    }
+    
+    def update_score(points) {
+        if points > 0:
+            self.score += points
+        else
+            self.score = 0
+        end
+    }
++++
 ```
 
 ### Advanced Class Example
@@ -360,7 +491,7 @@ class Counter:
 
 def main() {
     c = Counter()
-    given i in range(3):
+    given i in range(3)
         c.increment()
     done
     print("Count:", c)
@@ -383,7 +514,7 @@ Lyric is about learning and clarity, not syntax density.
 
 ## 📋 Current Implementation Status
 
-### ✅ Implemented Features (v0.1.6)
+### ✅ Implemented Features (v0.4.0)
 - Core language constructs (functions, conditionals, loops)
 - Class system with `+++` terminator
 - Built-in data structures (lists, dictionaries)
@@ -396,14 +527,13 @@ Lyric is about learning and clarity, not syntax density.
 - **Declaration enforcement (all variables must be declared)**
 - **Multi-variable declarations with comma-separated syntax**
 - **Mixed-type multi-declarations support**
-- Comprehensive test suite (226+ tests)
+- Comprehensive test suite (334+ tests)
 
 ### 🚧 Planned Features
-- Import system
-- Exception handling (try/catch/finally)
+- Advanced exception handling enhancements
 - File I/O operations
 - Advanced type system features
-- Module system
+- Module system expansion
 - Standard library expansion
 
 ## 💡 Example Program
@@ -413,14 +543,14 @@ Lyric is about learning and clarity, not syntax density.
 var x, int y, str name
 
 # Static type declarations
-float pi = 3.14159
-god active = true
+flt pi = 3.14159
+var active = true
 
-def float calculate_area(float radius) {
+def flt calculate_area(flt radius): {
     return pi * radius * radius
 }
 
-def str format_result(float area, str shape) {
+def str format_result(flt area, str shape) {
     return "Area of " + shape + ": " + str(area)
 }
 

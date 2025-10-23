@@ -69,7 +69,7 @@ finally:
 fade
 
 # Test 8: Exception with method calls
-class Calculator:
+class Calculator
     def divide(int a, int b) {
         try:
             return a / b

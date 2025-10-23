@@ -16,7 +16,7 @@ class Person:
     }
 +++
 
-class Student:
+class Student
     name = "Student"
     grade = "A"
     

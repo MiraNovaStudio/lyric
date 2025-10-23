@@ -139,8 +139,8 @@ done
 
 
 def test_parse_class_definition():
-    """Test parsing class definition: class Player: name = "Guest" def greet() { print("Hello,", self.name) } +++"""
-    source = '''class Player:
+    """Test parsing class definition: class Player name = "Guest" def greet() { print("Hello,", self.name) } +++"""
+    source = '''class Player
 name = "Guest"
 def greet() {
 print("Hello,", self.name)
@@ -315,7 +315,7 @@ def test_parse_error_handling():
     
     # Test missing class terminator
     with pytest.raises(ParseError):
-        parse('class Player: name = "test"')
+        parse('class Player name = "test"')
 
 
 def test_parse_complex_nested_structure():
@@ -473,7 +473,7 @@ def test_parse_loop_example():
 
 def test_parse_class_example():
     """Test parsing a class definition example."""
-    source = """class Player:
+    source = """class Player
 def greet() {
     print("Hello!")
 }

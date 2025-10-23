@@ -2,7 +2,7 @@
 
 Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. This project is being developed from scratch to test our development processes and create a clean, educational programming language implementation.
 
-**Status**: Active Development - Version 0.3.0 (Pre-Alpha)
+**Status**: Active Development - Version 0.4.0 (Pre-Alpha)
 
 ## Project Goals
 
@@ -14,12 +14,12 @@ This iteration of Lyric is being built from the ground up to:
 
 ## Current State
 
-The project has completed Sprint 1, Sprint 2, and Sprint 3 with:
+The project has completed Sprint 1, Sprint 2, Sprint 3, and Sprint 4 with:
 - ✅ Complete lexer implementation with tokenization
 - ✅ Recursive descent parser with AST generation
 - ✅ Interpreter with scope management and built-in functions
 - ✅ CLI interface for running Lyric programs
-- ✅ Comprehensive test suite (286 tests)
+- ✅ Comprehensive test suite (360 tests)
 - ✅ Class definitions and instantiation
 - ✅ Nested control flow (if/else, given/done)
 - ✅ Error reporting with line numbers
@@ -30,6 +30,12 @@ The project has completed Sprint 1, Sprint 2, and Sprint 3 with:
 - ✅ Class constructors with init() methods
 - ✅ Exception handling (try/catch/finally)
 - ✅ Return statements and function parameters
+- ✅ Python interoperability with `importpy` statement
+- ✅ `pyobject` type system integration
+- ✅ Multi-variable declarations with mixed types (`var x, int y, str z`)
+- ✅ Dynamic typing with `var` keyword
+- ✅ AST position tracking for precise error reporting
+- ✅ Optional colon syntax across all core constructs
 
 ## How to Run
 
@@ -110,6 +116,39 @@ def main() {
     print("Name:", person.name)
     print("Age:", person.age)
 }
+```
+
+**Python Interoperability** (`lyric/tests/examples/importpy_tests.ly`):
+```lyric
+# Import Python modules using importpy
+importpy math
+importpy datetime
+
+# Use Python functions and constants
+var result = math.sqrt(16)
+print(result)  # prints 4.0
+
+var pi = math.pi
+print(pi)      # prints 3.141592653589793
+
+# Access Python classes and methods
+var now = datetime.datetime.now()
+print(now.year)  # prints current year
+
+# Chained member access works
+var today = datetime.date.today()
+print(today)
+
+# Multiple modules
+importpy os
+var current_dir = os.getcwd()
+print(current_dir)
+
+# pyobject values work seamlessly with var type
+var math_obj = math
+var sqrt_func = math_obj.sqrt
+var result2 = sqrt_func(25)
+print(result2)  # prints 5.0
 ```
 
 **Exception Handling** (`lyric/tests/examples/exception_tests.ly`):
@@ -263,6 +302,7 @@ pip install pytest flake8 setuptools
 - **Data Structures**: `[item1, item2, ...]` for lists and `{"key": value}` for dictionaries ✅
 - **Exception Handling**: `try: ... catch: ... finally: ... fade` with error propagation ✅
 - **Comments**: `# comment text` (full-line and inline comments) ✅
+- **Python Interoperability**: `importpy module` for seamless Python library access ✅
 
 ### Built-in Functions (Implemented)
 

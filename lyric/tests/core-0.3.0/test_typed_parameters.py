@@ -112,7 +112,7 @@ def test_var_parameter_accepts_any_type():
 def test_typed_class_method_parameters():
     """Test typed parameters in class methods."""
     source = """
-    class Calculator:
+    class Calculator
         def add(int x, int y) {
             return x + y
         }

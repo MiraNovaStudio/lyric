@@ -71,6 +71,8 @@ nova/changelog/YYYYMMDD/TIME_HHMM-CHANGELOG.md
 ### 4. Write Sprint Task Summary (Conditional)
 If **Git Commit Toggle = YES**, Claude writes a sprint task summary **AFTER** completing the task implementation:
 
+**🚨 CRITICAL REQUIREMENT 🚨**: 
+**ALWAYS CREATE SPRINT TASK SUMMARY - THIS IS MANDATORY!**
 
 nova/arcs/trajectory-0.9.1/yield-0.x.x/SPRINTX_TASKX_SUMMARY.md
 
@@ -116,9 +118,10 @@ nova/arcs/trajectory-0.9.1/yield-0.x.x/SPRINTX_DOD_SUMMARY.md
 1. **REQUIRED**: Create changelog entry (Step 3) with placeholder commit hash - **MUST BE DONE FIRST**
 2. **REQUIRED**: Create sprint task summary (Step 4) - **MUST BE DONE BEFORE COMMIT**
 3. **REQUIRED**: Create sprint DOD summary (Step 5) if sprint complete - **MUST BE DONE BEFORE COMMIT**
-4. Stage all files: `git add *`
-5. Commit all changes: `git commit -a -m "SprintX TaskY: <brief description>"`
-6. **STOP HERE** - Do NOT create a second commit to update changelog with commit hash
+4. **CHECKLIST**: ✅ Changelog created ✅ Task summary created ✅ DOD summary created (if applicable)
+5. Stage all files: `git add *`
+6. Commit all changes: `git commit -a -m "SprintX TaskY: <brief description>"`
+7. **STOP HERE** - Do NOT create a second commit to update changelog with commit hash
 
 **🚨 CRITICAL ORDER RULE 🚨**:
 **ALL DOCUMENTATION MUST BE CREATED BEFORE ANY COMMIT!**
@@ -139,6 +142,7 @@ git commit -a -m "SprintX TaskY: <brief description>"
 - **MUST** include sprint number and task number
 - **MUST** be concise (e.g., "Sprint1 Task2: Implement Lexer", "Sprint1 Task4: Implement Parser")
 - **MUST NOT** include detailed descriptions (those go in changelog entries)
+- **🚨 CRITICAL**: Keep commit messages SHORT - detailed information is in changelog files!
 
 **Note**: This process ensures that:
 - Changelog entries are ALWAYS created before commits
@@ -148,6 +152,29 @@ git commit -a -m "SprintX TaskY: <brief description>"
 - Commit messages are concise and follow the SprintX TaskY format
 
 Keep commit messages short; details live in changelog entries.
+
+**❌ WRONG - Too detailed:**
+```
+git commit -m "Sprint 4 Task 2: Update Specification and Grammar
+
+- Updated Lyric Language Specification to version 0.4.0
+- Corrected type names throughout (god→bool, float→flt)
+- Enhanced grammar rules to match current implementation
+- Added comprehensive multi-declaration examples and error messages
+- Updated syntax examples to remove colons from control structures
+- Updated implementation status and test counts (334+ tests)
+- Added sample error messages for type mismatches and invalid types
+
+The specification now accurately reflects the multi-variable declaration
+feature implemented in Sprint 4 Task 1.
+
+Closes: Sprint 4 Task 2"
+```
+
+**✅ CORRECT - Concise:**
+```
+git commit -m "Sprint4 Task2: Update specification and grammar"
+```
 
 ### Changelog Format
 

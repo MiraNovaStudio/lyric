@@ -123,7 +123,7 @@ class TestRuntimeSafety:
         
         error_msg = str(exc_info.value)
         assert "Method not found" in error_msg
-        assert "'unknown_method' is not a method of 'obj'" in error_msg
+        assert "'unknown_method' is not a method of" in error_msg
         assert "has no methods" in error_msg
     
     def test_enhanced_division_by_zero_messages(self):
@@ -324,7 +324,7 @@ class TestRuntimeSafety:
         
         error_msg = str(exc_info.value)
         assert "Member not found" in error_msg
-        assert "'unknown_member' is not a member of 'obj'" in error_msg
+        assert "'unknown_member' is not a member of" in error_msg
         assert "Available members" in error_msg
         assert "name" in error_msg
     

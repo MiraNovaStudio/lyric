@@ -9,7 +9,7 @@ import sys
 
 def test_class_definition_and_instantiation_a12():
     """Test defining a class and creating an instance (A12)."""
-    source = """class Person:
+    source = """class Person
     name = "Guest"
     age = 25
 +++
@@ -34,7 +34,7 @@ def main() {
 
 def test_class_method_call_a13():
     """Test calling an instance method (A13)."""
-    source = """class Player:
+    source = """class Player
     name = "Guest"
     def greet() { 
         print("Hello,", self.name) 
@@ -61,7 +61,7 @@ def main() {
 
 def test_instance_variables_a14():
     """Test instance variables are stored in each object dictionary (A14)."""
-    source = """class Person:
+    source = """class Person
     name = "Default"
     def set_name(new_name) {
         self.name = new_name
@@ -98,7 +98,7 @@ def main() {
 
 def test_class_without_methods():
     """Test simple class with just attributes."""
-    source = """class Point:
+    source = """class Point
     x = 0
     y = 0
 +++
@@ -123,7 +123,7 @@ def main() {
 
 def test_class_instantiation_syntax():
     """Test class instantiation syntax like player = Player()."""
-    source = """class Calculator:
+    source = """class Calculator
     def add(a, b) {
         return a + b
     }

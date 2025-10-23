@@ -11,7 +11,7 @@ import sys
 def test_class_with_init_method_a11():
     """Test A11: Classes with init() initialize instance variables correctly."""
     source = '''
-    class Person:
+    class Person
         def init(name, age) {
             self.name = name
             self.age = age
@@ -36,7 +36,7 @@ def test_class_with_init_method_a11():
 def test_method_calls_instance_syntax_a12():
     """Test A12: Method calls using instance.method() work and print correct values."""
     source = '''
-    class Calculator:
+    class Calculator
         def init() {
             self.history = []
         }
@@ -66,7 +66,7 @@ def test_method_calls_instance_syntax_a12():
 def test_instance_variable_assignment_a13():
     """Test A13: Assigning and reading instance variables works correctly."""
     source = '''
-    class BankAccount:
+    class BankAccount
         def init(initial_balance) {
             self.balance = initial_balance
             self.transactions = []
@@ -104,7 +104,7 @@ def test_instance_variable_assignment_a13():
 def test_class_without_init_method():
     """Test that classes without init() method still work correctly."""
     source = '''
-    class Point:
+    class Point
         x = 0
         y = 0
         def move(dx, dy) {
@@ -132,7 +132,7 @@ def test_class_without_init_method():
 def test_multiple_instances_independence():
     """Test that multiple instances of the same class are independent."""
     source = '''
-    class Counter:
+    class Counter
         def init() {
             self.count = 0
         }
@@ -163,7 +163,7 @@ def test_multiple_instances_independence():
 def test_init_method_with_no_parameters():
     """Test init() method with no parameters."""
     source = '''
-    class DefaultPerson:
+    class DefaultPerson
         def init() {
             self.name = "Unknown"
             self.age = 0
@@ -190,7 +190,7 @@ def test_init_method_with_no_parameters():
 def test_init_method_with_type_parameters():
     """Test init() method with typed parameters."""
     source = '''
-    class TypedPerson:
+    class TypedPerson
         def init(str name, int age) {
             self.name = name
             self.age = age
@@ -213,7 +213,7 @@ def test_init_method_with_type_parameters():
 def test_init_method_type_error():
     """Test that init() method enforces parameter types."""
     source = '''
-    class TypedPerson:
+    class TypedPerson
         def init(str name, int age) {
             self.name = name
             self.age = age
@@ -233,7 +233,7 @@ def test_init_method_type_error():
 def test_complex_class_with_multiple_methods():
     """Test complex class with multiple methods and instance variables."""
     source = '''
-    class ShoppingCart:
+    class ShoppingCart
         def init() {
             self.items = []
             self.total = 0
@@ -274,7 +274,7 @@ def test_complex_class_with_multiple_methods():
 def test_self_reference_in_nested_calls():
     """Test self reference in nested method calls."""
     source = '''
-    class MathUtils:
+    class MathUtils
         def init() {
             self.multiplier = 2
         }

@@ -7,7 +7,7 @@ import pytest
 
 def test_parse_class_with_method_a11():
     """Test class parsing with method (A11 from Sprint2 Task4)."""
-    source = """class Player:
+    source = """class Player
     name = "Guest"
     def greet() { print("Hello,", self.name) }
 +++"""
@@ -36,7 +36,7 @@ def test_parse_class_with_method_a11():
 
 def test_parse_simple_class():
     """Test simple class parsing."""
-    source = """class Person:
+    source = """class Person
     age = 25
 +++"""
     
@@ -48,7 +48,7 @@ def test_parse_simple_class():
 
 def test_parse_class_with_multiple_methods():
     """Test class with multiple methods."""
-    source = """class Calculator:
+    source = """class Calculator
     def add(a, b) { return a + b }
     def subtract(a, b) { return a - b }
 +++"""
@@ -62,7 +62,7 @@ def test_parse_class_with_multiple_methods():
 
 def test_parse_empty_class():
     """Test empty class parsing."""
-    source = """class Empty:
+    source = """class Empty
 +++"""
     
     ast = parse(source)
