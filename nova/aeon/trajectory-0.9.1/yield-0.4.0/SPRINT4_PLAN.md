@@ -203,6 +203,54 @@ try, catch, and finally constructs
 - pytest unit test both pass 100%.
 
 
+### **Task 8 - Update Language Specification for Optional Colon Syntax**
+
+#### Goal:
+-Revise the Lyric Language Specification to document that the colon (:) is now optional in key language constructs.
+
+#### Instructions:
+
+- Open docs/Lyric Language Specification.md
+- In the Syntax Overview section, update examples for:
+
+```
+class declarations
+
+def function definitions
+
+if / else if / else conditionals
+
+given / done loops
+
+try / catch / finally / fade blocks
+```
+
+- Note that a colon may appear optionally after the header line.
+
+- Clarify that both colon and non-colon forms are functionally identical and compile to the same AST.
+
+- In the Grammar Definition section, update rules such as:
+
+```
+class_decl = "class" IDENT [":"];
+def_decl   = "def" IDENT "(" param_list ")" [":"];
+if_stmt    = "if" expression [":"];
+```
+
+- Add a brief note under Style Recommendations:
+
+“The colon is optional.”
+
+
+#### Acceptance Criteria
+
+- The document accurately reflects lyric's sytnax regarding colons
+
+
+
+
+
+
 ## 📅 Definition of Done
 - All acceptance criteria met for each task.  
 - `CHANGELOG.md` and `README.md` updated to reflect new syntax.  

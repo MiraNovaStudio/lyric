@@ -60,14 +60,15 @@ def main() {
 ### Conditionals
 
 - Uses `else if` instead of `elif`
-- Block introduced by `:` and closed by `end`
+- Block introduced by optional `:` and closed by `end`
+- Both `if condition:` and `if condition` are valid
 
 ```lyric
 if x > 0:
     print("positive")
 else if x < 0:
     print("negative")
-else:
+else
     print("zero")
 end
 ```
@@ -75,7 +76,8 @@ end
 ### Loops
 
 - `given` replaces both `for` and `while`
-- Ends with `done`
+- Block introduced by optional `:` and closed by `done`
+- Both `given condition:` and `given condition` are valid
 
 ```lyric
 # Iterator loop
@@ -84,7 +86,7 @@ given i in range(5):
 done
 
 # While loop
-given n > 0:
+given n > 0
     print(n)
     n -= 1
 done
@@ -94,11 +96,17 @@ done
 ### Functions
 
 - Braces used only for functions
+- Block introduced by optional `:` after function signature
+- Both `def name(): {` and `def name() {` are valid
 - Indentation purely stylistic, not structural
 
 ```lyric
-def greet(name) {
+def greet(name): {
     print("Hello,", name)
+}
+
+def calculate(x) {
+    return x * 2
 }
 ```
 
@@ -106,6 +114,8 @@ def greet(name) {
 
 - `+++` closes a class, symbolizing addition of a structure to the program
 - Classes are lightweight containers for variables and functions
+- Block introduced by optional `:` after class name
+- Both `class Name:` and `class Name` are valid
 - `+++` is supposed to symbolize attaching a data structure to a program
 
 ```lyric
@@ -114,6 +124,14 @@ class Player:
 
     def greet() {
         print("Hello,", self.name)
+    }
++++
+
+class Game
+    score = 0
+    
+    def update_score(points) {
+        self.score += points
     }
 +++
 ```
@@ -161,16 +179,18 @@ def main() {
 
 ### Error Handling (Planned)
 - Uses familiar Python-style exception handling
-- Syntax simplified: `except: ErrorType:`
+- Block introduced by optional `:` after try, catch, and finally keywords
+- Both `try:`, `catch:`, `finally:` and `try`, `catch`, `finally` are valid
+- Syntax simplified: `catch: ErrorType:`
 
 ```lyric
 def main() {
     try:
         n = int(input("Enter a number: "))
         print("Half:", n / 2)
-    except: ValueError:
+    catch:
         print("Invalid input")
-    finally:
+    finally
         print("Done")
     fade
 }
@@ -350,10 +370,110 @@ var x, int y, str z
 int count, var temp, flt pi
 ```
 
+#### Core Construct Grammar Rules
+
+**Class Declaration Grammar:**
+```
+class_decl := "class" IDENT [":"] class_body "+++"
+
+class_body := 
+    | class_member*
+    
+class_member :=
+    | variable_declaration
+    | function_declaration
+```
+
+**Function Declaration Grammar:**
+```
+function_decl := "def" IDENT "(" param_list ")" [":"] "{" function_body "}"
+
+param_list :=
+    | empty
+    | param ("," param)*
+    
+param :=
+    | IDENT                    # Untyped parameter (defaults to var)
+    | type_annotation IDENT    # Typed parameter
+```
+
+**Control Structure Grammar:**
+```
+if_statement := "if" expression [":"] statement* elif_clause* else_clause? "end"
+
+elif_clause := "else" "if" expression [":"] statement*
+
+else_clause := "else" [":"] statement*
+
+loop_statement := "given" expression [":"] statement* "done"
+```
+
+**Exception Handling Grammar:**
+```
+try_statement := "try" [":"] statement* catch_clause* finally_clause? "fade"
+
+catch_clause := "catch" [":"] statement*
+
+finally_clause := "finally" [":"] statement*
+```
+
+**Notes:**
+- The colon `:` is optional in all constructs listed above
+- Both `if condition:` and `if condition` produce identical AST nodes
+- Both `def name(): {` and `def name() {` are functionally equivalent
+- Mixed colon usage is supported and encouraged for style flexibility
+
+#### Style Recommendations
+
+**Colon Usage:**
+The colon is optional in all core language constructs. Both syntax variants are functionally identical and compile to the same AST. Choose the style that best fits your project's needs:
+
+- **Consistent Style**: Use colons consistently throughout your codebase for visual clarity
+- **Minimal Style**: Omit colons for a cleaner, more concise appearance  
+- **Mixed Style**: Combine both approaches based on context and readability
+
+**Examples:**
+```lyric
+# Consistent colon style
+class Person:
+    def greet(): {
+        if self.name:
+            print("Hello", self.name)
+        else
+            print("Hello stranger")
+        end
+    }
++++
+
+# Minimal colon style
+class Game
+    def play() {
+        given i in range(5)
+            print("Round", i)
+        done
+    }
++++
+
+# Mixed style (recommended for flexibility)
+class Player:
+    def init() {
+        self.score = 0
+    }
+    
+    def update_score(points) {
+        if points > 0:
+            self.score += points
+        else
+            self.score = 0
+        end
+    }
++++
+```
+
 ### Advanced Class Example
 
 ```lyric
-class Counter
+class Counter:
     value = 0
 
     def Counter(start) {
@@ -426,7 +546,7 @@ var x, int y, str name
 flt pi = 3.14159
 var active = true
 
-def flt calculate_area(flt radius) {
+def flt calculate_area(flt radius): {
     return pi * radius * radius
 }
 
