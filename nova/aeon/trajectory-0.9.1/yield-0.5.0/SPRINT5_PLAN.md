@@ -148,6 +148,29 @@ if ready {
 - Documentation updated with a short note: "The `god` type (named in honor of logician Kurt Gödel) represents truth values."
 - `README.md` and `CHANGELOG.md` updated accordingly.
 
+## Task 8 - Add Alternative Type Name Bin for God Type
+
+Introduce `bin` as an alias for `god`.
+
+**Behavior:**
+- Both types represent true/false values.
+- Internally, both map to the same boolean implementation.
+- If `god` becomes widely accepted, `bin` may be deprecated in a future release.
+
+**Example:**
+```lyric
+god flag1 = true
+bin flag2 = false
+print(flag1, flag2)
+```
+
+### Acceptance Criteria:
+- `bin` recognized as a valid type keyword.
+- `bin` and `god` behave identically.
+- Type enforcement and logical operations work with both.
+- Documentation updated noting `bin` is an alias for `god`.
+
+
 ## Definition of Done
 
 - `rex` type implemented with `.match()` and `.replace()` fully working.
