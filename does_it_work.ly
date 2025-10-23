@@ -69,7 +69,7 @@ def main() {
 
     var radians = math.pi / 2
     var s = math.sin(radians)
-    print("sin(pi/2) from Python math: " + s)
+    print("sin(pi/2) from Python math: ", s)
 
     print("All constructs exercised. ✅")
 }
