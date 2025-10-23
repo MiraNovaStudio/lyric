@@ -751,7 +751,7 @@ class Interpreter:
                 return left * right
             elif node.op == '/':
                 if right == 0:
-                    raise RuntimeErrorLyric("Division by zero: cannot divide by zero. Check your divisor value before performing division.")
+                    raise RuntimeErrorLyric("Division by zero: cannot divide by zero. Check your divisor value before performing division.", node.line, node.column)
                 return left / right
             elif node.op == '==':
                 return left == right
@@ -770,9 +770,9 @@ class Interpreter:
             elif node.op == 'or':
                 return self._is_truthy(left) or self._is_truthy(right)
             else:
-                raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}")
+                raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}", node.line, node.column)
         except TypeError as e:
-            raise RuntimeErrorLyric(f"Type mismatch in operation '{node.op}': {str(e)}. Check that both operands are compatible types for this operation.")
+            raise RuntimeErrorLyric(f"Type mismatch in operation '{node.op}': {str(e)}. Check that both operands are compatible types for this operation.", node.line, node.column)
     
     def _evaluate_unary_operation(self, node: UnaryOpNode) -> Any:
         """Evaluate a unary operation."""
