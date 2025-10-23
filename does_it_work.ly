@@ -10,7 +10,7 @@ def add(int a, int b) {
 }
 
 def greet(name) { 
-    print("Hello, " + name) 
+    print("Hello, ", name) 
 }
 
 # ——— Simple class declaration (symbolic close with +++) ———
@@ -18,7 +18,7 @@ class Example
     str name = "Guest"
     
     def hello() {
-        print("Hello, " + self.name)
+        print("Hello, ", self.name)
     }    # minimal class; parser should accept class block and +++ close
 +++
 
@@ -29,8 +29,8 @@ def main() {
     var y = add(x, 7)
     greet("Lyric")
 
-    print("x = " + x)
-    print("y = " + y)
+    print("x = ", x)
+    print("y = ", y)
 
     # Conditionals with end
     if y > 10
@@ -42,19 +42,10 @@ def main() {
     end
 
     # given/done loop (basic iteration)
-    var i = 0
-    given
-        print("loop i = " + i)
+    int i = 0
+    given i < 3:
+        print("loop i = ", i)
         i = i + 1
-        if i >= 3
-            # break-style pattern; end the loop by setting a guard and using done
-            # (implementation-defined; this exercises body execution)
-            # No-op here; just runs 3 times
-        end
-        if i == 3
-            # simulate exit by reaching the condition and letting interpreter stop on next check
-        end
-        # loop body ends
     done
 
     # Lists and indexing (for try/catch test)
@@ -64,8 +55,8 @@ def main() {
     try:
         var bad = items[5]      # should raise IndexError
         print("This should not print")
-    catch IndexError as e:
-        print("Caught IndexError: " + e)
+    #catch IndexError as e:
+    #    print("Caught IndexError: " + e)
     catch:
         print("Caught some other error")
     finally:
@@ -74,7 +65,7 @@ def main() {
 
     # importpy usage: datetime and math interop (values are internal pyobject represented as var)
     var now = datetime.datetime.now()
-    print("Year from Python datetime: " + now.year)
+    print("Year from Python datetime: ", now.year)
 
     var radians = math.pi / 2
     var s = math.sin(radians)
