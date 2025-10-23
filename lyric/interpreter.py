@@ -1,13 +1,38 @@
 """Interpreter module for executing Lyric AST nodes."""
 
 from typing import Any, List
+import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
+
+
+class RexObject:
+    """Represents a compiled regex object with methods."""
+    
+    def __init__(self, compiled_pattern):
+        self.pattern = compiled_pattern
+    
+    def match(self, text: str) -> bool:
+        """Check if the regex matches the beginning of the text."""
+        if not isinstance(text, str):
+            raise RuntimeErrorLyric(f"Type error: rex.match() expects a string, but got {type(text).__name__}")
+        return bool(self.pattern.match(text))
+    
+    def replace(self, source: str, replacement: str) -> str:
+        """Replace all matches of the regex in the source string."""
+        if not isinstance(source, str):
+            raise RuntimeErrorLyric(f"Type error: rex.replace() expects a string as source, but got {type(source).__name__}")
+        if not isinstance(replacement, str):
+            raise RuntimeErrorLyric(f"Type error: rex.replace() expects a string as replacement, but got {type(replacement).__name__}")
+        return self.pattern.sub(replacement, source)
+    
+    def __repr__(self):
+        return f"RexObject(pattern='{self.pattern.pattern}')"
 
 
 class ReturnValue:
@@ -285,6 +310,8 @@ class Interpreter:
             return isinstance(value, str)
         elif expected_type == 'flt':
             return isinstance(value, (int, float)) and not isinstance(value, bool)
+        elif expected_type == 'rex':
+            return isinstance(value, RexObject)
         else:
             return False
     
@@ -328,6 +355,15 @@ class Interpreter:
             return obj[index]
         else:
             raise RuntimeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
+    
+    def _evaluate_rex_literal(self, node: RexNode) -> 'RexObject':
+        """Evaluate a regex literal and return a RexObject."""
+        import re
+        try:
+            compiled_pattern = re.compile(node.pattern)
+            return RexObject(compiled_pattern)
+        except re.error as e:
+            raise RuntimeErrorLyric(f"Invalid regex pattern '{node.pattern}' at line {node.line}, column {node.column}: {e}")
     
     def _evaluate_function_definition(self, node: FunctionNode) -> None:
         """Evaluate a function definition."""
@@ -517,6 +553,17 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     except AttributeError:
                         raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{method_name}'")
+                elif isinstance(current_obj, RexObject):
+                    # Handle RexObject methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: RexObject has no attribute '{method_name}'")
                 elif callable(current_obj):
                     # Handle classes and callable objects
                     try:
@@ -611,6 +658,8 @@ class Interpreter:
             return self._evaluate_dict_literal(expr)
         elif isinstance(expr, IndexNode):
             return self._evaluate_index(expr)
+        elif isinstance(expr, RexNode):
+            return self._evaluate_rex_literal(expr)
         else:
             raise RuntimeErrorLyric(f"Unknown expression type: {type(expr)}")
     

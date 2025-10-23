@@ -21,7 +21,7 @@ class Lexer:
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'given', 'done', 'end', 
         'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'return',
-        'int', 'str', 'flt', 'var', 'pyobject', 'True', 'False', 'None', 'raise', 'importpy'
+        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'True', 'False', 'None', 'raise', 'importpy'
     }
     
     # Single character operators and delimiters
@@ -130,6 +130,29 @@ class Lexer:
             self._scan_string()
             return
         
+        # Handle regex literals
+        if char == '/':
+            # Check if this is a regex literal or division
+            # Regex literals must be followed by a non-whitespace character
+            # and must have a closing slash
+            if not self._is_at_end() and self._peek() != ' ' and self._peek() != '\t' and self._peek() != '\n':
+                # Look ahead to see if there's a closing slash
+                temp_pos = self.current
+                has_closing_slash = False
+                while temp_pos < len(self.source) and self.source[temp_pos] != '\n':
+                    if self.source[temp_pos] == '/':
+                        has_closing_slash = True
+                        break
+                    temp_pos += 1
+                
+                if has_closing_slash:
+                    self._scan_regex()
+                    return
+            
+            # If not a regex literal, treat as division
+            self.tokens.append(Token('DIVIDE', char, self.line, self.start_col))
+            return
+        
         # Handle numbers
         if char.isdigit():
             self._scan_number(char)
@@ -178,6 +201,32 @@ class Lexer:
         
         self.tokens.append(Token('STRING', value, start_line, start_col))
     
+    def _scan_regex(self):
+        """Scan a regex literal."""
+        start_line = self.line
+        start_col = self.start_col
+        value = ''
+        
+        while self._peek() != '/' and not self._is_at_end():
+            if self._peek() == '\n':
+                raise LexError(f"Unterminated regex at line {start_line}, column {start_col}")
+            value += self._advance()
+        
+        if self._is_at_end():
+            raise LexError(f"Unterminated regex at line {start_line}, column {start_col}")
+        
+        # Consume the closing slash
+        self._advance()
+        
+        # Validate regex pattern
+        try:
+            import re
+            re.compile(value)
+        except re.error as e:
+            raise LexError(f"Invalid regex pattern '{value}' at line {start_line}, column {start_col}: {e}")
+        
+        self.tokens.append(Token('REGEX_LITERAL', value, start_line, start_col))
+    
     def _scan_number(self, first_char: str):
         """Scan a number (integer or float)."""
         start_line = self.line
@@ -215,7 +264,7 @@ class Lexer:
             elif value == 'None':
                 # Convert None keyword to actual None value
                 self.tokens.append(Token('NONE', None, start_line, start_col))
-            elif value in ('int', 'str', 'flt', 'var', 'pyobject'):
+            elif value in ('int', 'str', 'flt', 'var', 'pyobject', 'rex'):
                 # Type keywords can also be used as identifiers in expressions
                 # We'll let the parser decide based on context
                 self.tokens.append(Token('TYPE_OR_IDENT', value, start_line, start_col))

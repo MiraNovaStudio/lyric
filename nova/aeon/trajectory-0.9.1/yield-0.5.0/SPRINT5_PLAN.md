@@ -180,3 +180,4 @@ print(flag1, flag2)
 - Unit tests created for `rex` functionality and CLI execution.
 - `README.md` updated with new usage examples.
 - `CHANGELOG.md` updated to include `rex` type and CLI improvements.
+- `bin` and `god` types work as intended

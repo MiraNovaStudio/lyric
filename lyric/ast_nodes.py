@@ -423,10 +423,27 @@ class ImportPyNode(ASTNode):
         }
 
 
+@dataclass
+class RexNode(ASTNode):
+    """Represents a regex literal."""
+    pattern: str
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"RexNode(pattern='{self.pattern}')"
+    
+    def to_dict(self):
+        return {
+            'type': 'RexNode',
+            'pattern': self.pattern
+        }
+
+
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
     ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
-    TryNode, RaiseNode, ImportPyNode
+    TryNode, RaiseNode, ImportPyNode, RexNode
 ]
