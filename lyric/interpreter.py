@@ -31,6 +31,12 @@ class RexObject:
             raise RuntimeErrorLyric(f"Type error: rex.replace() expects a string as replacement, but got {type(replacement).__name__}")
         return self.pattern.sub(replacement, source)
     
+    # TODO: Future enhancement - .search() method for mid-string matches
+    # def search(self, text: str) -> bool:
+    #     """Search for the regex pattern anywhere in the text (not just at the beginning)."""
+    #     # Implementation would use Python's re.search() instead of re.match()
+    #     # This method is deferred for future sprints to keep the initial rex implementation focused
+    
     def __repr__(self):
         return f"RexObject(pattern='{self.pattern.pattern}')"
 
