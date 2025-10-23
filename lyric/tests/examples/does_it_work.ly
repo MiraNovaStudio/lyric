@@ -14,7 +14,7 @@ def greet(name) {
 }
 
 # ——— Simple class declaration (symbolic close with +++) ———
-class Example:
+class Example
     str name = "Guest"
     
     def hello() {

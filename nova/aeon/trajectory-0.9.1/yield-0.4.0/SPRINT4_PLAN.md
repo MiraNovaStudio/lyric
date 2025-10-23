@@ -103,7 +103,6 @@ instead of
 class Example:
 ```
   
-- When the colon form is used, emit a deprecation warning (e.g., “DeprecationWarning: Colons after class declarations will be removed in a future version.”).  
 - Update all existing test cases and example programs to use the new syntax.  
 - Add new tests to confirm that both forms currently parse successfully and that the deprecation warning appears.  
 

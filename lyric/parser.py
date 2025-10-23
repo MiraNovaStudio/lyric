@@ -195,16 +195,11 @@ class Parser:
         return params, param_types
     
     def _parse_class_def(self) -> ClassNode:
-        """Parse class definition: class IDENT [":"] statement* CLASS_END"""
+        """Parse class definition: class IDENT statement* CLASS_END"""
         class_token = self._consume('CLASS', "Expected 'class'")
         
         name_token = self._consume('IDENT', "Expected class name")
         name = name_token.value
-        
-        # Check if colon is present and emit deprecation warning
-        if self._match('COLON'):
-            # Deprecation warning for colon form
-            print(f"DeprecationWarning: Colons after class declarations will be removed in a future version. Use 'class {name}' instead of 'class {name}:' at line {class_token.line}, column {class_token.col}")
         
         members_statements = []
         while not self._check('CLASS_END') and not self._is_at_end():

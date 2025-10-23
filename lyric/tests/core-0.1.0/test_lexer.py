@@ -34,11 +34,11 @@ end"""
 
 def test_class_with_terminator():
     """Test tokenizing class definition with +++ terminator."""
-    source = "class Player: +++"
+    source = "class Player +++"
     
     tokens = tokenize(source)
     
-    expected_types = ['CLASS', 'IDENT', 'COLON', 'CLASS_END', 'EOF']
+    expected_types = ['CLASS', 'IDENT', 'CLASS_END', 'EOF']
     assert len(tokens) == len(expected_types)
     
     for i, (token, expected_type) in enumerate(zip(tokens, expected_types)):
@@ -47,12 +47,12 @@ def test_class_with_terminator():
     # Check specific values
     assert tokens[0].value == 'class'
     assert tokens[1].value == 'Player'
-    assert tokens[3].value == '+++'
+    assert tokens[2].value == '+++'
 
 
 def test_class_with_methods_and_terminator():
     """Test tokenizing class with methods and +++ terminator."""
-    source = """class Calculator:
+    source = """class Calculator
 def add(x, y):
 return x + y
 +++"""
@@ -72,8 +72,8 @@ return x + y
 
 def test_multiple_classes_with_terminators():
     """Test tokenizing multiple classes with +++ terminators."""
-    source = """class A: +++
-class B: +++"""
+    source = """class A +++
+class B +++"""
     
     tokens = tokenize(source)
     

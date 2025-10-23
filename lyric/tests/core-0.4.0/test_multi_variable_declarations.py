@@ -183,7 +183,7 @@ class TestMultiVariableDeclarations:
     def test_multi_declaration_in_class(self):
         """Test multi-declaration inside classes."""
         source = """
-        class TestClass:
+        class TestClass
             var x, int y, str z
             def init(self) {
                 self.x = 3.14

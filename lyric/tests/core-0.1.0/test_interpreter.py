@@ -82,8 +82,8 @@ done
 
 
 def test_evaluate_class_definition():
-    """Test evaluating class definition: class Player: name = "Guest" def greet() { print("Hello,", self.name) } +++"""
-    source = '''class Player:
+    """Test evaluating class definition: class Player name = "Guest" def greet() { print("Hello,", self.name) } +++"""
+    source = '''class Player
 name = "Guest"
 def greet() {
 print("Hello,", self.name)
@@ -299,7 +299,7 @@ def test_evaluate_error_handling():
 
 def test_evaluate_member_access():
     """Test member access evaluation."""
-    source = '''class Person:
+    source = '''class Person
 name = "John"
 age = 30
 +++
@@ -444,7 +444,7 @@ def test_evaluate_loop_example():
 
 def test_evaluate_class_instantiation():
     """Test class instantiation and method calls."""
-    source = """class Person:
+    source = """class Person
     name = "Guest"
     age = 25
     
@@ -514,7 +514,7 @@ def test_evaluate_error_reporting():
 
 def test_evaluate_isinstance_function():
     """Test isinstance function with classes and built-in types."""
-    source = """class Person:
+    source = """class Person
     name = "Guest"
 +++
 
@@ -532,7 +532,7 @@ def main() {
 
 def test_evaluate_type_function():
     """Test type function with classes and built-in types."""
-    source = """class Person:
+    source = """class Person
     name = "Guest"
 +++
 
@@ -596,7 +596,7 @@ def test_evaluate_range_enhancements():
 
 def test_evaluate_complex_class_interaction():
     """Test complex class interactions with multiple classes."""
-    source = """class Person:
+    source = """class Person
     name = "Guest"
     
     def greet() {
@@ -608,7 +608,7 @@ def test_evaluate_complex_class_interaction():
     }
 +++
 
-class Student:
+class Student
     name = "Student"
     grade = "A"
     

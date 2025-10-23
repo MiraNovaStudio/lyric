@@ -1,4 +1,4 @@
-"""Tests for Sprint 4 Task 5: Class syntax simplification - both colon and non-colon forms."""
+"""Tests for Sprint 4 Pivot 4.1: Class syntax simplification - colonless syntax only."""
 
 import pytest
 import io
@@ -6,6 +6,7 @@ import sys
 from lyric.parser import parse
 from lyric.interpreter import evaluate
 from lyric.ast_nodes import ClassNode
+from lyric.errors import SyntaxErrorLyric
 
 
 def test_class_without_colon_syntax():
@@ -27,73 +28,17 @@ def main() {
     assert result == "Hello from test"
 
 
-def test_class_with_colon_syntax_deprecation_warning():
-    """Test that class declarations with colons work but show deprecation warning."""
+def test_class_with_colon_syntax_rejected():
+    """Test that class declarations with colons are properly rejected."""
     source = """class TestClass:
     name = "test"
     def greet() {
         return "Hello from " + self.name
     }
-+++
-
-def main() {
-    instance = TestClass()
-    return instance.greet()
-}"""
-    
-    # Capture stdout to check for deprecation warning
-    old_stdout = sys.stdout
-    sys.stdout = captured_output = io.StringIO()
-    
-    try:
-        ast = parse(source)
-        result = evaluate(ast)
-        
-        # Check that it still works
-        assert result == "Hello from test"
-        
-        # Check that deprecation warning was printed
-        output = captured_output.getvalue()
-        assert "DeprecationWarning" in output
-        assert "Colons after class declarations will be removed" in output
-        assert "Use 'class TestClass' instead of 'class TestClass:'" in output
-        
-    finally:
-        sys.stdout = old_stdout
-
-
-def test_both_syntaxes_parse_correctly():
-    """Test that both syntaxes produce equivalent AST structures."""
-    source_without_colon = """class TestClass
-    name = "test"
 +++"""
     
-    source_with_colon = """class TestClass:
-    name = "test"
-+++"""
-    
-    # Parse both versions
-    ast_without_colon = parse(source_without_colon)
-    ast_with_colon = parse(source_with_colon)
-    
-    # Both should have one statement
-    assert len(ast_without_colon.statements) == 1
-    assert len(ast_with_colon.statements) == 1
-    
-    # Both should be ClassNode instances
-    class_without_colon = ast_without_colon.statements[0]
-    class_with_colon = ast_with_colon.statements[0]
-    
-    assert isinstance(class_without_colon, ClassNode)
-    assert isinstance(class_with_colon, ClassNode)
-    
-    # Both should have the same name
-    assert class_without_colon.name == "TestClass"
-    assert class_with_colon.name == "TestClass"
-    
-    # Both should have the same number of members
-    assert len(class_without_colon.members_statements) == 1
-    assert len(class_with_colon.members_statements) == 1
+    with pytest.raises(SyntaxErrorLyric, match="Expected expression"):
+        parse(source)
 
 
 def test_class_syntax_does_not_affect_other_constructs():
@@ -125,26 +70,21 @@ done"""
     assert ast.statements[0].name == "TestClass"
 
 
-def test_empty_class_both_syntaxes():
-    """Test empty classes with both syntaxes."""
-    source_without_colon = """class EmptyClass
+def test_empty_class():
+    """Test empty classes."""
+    source = """class EmptyClass
 +++"""
     
-    source_with_colon = """class EmptyClass:
-+++"""
+    # Should parse successfully
+    ast = parse(source)
     
-    # Both should parse successfully
-    ast_without_colon = parse(source_without_colon)
-    ast_with_colon = parse(source_with_colon)
-    
-    # Both should be empty classes
-    assert len(ast_without_colon.statements[0].members_statements) == 0
-    assert len(ast_with_colon.statements[0].members_statements) == 0
+    # Should be empty class
+    assert len(ast.statements[0].members_statements) == 0
 
 
-def test_class_with_methods_both_syntaxes():
-    """Test classes with methods using both syntaxes."""
-    source_without_colon = """class Calculator
+def test_class_with_methods():
+    """Test classes with methods."""
+    source = """class Calculator
     def add(a, b) {
         return a + b
     }
@@ -153,26 +93,15 @@ def test_class_with_methods_both_syntaxes():
     }
 +++"""
     
-    source_with_colon = """class Calculator:
-    def add(a, b) {
-        return a + b
-    }
-    def multiply(a, b) {
-        return a * b
-    }
-+++"""
+    # Should parse successfully
+    ast = parse(source)
     
-    # Both should parse successfully
-    ast_without_colon = parse(source_without_colon)
-    ast_with_colon = parse(source_with_colon)
-    
-    # Both should have 2 methods
-    assert len(ast_without_colon.statements[0].members_statements) == 2
-    assert len(ast_with_colon.statements[0].members_statements) == 2
+    # Should have 2 methods
+    assert len(ast.statements[0].members_statements) == 2
 
 
-def test_class_instantiation_works_both_syntaxes():
-    """Test that class instantiation works with both syntaxes."""
+def test_class_instantiation_works():
+    """Test that class instantiation works."""
     source = """class TestClass
     name = "test"
     def get_name() {
@@ -190,9 +119,9 @@ def main() {
     assert result == "test"
 
 
-def test_class_with_init_method_both_syntaxes():
-    """Test classes with init methods using both syntaxes."""
-    source_without_colon = """class Person
+def test_class_with_init_method():
+    """Test classes with init methods."""
+    source = """class Person
     def init(name) {
         self.name = name
     }
@@ -203,23 +132,28 @@ def main() {
     return person.name
 }"""
     
-    source_with_colon = """class Person:
-    def init(name) {
-        self.name = name
-    }
+    # Should work
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result == "Alice"
+
+
+def test_multiple_classes():
+    """Test multiple class declarations."""
+    source = """class Person
+    name = "Default"
++++
+
+class Student
+    grade = "A"
 +++
 
 def main() {
-    person = Person("Alice")
-    return person.name
+    person = Person()
+    student = Student()
+    return person.name + " " + student.grade
 }"""
     
-    # Both should work
-    ast_without_colon = parse(source_without_colon)
-    ast_with_colon = parse(source_with_colon)
-    
-    result_without_colon = evaluate(ast_without_colon)
-    result_with_colon = evaluate(ast_with_colon)
-    
-    assert result_without_colon == "Alice"
-    assert result_with_colon == "Alice"
+    ast = parse(source)
+    result = evaluate(ast)
+    assert result == "Default A"
