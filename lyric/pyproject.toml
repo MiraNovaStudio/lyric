@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lyric"
-version = "0.0.1"
+version = "0.4.0"
 description = "Lyric programming language interpreter"
 authors = [{name = "Lyric Team"}]
 readme = "README.md"

@@ -2,7 +2,7 @@
 
 Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. This project is being developed from scratch to test our development processes and create a clean, educational programming language implementation.
 
-**Status**: Active Development - Version 0.3.0 (Pre-Alpha)
+**Status**: Active Development - Version 0.4.0 (Pre-Alpha)
 
 ## Project Goals
 
@@ -14,12 +14,12 @@ This iteration of Lyric is being built from the ground up to:
 
 ## Current State
 
-The project has completed Sprint 1, Sprint 2, and Sprint 3 with:
+The project has completed Sprint 1, Sprint 2, Sprint 3, and Sprint 4 with:
 - ✅ Complete lexer implementation with tokenization
 - ✅ Recursive descent parser with AST generation
 - ✅ Interpreter with scope management and built-in functions
 - ✅ CLI interface for running Lyric programs
-- ✅ Comprehensive test suite (286 tests)
+- ✅ Comprehensive test suite (360 tests)
 - ✅ Class definitions and instantiation
 - ✅ Nested control flow (if/else, given/done)
 - ✅ Error reporting with line numbers
@@ -32,6 +32,10 @@ The project has completed Sprint 1, Sprint 2, and Sprint 3 with:
 - ✅ Return statements and function parameters
 - ✅ Python interoperability with `importpy` statement
 - ✅ `pyobject` type system integration
+- ✅ Multi-variable declarations with mixed types (`var x, int y, str z`)
+- ✅ Dynamic typing with `var` keyword
+- ✅ AST position tracking for precise error reporting
+- ✅ Optional colon syntax across all core constructs
 
 ## How to Run
 
