@@ -28,51 +28,9 @@ Verify that declared types (`int`, `flt`, `str`, `rex`, `god`, `var`) are enforc
 - Assignments violating declared types must raise a `TypeError`.
 - Return types from functions must match declared type signatures.
 
-### Acceptance Criteria:
-- Type errors produce clear messages showing variable name, expected type, and actual type.
-- Return-type mismatches trigger errors.
-- No silent type coercions unless explicitly handled.
-- Unit tests pass for mixed type assignment and function returns.
+## Task 3
 
-## Task 3 — Optional Colon Syntax for Core Language Constructs
-
-- Modify grammar rules and parser logic to treat the colon token as optional for:
-
-``
-class declarations
-
-def functions
-
-if, else if, and else blocks
-
-given / done loops
-
-try, catch, and finally constructs
-```
-
-- Ensure colon and non-colon variants produce identical AST nodes.
-
-- Maintain consistent indentation and block parsing regardless of colon usage.
-
-- Add or update test cases covering both syntaxes.
-
-- Review sample programs to confirm backward compatibility.
-
-### Implementation Notes
-
-- Adjust the parser’s header rules, e.g. if match(COLON): advance() instead of requiring it.
-
-- Update error messages to suggest a colon when missing but not fail without one.
-
-- AST and interpreter layers require no structural change; only the parser and tokenizer are affected.
-
-### Acceptance Criteria
-
-- All constructs listed above compile successfully with and without colons.
-- Unit tests verify identical AST output for both syntaxes.
-- No regressions in existing programs or core/full test suites.
-- tests/examples/ updated to demonstrate mixed colon usage.
-- pytest unit test both pass 100%.
+- skip this task and write a changelog file that it was skipped
 
 
 
