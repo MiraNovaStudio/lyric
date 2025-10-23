@@ -120,7 +120,7 @@ def test_cli_syntax_error_handling():
     # Create a temporary file with syntax error
     temp_file = "syntax_error.ly"
     with open(temp_file, 'w') as f:
-        f.write('def main() {\n    if true:\n        print("missing end")\n}')
+        f.write('def main() {\n    if true\n        print("missing end")\n}')
     
     try:
         # Run the CLI command

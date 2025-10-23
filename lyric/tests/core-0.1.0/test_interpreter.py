@@ -26,9 +26,9 @@ def test_evaluate_if_else_statement():
     """Test evaluating if/else statement."""
     source = '''def main() {
 x = 5
-if x > 0:
+if x > 0
 print("positive")
-else:
+else
 print("non-positive")
 end
 }'''
@@ -53,9 +53,9 @@ end
 
 
 def test_evaluate_loop_statement():
-    """Test evaluating loop statement: given i in range(3): print(i) done"""
+    """Test evaluating loop statement: given i in range(3) print(i) done"""
     source = '''def main() {
-given i in range(3):
+given i in range(3)
 print("iteration")
 done
 }'''

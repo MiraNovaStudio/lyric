@@ -117,7 +117,7 @@ def test_ast_nodes_to_dict_methods():
 def test_complex_ast_structure():
     """Test creating a complex AST structure similar to real Lyric code."""
     
-    # Create AST for: def main() { x = 5; if x > 0: print("positive") end }
+    # Create AST for: def main() { x = 5; if x > 0 print("positive") end }
     
     # Literals and identifiers
     five = LiteralNode(5)
@@ -134,10 +134,10 @@ def test_complex_ast_structure():
     # Function call: print("positive")
     print_call = CallNode("print", [positive_str])
     
-    # If statement: if x > 0: print("positive") end
+    # If statement: if x > 0 print("positive") end
     if_stmt = IfNode(x_gt_zero, [print_call], [], None)
     
-    # Function definition: def main() { x = 5; if x > 0: print("positive") end }
+    # Function definition: def main() { x = 5; if x > 0 print("positive") end }
     main_func = FunctionNode("main", [], [], [assign_x, if_stmt])
     
     # Program: def main() { ... }
@@ -195,7 +195,7 @@ def test_if_node_with_elifs_and_else():
 def test_loop_node_iterator_and_while():
     """Test LoopNode with both iterator and while loop kinds."""
     
-    # Iterator loop: given i in range(3): print(i) done
+    # Iterator loop: given i in range(3) print(i) done
     range_call = CallNode("range", [LiteralNode(3)])
     i_id = IdentifierNode("i")
     print_call = CallNode("print", [i_id])
@@ -206,7 +206,7 @@ def test_loop_node_iterator_and_while():
         body=[print_call]
     )
     
-    # While loop: given x > 0: x = x - 1 done
+    # While loop: given x > 0 x = x - 1 done
     x_id = IdentifierNode("x")
     zero = LiteralNode(0)
     one = LiteralNode(1)

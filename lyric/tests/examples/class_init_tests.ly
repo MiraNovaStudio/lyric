@@ -33,10 +33,10 @@ class BankAccount
     }
     
     def withdraw(flt amount) {
-        if self.balance >= amount:
+        if self.balance >= amount
             self.balance = self.balance - amount
             append(self.transactions, "Withdrawal: " + str(amount))
-        else:
+        else
             print("Insufficient funds")
         end
     }
@@ -85,7 +85,7 @@ class Student
     }
     
     def calculate_average() {
-        if len(self.grades) > 0:
+        if len(self.grades) > 0
             var total = 0
             var count = len(self.grades)
             # Note: This would need a loop to sum grades, simplified for now

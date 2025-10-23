@@ -219,11 +219,16 @@ class Parser:
         return ClassNode(name, members_statements, class_token.line, class_token.col)
     
     def _parse_if_block(self) -> IfNode:
-        """Parse if block: if expression ":" statement* ("else" "if" expression ":" statement*)* ("else" ":" statement*)? "end" """
+        """Parse if block: if expression [":"] statement* ("else" "if" expression [":"] statement*)* ("else" [":"] statement*)? "end" """
         if_token = self._consume('IF', "Expected 'if'")
         
         condition = self._parse_expression()
-        self._consume('COLON', "Expected ':' after if condition")
+        
+        # Check if colon is present and emit deprecation warning
+        if self._match('COLON'):
+            # Deprecation warning for colon form
+            import warnings
+            warnings.warn(f"Colons after control structures will be removed in a future version. Use 'if condition' instead of 'if condition:' at line {if_token.line}, column {if_token.col}", DeprecationWarning, stacklevel=2)
         
         then_body = []
         while not self._check('ELSE', 'END') and not self._is_at_end():
@@ -245,7 +250,11 @@ class Parser:
             if self._match('IF'):
                 # elif clause
                 elif_condition = self._parse_expression()
-                self._consume('COLON', "Expected ':' after elif condition")
+                
+                # Check if colon is present and emit deprecation warning
+                if self._match('COLON'):
+                    import warnings
+                    warnings.warn(f"Colons after control structures will be removed in a future version. Use 'else if condition' instead of 'else if condition:' at line {if_token.line}, column {if_token.col}", DeprecationWarning, stacklevel=2)
                 
                 elif_body = []
                 while not self._check('ELSE', 'END') and not self._is_at_end():
@@ -263,7 +272,10 @@ class Parser:
                 elifs.append((elif_condition, elif_body))
             else:
                 # else clause
-                self._consume('COLON', "Expected ':' after else")
+                # Check if colon is present and emit deprecation warning
+                if self._match('COLON'):
+                    import warnings
+                    warnings.warn(f"Colons after control structures will be removed in a future version. Use 'else' instead of 'else:' at line {if_token.line}, column {if_token.col}", DeprecationWarning, stacklevel=2)
                 
                 else_body = []
                 while not self._check('END') and not self._is_at_end():
@@ -284,7 +296,7 @@ class Parser:
         return IfNode(condition, then_body, elifs, else_body, if_token.line, if_token.col)
     
     def _parse_loop_block(self) -> LoopNode:
-        """Parse loop block: given expression ":" statement* "done" """
+        """Parse loop block: given expression [":"] statement* "done" """
         given_token = self._consume('GIVEN', "Expected 'given'")
         
         iterator_var = None
@@ -302,7 +314,10 @@ class Parser:
             condition_or_iter = self._parse_expression()
             loop_kind = "while"
         
-        self._consume('COLON', "Expected ':' after given expression")
+        # Check if colon is present and emit deprecation warning
+        if self._match('COLON'):
+            import warnings
+            warnings.warn(f"Colons after control structures will be removed in a future version. Use 'given condition' instead of 'given condition:' at line {given_token.line}, column {given_token.col}", DeprecationWarning, stacklevel=2)
         
         body = []
         while not self._check('DONE') and not self._is_at_end():
