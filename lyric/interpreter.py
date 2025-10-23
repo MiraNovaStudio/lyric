@@ -318,6 +318,8 @@ class Interpreter:
             return isinstance(value, (int, float)) and not isinstance(value, bool)
         elif expected_type == 'rex':
             return isinstance(value, RexObject)
+        elif expected_type == 'god':
+            return isinstance(value, bool)
         else:
             return False
     
