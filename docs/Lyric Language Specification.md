@@ -1,6 +1,6 @@
 # Lyric Language Specification
 
-**Version:** 0.4.0  
+**Version:** 0.5.0  
 **Authors:** Michael (Aeonath), ChatGPT, and Claude  
 **Project:** MiraNova Studios Initiative  
 **Date:** October 2025  

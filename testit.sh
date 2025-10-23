@@ -50,3 +50,8 @@ else
     echo ""
     echo "For detailed output, run: ./testit.sh -v"
 fi
+
+
+lyric run ./does_it_work.ly
+
+

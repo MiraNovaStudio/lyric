@@ -1,13 +1,44 @@
 """Interpreter module for executing Lyric AST nodes."""
 
 from typing import Any, List
+import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import RuntimeErrorLyric
 from lyric.runtime import register_builtins
+
+
+class RexObject:
+    """Represents a compiled regex object with methods."""
+    
+    def __init__(self, compiled_pattern):
+        self.pattern = compiled_pattern
+    
+    def match(self, text: str) -> bool:
+        """Check if the regex matches the beginning of the text."""
+        if not isinstance(text, str):
+            raise RuntimeErrorLyric(f"Type error: rex.match() expects a string, but got {type(text).__name__}")
+        return bool(self.pattern.match(text))
+    
+    def replace(self, source: str, replacement: str) -> str:
+        """Replace all matches of the regex in the source string."""
+        if not isinstance(source, str):
+            raise RuntimeErrorLyric(f"Type error: rex.replace() expects a string as source, but got {type(source).__name__}")
+        if not isinstance(replacement, str):
+            raise RuntimeErrorLyric(f"Type error: rex.replace() expects a string as replacement, but got {type(replacement).__name__}")
+        return self.pattern.sub(replacement, source)
+    
+    # TODO: Future enhancement - .search() method for mid-string matches
+    # def search(self, text: str) -> bool:
+    #     """Search for the regex pattern anywhere in the text (not just at the beginning)."""
+    #     # Implementation would use Python's re.search() instead of re.match()
+    #     # This method is deferred for future sprints to keep the initial rex implementation focused
+    
+    def __repr__(self):
+        return f"RexObject(pattern='{self.pattern.pattern}')"
 
 
 class ReturnValue:
@@ -285,6 +316,12 @@ class Interpreter:
             return isinstance(value, str)
         elif expected_type == 'flt':
             return isinstance(value, (int, float)) and not isinstance(value, bool)
+        elif expected_type == 'rex':
+            return isinstance(value, RexObject)
+        elif expected_type == 'god':
+            return isinstance(value, bool)
+        elif expected_type == 'bin':
+            return isinstance(value, bool)  # bin is an alias for god
         else:
             return False
     
@@ -328,6 +365,15 @@ class Interpreter:
             return obj[index]
         else:
             raise RuntimeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
+    
+    def _evaluate_rex_literal(self, node: RexNode) -> 'RexObject':
+        """Evaluate a regex literal and return a RexObject."""
+        import re
+        try:
+            compiled_pattern = re.compile(node.pattern)
+            return RexObject(compiled_pattern)
+        except re.error as e:
+            raise RuntimeErrorLyric(f"Invalid regex pattern '{node.pattern}' at line {node.line}, column {node.column}: {e}")
     
     def _evaluate_function_definition(self, node: FunctionNode) -> None:
         """Evaluate a function definition."""
@@ -517,6 +563,17 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     except AttributeError:
                         raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{method_name}'")
+                elif isinstance(current_obj, RexObject):
+                    # Handle RexObject methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: RexObject has no attribute '{method_name}'")
                 elif callable(current_obj):
                     # Handle classes and callable objects
                     try:
@@ -611,6 +668,8 @@ class Interpreter:
             return self._evaluate_dict_literal(expr)
         elif isinstance(expr, IndexNode):
             return self._evaluate_index(expr)
+        elif isinstance(expr, RexNode):
+            return self._evaluate_rex_literal(expr)
         else:
             raise RuntimeErrorLyric(f"Unknown expression type: {type(expr)}")
     
@@ -692,7 +751,7 @@ class Interpreter:
                 return left * right
             elif node.op == '/':
                 if right == 0:
-                    raise RuntimeErrorLyric("Division by zero: cannot divide by zero. Check your divisor value before performing division.")
+                    raise RuntimeErrorLyric("Division by zero: cannot divide by zero. Check your divisor value before performing division.", node.line, node.column)
                 return left / right
             elif node.op == '==':
                 return left == right
@@ -711,9 +770,9 @@ class Interpreter:
             elif node.op == 'or':
                 return self._is_truthy(left) or self._is_truthy(right)
             else:
-                raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}")
+                raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}", node.line, node.column)
         except TypeError as e:
-            raise RuntimeErrorLyric(f"Type mismatch in operation '{node.op}': {str(e)}. Check that both operands are compatible types for this operation.")
+            raise RuntimeErrorLyric(f"Type mismatch in operation '{node.op}': {str(e)}. Check that both operands are compatible types for this operation.", node.line, node.column)
     
     def _evaluate_unary_operation(self, node: UnaryOpNode) -> Any:
         """Evaluate a unary operation."""

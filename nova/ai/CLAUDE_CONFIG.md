@@ -61,6 +61,18 @@ nova/changelog/YYYYMMDD/TIME_HHMM-CHANGELOG.md
 
 **Time Format**: Use 24-hour format (e.g., 1430 for 2:30 PM, 0915 for 9:15 AM)
 
+**🚨 DUPLICATE TIMESTAMP HANDLING 🚨**:
+If a changelog file already exists with the same timestamp, append a decimal suffix:
+- First file: `2050-CHANGELOG.md`
+- Second file: `2050.1-CHANGELOG.md` 
+- Third file: `2050.2-CHANGELOG.md`
+- And so on...
+
+**Examples:**
+- `nova/changelog/20251022/1430-CHANGELOG.md`
+- `nova/changelog/20251022/1430.1-CHANGELOG.md`
+- `nova/changelog/20251022/1430.2-CHANGELOG.md`
+
 **Include**
 - Commit hash
 - Files changed

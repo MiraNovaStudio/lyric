@@ -5,7 +5,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -496,6 +496,10 @@ class Parser:
             token = self._previous()
             return LiteralNode(None, token.line, token.col)
         
+        if self._match('REGEX_LITERAL'):
+            token = self._previous()
+            return RexNode(token.value, token.line, token.col)
+        
         if self._match('IDENT', 'TYPE_OR_IDENT'):
             name_token = self._previous()
             name = name_token.value
@@ -754,7 +758,7 @@ class Parser:
             raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
         
         # Validate that the type is a known type
-        valid_types = {'int', 'str', 'flt', 'var'}
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin'}
         if type_name not in valid_types:
             raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
         
@@ -787,7 +791,7 @@ class Parser:
                 raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
             
             # Validate that the type is a known type
-            valid_types = {'int', 'str', 'flt', 'var'}
+            valid_types = {'int', 'str', 'flt', 'var', 'god', 'bin'}
             if type_name not in valid_types:
                 raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
             

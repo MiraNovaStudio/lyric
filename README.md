@@ -2,7 +2,7 @@
 
 Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. This project is being developed from scratch to test our development processes and create a clean, educational programming language implementation.
 
-**Status**: Active Development - Version 0.4.0 (Pre-Alpha)
+**Status**: Active Development - Version 0.5.0 (Pre-Alpha)
 
 ## Project Goals
 
@@ -14,12 +14,12 @@ This iteration of Lyric is being built from the ground up to:
 
 ## Current State
 
-The project has completed Sprint 1, Sprint 2, Sprint 3, and Sprint 4 with:
+The project has completed Sprint 1, Sprint 2, Sprint 3, Sprint 4, and Sprint 5 with:
 - ✅ Complete lexer implementation with tokenization
 - ✅ Recursive descent parser with AST generation
 - ✅ Interpreter with scope management and built-in functions
 - ✅ CLI interface for running Lyric programs
-- ✅ Comprehensive test suite (360 tests)
+- ✅ Comprehensive test suite (436 tests)
 - ✅ Class definitions and instantiation
 - ✅ Nested control flow (if/else, given/done)
 - ✅ Error reporting with line numbers
@@ -36,6 +36,10 @@ The project has completed Sprint 1, Sprint 2, Sprint 3, and Sprint 4 with:
 - ✅ Dynamic typing with `var` keyword
 - ✅ AST position tracking for precise error reporting
 - ✅ Optional colon syntax across all core constructs
+- ✅ Native regular expression support with `rex` type and `/pattern/` literals
+- ✅ Boolean types (`god` and `bin`) with `true`/`false` literals
+- ✅ Enhanced CLI with `lyric run file.ly` and `lyric file.ly` commands
+- ✅ Global `lyric` command availability after `pip install`
 
 ## How to Run
 
@@ -43,6 +47,8 @@ Lyric programs use the `.ly` file extension and are executed through the command
 
 ```bash
 lyric run path_to_file.ly
+# or simply:
+lyric path_to_file.ly
 ```
 
 For example:
@@ -116,6 +122,60 @@ def main() {
     print("Name:", person.name)
     print("Age:", person.age)
 }
+```
+
+**Regular Expressions** (`lyric/tests/examples/regex_demo.ly`):
+```lyric
+# Regular expression literals with /pattern/ syntax
+rex email_pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+rex phone_pattern = /^\d{3}-\d{3}-\d{4}$/
+
+# Test email validation
+var email = "user@example.com"
+if email_pattern.match(email):
+    print("Valid email address")
+else:
+    print("Invalid email address")
+
+# Replace operations
+rex space_pattern = /\s+/
+var text = "hello    world   with   spaces"
+var cleaned = space_pattern.replace(text, " ")
+print(cleaned)  # prints "hello world with spaces"
+
+# Multiple replacements
+rex vowel_pattern = /[aeiou]/i
+var message = "Hello World"
+var result = vowel_pattern.replace(message, "*")
+print(result)  # prints "H*ll* W*rld"
+```
+
+**Boolean Types** (`lyric/tests/examples/boolean_demo.ly`):
+```lyric
+# God type (honoring Kurt Gödel)
+god is_valid = true
+god is_complete = false
+
+# Bin type (alternative boolean type)
+bin is_active = true
+bin is_pending = false
+
+# Both types work identically
+if is_valid and is_active:
+    print("Both conditions are true")
+
+# Type checking
+print(type(is_valid))  # prints "god"
+print(type(is_active)) # prints "bin"
+
+# Logical operations
+var result = is_valid or is_complete
+print(result)  # prints true
+
+# Comparisons
+var comparison = 5 > 3
+print(comparison)  # prints true
+print(type(comparison))  # prints "god"
 ```
 
 **Python Interoperability** (`lyric/tests/examples/importpy_tests.ly`):
@@ -299,6 +359,8 @@ pip install pytest flake8 setuptools
 - **Classes**: `class Name: ... +++` with instantiation, methods, and member access ✅
 - **Variables**: Dynamic typing with `name = value` assignment ✅
 - **Typed Variables**: `int name = value`, `str name = value`, `flt name = value`, `var name = value` ✅
+- **Boolean Types**: `god name = true/false` and `bin name = true/false` (honoring Kurt Gödel) ✅
+- **Regular Expressions**: `rex name = /pattern/` with `.match()` and `.replace()` methods ✅
 - **Data Structures**: `[item1, item2, ...]` for lists and `{"key": value}` for dictionaries ✅
 - **Exception Handling**: `try: ... catch: ... finally: ... fade` with error propagation ✅
 - **Comments**: `# comment text` (full-line and inline comments) ✅

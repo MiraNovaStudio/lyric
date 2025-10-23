@@ -84,6 +84,10 @@ def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
             return isinstance(obj, dict)
         elif class_or_type == "bool":
             return isinstance(obj, bool)
+        elif class_or_type == "god":
+            return isinstance(obj, bool)  # god type represents boolean values
+        elif class_or_type == "bin":
+            return isinstance(obj, bool)  # bin is an alias for god
         elif class_or_type == "None":
             return obj is None
         elif class_or_type == "pyobject":
@@ -117,7 +121,7 @@ def type_builtin(obj: Any) -> str:
     
     # Handle Python built-in types (check bool first since it's a subclass of int)
     if isinstance(obj, bool):
-        return "bool"
+        return "god"  # Return "god" for boolean types (honoring Kurt Gödel)
     elif isinstance(obj, int):
         return "int"
     elif isinstance(obj, float):

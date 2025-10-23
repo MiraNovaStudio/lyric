@@ -91,9 +91,7 @@ The codebase is internally consistent, readable, and easy to extend. Optional co
 - Tagging: `dev-core-0.4.0`
 - Snapshot export for GitHub (`lyric-lang-rel-0.4.0`)
 - PyPI packaging and testing
-- Start of Sprint 5 (`import` system foundation)
-
----
+- Start of Sprint 5
 
 **Verdict:**  
 > **Sprint 4 complete — codebase approved for release.**  
