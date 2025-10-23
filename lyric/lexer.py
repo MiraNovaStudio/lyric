@@ -21,7 +21,7 @@ class Lexer:
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'given', 'done', 'end', 
         'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'return',
-        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'True', 'False', 'true', 'false', 'None', 'raise', 'importpy'
+        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'True', 'False', 'true', 'false', 'None', 'raise', 'importpy'
     }
     
     # Single character operators and delimiters
@@ -264,7 +264,7 @@ class Lexer:
             elif value == 'None':
                 # Convert None keyword to actual None value
                 self.tokens.append(Token('NONE', None, start_line, start_col))
-            elif value in ('int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god'):
+            elif value in ('int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin'):
                 # Type keywords can also be used as identifiers in expressions
                 # We'll let the parser decide based on context
                 self.tokens.append(Token('TYPE_OR_IDENT', value, start_line, start_col))

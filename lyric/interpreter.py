@@ -320,6 +320,8 @@ class Interpreter:
             return isinstance(value, RexObject)
         elif expected_type == 'god':
             return isinstance(value, bool)
+        elif expected_type == 'bin':
+            return isinstance(value, bool)  # bin is an alias for god
         else:
             return False
     
