@@ -1,7 +1,7 @@
-# Sprint 4 Pivot 4.1 Summary
+# Sprint 4 Pivot 5.1 Summary
 
 ## Pivot Summary
-Sprint 4 Pivot 4.1 successfully removed colon syntax support entirely from Lyric class declarations, eliminating the deprecated version and simplifying the language syntax. This pivot was implemented after user feedback that there was no need to maintain a deprecated version with the `class Name:` syntax.
+Sprint 4 Pivot 5.1 successfully removed colon syntax support entirely from Lyric class declarations, eliminating the deprecated version and simplifying the language syntax. This pivot was implemented after user feedback that there was no need to maintain a deprecated version with the `class Name:` syntax.
 
 ## Key Changes Made
 - **Parser Enhancement**: Modified `_parse_class_def()` in `lyric/parser.py` to completely remove colon support and deprecation warning code
