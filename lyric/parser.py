@@ -1,11 +1,17 @@
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Designed and Architected by Michael (Aeonath) and ChatGPT
+# Implemented by Claude
+# Licensed under the MIT License with Source Attribution
+
 """Parser module for converting tokens to AST."""
 
 from typing import List
 from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode, RexNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -16,6 +22,7 @@ class Parser:
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.current = 0
+        self.loop_depth = 0  # Track nesting level for break/continue validation
     
     def parse(self) -> ProgramNode:
         """Parse tokens into a ProgramNode."""
@@ -75,7 +82,9 @@ class Parser:
         if self._is_at_end():
             return None
         
-        if self._check('DEF'):
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
+            return self._parse_func_def()
+        elif self._check('DEF'):
             return self._parse_func_def()
         elif self._check('CLASS'):
             return self._parse_class_def()
@@ -85,6 +94,10 @@ class Parser:
             return self._parse_loop_block()
         elif self._check('RETURN'):
             return self._parse_return_stmt()
+        elif self._check('BREAK'):
+            return self._parse_break_stmt()
+        elif self._check('CONTINUE'):
+            return self._parse_continue_stmt()
         elif self._check('TRY'):
             return self._parse_try_block()
         elif self._check('IMPORTPY'):
@@ -110,7 +123,14 @@ class Parser:
             return self._parse_assignment_or_expr_stmt()
     
     def _parse_func_def(self) -> FunctionNode:
-        """Parse function definition: def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
+        """Parse function definition: [TYPE] def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
+        return_type = None
+        
+        # Check for optional return type before 'def'
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
+            type_token = self._advance()
+            return_type = type_token.value.lower()
+        
         def_token = self._consume('DEF', "Expected 'def'")
         
         name_token = self._consume('IDENT', "Expected function name")
@@ -145,7 +165,7 @@ class Parser:
         
         self._consume('RBRACE', "Expected '}' after function body")
         
-        return FunctionNode(name, params, param_types, body_statements, def_token.line, def_token.col)
+        return FunctionNode(name, params, param_types, return_type, body_statements, def_token.line, def_token.col)
     
     def _parse_param_list(self) -> tuple[List[str], List[str]]:
         """Parse parameter list: (TYPE IDENT | IDENT) ("," (TYPE IDENT | IDENT))*"""
@@ -209,6 +229,8 @@ class Parser:
         self._match('COLON')  # Optional colon
         
         members_statements = []
+        constructor_method = None
+        
         while not self._check('CLASS_END') and not self._is_at_end():
             # Skip NEWLINE tokens
             while self._match('NEWLINE'):
@@ -219,11 +241,23 @@ class Parser:
                 
             stmt = self._parse_statement()
             if stmt:
-                members_statements.append(stmt)
+                # Check if this is a constructor method (method name matches class name)
+                if isinstance(stmt, FunctionNode) and stmt.name == name:
+                    if constructor_method is not None:
+                        # Multiple constructors found - this is an error
+                        raise ParseError(
+                            f"Multiple constructors found for class '{name}'. Only one constructor method is allowed per class. "
+                            f"Found constructor at line {constructor_method.line}, column {constructor_method.column} "
+                            f"and another at line {stmt.line}, column {stmt.column}",
+                            stmt.line, stmt.column
+                        )
+                    constructor_method = stmt
+                else:
+                    members_statements.append(stmt)
         
         self._consume('CLASS_END', "Expected '+++' after class body")
         
-        return ClassNode(name, members_statements, class_token.line, class_token.col)
+        return ClassNode(name, members_statements, constructor_method, class_token.line, class_token.col)
     
     def _parse_if_block(self) -> IfNode:
         """Parse if block: if expression [":"] statement* ("else" "if" expression [":"] statement*)* ("else" [":"] statement*)? "end" """
@@ -317,6 +351,9 @@ class Parser:
         # Make colon optional after given expression
         self._match('COLON')  # Optional colon
         
+        # Increment loop depth for break/continue validation
+        self.loop_depth += 1
+        
         body = []
         while not self._check('DONE') and not self._is_at_end():
             # Skip NEWLINE tokens
@@ -329,6 +366,9 @@ class Parser:
             stmt = self._parse_statement()
             if stmt:
                 body.append(stmt)
+        
+        # Decrement loop depth
+        self.loop_depth -= 1
         
         self._consume('DONE', "Expected 'done' after loop body")
         
@@ -392,6 +432,26 @@ class Parser:
             value = self._parse_expression()
         
         return ReturnNode(value, return_token.line, return_token.col)
+    
+    def _parse_break_stmt(self) -> BreakNode:
+        """Parse break statement: break """
+        break_token = self._consume('BREAK', "Expected 'break'")
+        
+        # Validate that break is used within a loop context
+        if self.loop_depth == 0:
+            raise ParseError(f"'break' used outside of loop at line {break_token.line}, column {break_token.col}")
+        
+        return BreakNode(break_token.line, break_token.col)
+    
+    def _parse_continue_stmt(self) -> ContinueNode:
+        """Parse continue statement: continue """
+        continue_token = self._consume('CONTINUE', "Expected 'continue'")
+        
+        # Validate that continue is used within a loop context
+        if self.loop_depth == 0:
+            raise ParseError(f"'continue' used outside of loop at line {continue_token.line}, column {continue_token.col}")
+        
+        return ContinueNode(continue_token.line, continue_token.col)
     
     def _parse_expression(self):
         """Parse an expression with proper precedence."""
@@ -670,7 +730,7 @@ class Parser:
         return self.tokens[self.current + 4]
 
     def _parse_try_block(self) -> TryNode:
-        """Parse try/catch/finally block: try [":"] ... catch [":"] ... finally [":"] ... fade"""
+        """Parse try/catch/finally block: try [":"] ... catch [Type] [as var] [":"] ... finally [":"] ... fade"""
         try_token = self._consume('TRY', "Expected 'try'")
         
         # Make colon optional after try
@@ -690,24 +750,11 @@ class Parser:
             if stmt:
                 try_body.append(stmt)
         
-        # Parse catch block (optional)
-        catch_body = None
-        if self._match('CATCH'):
-            # Make colon optional after catch
-            self._match('COLON')  # Optional colon
-            
-            catch_body = []
-            while not self._check('FINALLY', 'FADE') and not self._is_at_end():
-                # Skip NEWLINE tokens
-                while self._match('NEWLINE'):
-                    pass
-                
-                if self._check('FINALLY', 'FADE'):
-                    break
-                    
-                stmt = self._parse_statement()
-                if stmt:
-                    catch_body.append(stmt)
+        # Parse catch clauses (multiple allowed)
+        catch_clauses = []
+        while self._match('CATCH'):
+            catch_clause = self._parse_catch_clause()
+            catch_clauses.append(catch_clause)
         
         # Parse finally block (optional)
         finally_body = None
@@ -732,11 +779,47 @@ class Parser:
         self._consume('FADE', "Expected 'fade' to end try block")
         
         # Validate: try without catch is a syntax error
-        if catch_body is None:
-            raise ParseError("try block must have a catch block at line {}, column {}".format(
+        if not catch_clauses:
+            raise ParseError("try block must have at least one catch block at line {}, column {}".format(
                 self._peek().line, self._peek().col))
         
-        return TryNode(try_body, catch_body, finally_body, try_token.line, try_token.col)
+        return TryNode(try_body, catch_clauses, finally_body, try_token.line, try_token.col)
+    
+    def _parse_catch_clause(self) -> CatchClauseNode:
+        """Parse a single catch clause: catch [Type] [as identifier] [":"] ... """
+        exception_type = None
+        variable_name = None
+        
+        # Check for exception type (IDENT after CATCH)
+        if self._check('IDENT'):
+            exception_type = self._advance().value
+        
+        # Check for 'as' keyword
+        if self._match('AS'):
+            if self._check('IDENT'):
+                variable_name = self._advance().value
+            else:
+                raise ParseError("Expected variable name after 'as' at line {}, column {}".format(
+                    self._peek().line, self._peek().col))
+        
+        # Make colon optional after catch
+        self._match('COLON')  # Optional colon
+        
+        # Parse catch body
+        catch_body = []
+        while not self._check('CATCH', 'FINALLY', 'FADE') and not self._is_at_end():
+            # Skip NEWLINE tokens
+            while self._match('NEWLINE'):
+                pass
+            
+            if self._check('CATCH', 'FINALLY', 'FADE'):
+                break
+                
+            stmt = self._parse_statement()
+            if stmt:
+                catch_body.append(stmt)
+        
+        return CatchClauseNode(exception_type, variable_name, catch_body, self._peek().line, self._peek().col)
 
     def _parse_raise_stmt(self) -> RaiseNode:
         """Parse raise statement: raise ExceptionName"""

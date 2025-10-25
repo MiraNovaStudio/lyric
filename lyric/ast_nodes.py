@@ -1,3 +1,9 @@
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Designed and Architected by Michael (Aeonath) and ChatGPT
+# Implemented by Claude
+# Licensed under the MIT License with Source Attribution
+
 """AST node definitions for Lyric language."""
 
 from dataclasses import dataclass
@@ -35,6 +41,7 @@ class FunctionNode(ASTNode):
     name: str
     params: List[str]
     param_types: Optional[List[str]] = None  # Optional list of parameter types
+    return_type: Optional[str] = None  # Optional return type (None means inferred)
     body_statements: List['ASTNode'] = None
     line: int = 0
     column: int = 0
@@ -46,7 +53,7 @@ class FunctionNode(ASTNode):
             self.param_types = []
     
     def __repr__(self):
-        return f"FunctionNode(name='{self.name}', params={self.params}, param_types={self.param_types}, body={len(self.body_statements)})"
+        return f"FunctionNode(name='{self.name}', params={self.params}, param_types={self.param_types}, return_type={self.return_type}, body={len(self.body_statements)})"
     
     def to_dict(self):
         return {
@@ -225,17 +232,20 @@ class ClassNode(ASTNode):
     """Represents a class definition."""
     name: str
     members_statements: List['ASTNode']
+    constructor_method: Optional['FunctionNode'] = None  # Constructor method (name matches class name)
     line: int = 0
     column: int = 0
     
     def __repr__(self):
-        return f"ClassNode(name='{self.name}', members={len(self.members_statements)})"
+        constructor_info = f", constructor={self.constructor_method.name if self.constructor_method else 'None'}"
+        return f"ClassNode(name='{self.name}', members={len(self.members_statements)}{constructor_info})"
     
     def to_dict(self):
         return {
             'type': 'ClassNode',
             'name': self.name,
-            'members': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.members_statements]
+            'members': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.members_statements],
+            'constructor': self.constructor_method.to_dict() if self.constructor_method and hasattr(self.constructor_method, 'to_dict') else None
         }
 
 
@@ -253,6 +263,36 @@ class ReturnNode(ASTNode):
         return {
             'type': 'ReturnNode',
             'value': self.value.to_dict() if self.value and hasattr(self.value, 'to_dict') else str(self.value)
+        }
+
+
+@dataclass
+class BreakNode(ASTNode):
+    """Represents a break statement."""
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"BreakNode()"
+    
+    def to_dict(self):
+        return {
+            'type': 'BreakNode'
+        }
+
+
+@dataclass
+class ContinueNode(ASTNode):
+    """Represents a continue statement."""
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"ContinueNode()"
+    
+    def to_dict(self):
+        return {
+            'type': 'ContinueNode'
         }
 
 
@@ -350,24 +390,47 @@ class PrintNode(ASTNode):
 
 
 @dataclass
+class CatchClauseNode(ASTNode):
+    """Represents a catch clause with optional type and variable binding."""
+    exception_type: Optional[str]  # None for bare catch, str for typed catch
+    variable_name: Optional[str]   # None for catch without binding, str for catch as var
+    body: List['ASTNode']
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        type_str = f" {self.exception_type}" if self.exception_type else ""
+        var_str = f" as {self.variable_name}" if self.variable_name else ""
+        return f"CatchClauseNode({type_str}{var_str}, body={len(self.body)})"
+    
+    def to_dict(self):
+        return {
+            'type': 'CatchClauseNode',
+            'exception_type': self.exception_type,
+            'variable_name': self.variable_name,
+            'body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.body]
+        }
+
+
+@dataclass
 class TryNode(ASTNode):
     """Represents a try/catch/finally statement."""
     try_body: List['ASTNode']
-    catch_body: Optional[List['ASTNode']]
+    catch_clauses: List[CatchClauseNode]  # List of catch clauses instead of single catch_body
     finally_body: Optional[List['ASTNode']]
     line: int = 0
     column: int = 0
     
     def __repr__(self):
-        catch_present = self.catch_body is not None
+        catch_count = len(self.catch_clauses)
         finally_present = self.finally_body is not None
-        return f"TryNode(try={len(self.try_body)}, catch={catch_present}, finally={finally_present})"
+        return f"TryNode(try={len(self.try_body)}, catch_clauses={catch_count}, finally={finally_present})"
     
     def to_dict(self):
         return {
             'type': 'TryNode',
             'try_body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.try_body],
-            'catch_body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.catch_body] if self.catch_body else None,
+            'catch_clauses': [clause.to_dict() for clause in self.catch_clauses],
             'finally_body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.finally_body] if self.finally_body else None
         }
 
@@ -443,7 +506,7 @@ class RexNode(ASTNode):
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
     ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
-    TryNode, RaiseNode, ImportPyNode, RexNode
+    TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 ]

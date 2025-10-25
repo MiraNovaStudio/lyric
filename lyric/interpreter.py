@@ -1,13 +1,23 @@
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Designed and Architected by Michael (Aeonath) and ChatGPT
+# Implemented by Claude
+# Licensed under the MIT License with Source Attribution
+
 """Interpreter module for executing Lyric AST nodes."""
 
 from typing import Any, List
 import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode, RexNode
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 )
-from lyric.errors import RuntimeErrorLyric
+from lyric.errors import (
+    RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
+    IndexErrorLyric, KeyErrorLyric, TypeErrorLyric, ValueErrorLyric,
+    AttributeErrorLyric, ZeroDivisionErrorLyric, BreakSignal, ContinueSignal
+)
 from lyric.runtime import register_builtins
 
 
@@ -56,12 +66,223 @@ class Interpreter:
             'false': False,
             'None': None
         }
-        # Track variable types
-        self.variable_types = {}
+        # Track variable types with scope support
+        self.variable_types = {}  # Global scope
+        self.scope_stack = []     # Stack of scopes for nested functions/blocks
         # Register built-in functions
         register_builtins(self.global_scope)
         self.functions = {}
         self.classes = {}
+    
+    def _push_scope(self):
+        """Push a new scope onto the stack."""
+        self.scope_stack.append({})
+    
+    def _pop_scope(self):
+        """Pop the current scope from the stack."""
+        if self.scope_stack:
+            return self.scope_stack.pop()
+        return {}
+    
+    def _get_current_scope(self):
+        """Get the current scope (top of stack) or global scope."""
+        if self.scope_stack:
+            return self.scope_stack[-1]
+        return self.variable_types
+    
+    def _is_variable_declared_in_any_scope(self, var_name: str) -> bool:
+        """Check if a variable is declared in any scope (current or parent)."""
+        # Check current scope first
+        if var_name in self._get_current_scope():
+            return True
+        
+        # Check parent scopes
+        for scope in reversed(self.scope_stack[:-1]):
+            if var_name in scope:
+                return True
+        
+        # Check global scope
+        if var_name in self.variable_types:
+            return True
+        
+        return False
+    
+    def _set_variable_in_current_scope(self, var_name: str, var_type: str):
+        """Set a variable in the current scope."""
+        current_scope = self._get_current_scope()
+        current_scope[var_name] = var_type
+    
+    def _infer_function_return_type(self, func_node: FunctionNode) -> str:
+        """Infer the return type of a function by analyzing all return statements."""
+        return_types = []
+        has_explicit_return = False
+        has_implicit_return = False
+        
+        # Analyze all statements in the function body recursively
+        for stmt in func_node.body_statements:
+            return_types.extend(self._find_return_statements(stmt))
+        
+        # Check if we found any return statements
+        if return_types:
+            has_explicit_return = True
+        else:
+            has_implicit_return = True
+            return_types.append('None')
+        
+        # Check for consistency
+        unique_types = set(return_types)
+        if len(unique_types) > 1:
+            # Allow int and flt to be compatible (both return flt)
+            if unique_types == {'int', 'flt'}:
+                return 'flt'  # If both int and flt, return flt
+            else:
+                raise CompileErrorLyric(
+                    f"Inconsistent return types in function '{func_node.name}': {unique_types}",
+                    func_node.line, func_node.column
+                )
+        
+        return return_types[0] if return_types else 'None'
+    
+    def _find_return_statements(self, stmt) -> List[str]:
+        """Recursively find all return statements in a statement."""
+        return_types = []
+        
+        if isinstance(stmt, ReturnNode):
+            if stmt.value is None:
+                return_types.append('None')
+            else:
+                return_type = self._analyze_expression_type(stmt.value)
+                return_types.append(return_type)
+        elif isinstance(stmt, IfNode):
+            # Check then clause
+            if stmt.then_body:
+                for then_stmt in stmt.then_body:
+                    return_types.extend(self._find_return_statements(then_stmt))
+            # Check elif clauses
+            if stmt.elifs:
+                for elif_clause in stmt.elifs:
+                    # elif_clause is a tuple of (condition, body)
+                    if isinstance(elif_clause, tuple) and len(elif_clause) > 1:
+                        for elif_stmt in elif_clause[1]:
+                            return_types.extend(self._find_return_statements(elif_stmt))
+            # Check else clause
+            if stmt.else_body:
+                for else_stmt in stmt.else_body:
+                    return_types.extend(self._find_return_statements(else_stmt))
+        elif isinstance(stmt, TryNode):
+            # Check try block
+            if stmt.try_body:
+                for try_stmt in stmt.try_body:
+                    return_types.extend(self._find_return_statements(try_stmt))
+            # Check catch block
+            for catch_clause in stmt.catch_clauses:
+                for catch_stmt in catch_clause.body:
+                    return_types.extend(self._find_return_statements(catch_stmt))
+            # Check finally block
+            if stmt.finally_body:
+                for finally_stmt in stmt.finally_body:
+                    return_types.extend(self._find_return_statements(finally_stmt))
+        elif isinstance(stmt, LoopNode):
+            # Check loop body
+            if stmt.body:
+                for loop_stmt in stmt.body:
+                    return_types.extend(self._find_return_statements(loop_stmt))
+        
+        return return_types
+    
+    def _analyze_expression_type(self, expr) -> str:
+        """Analyze the type of an expression without evaluating it."""
+        if isinstance(expr, LiteralNode):
+            if isinstance(expr.value, bool):
+                return 'god'
+            elif isinstance(expr.value, int):
+                return 'int'
+            elif isinstance(expr.value, float):
+                return 'flt'
+            elif isinstance(expr.value, str):
+                return 'str'
+            elif expr.value is None:
+                return 'None'
+            else:
+                return 'var'
+        elif isinstance(expr, IdentifierNode):
+            # For now, we can't determine the type without evaluation
+            # This is a limitation of static analysis
+            return 'var'
+        elif isinstance(expr, BinaryOpNode):
+            # For binary operations, we need to analyze both operands
+            left_type = self._analyze_expression_type(expr.left)
+            right_type = self._analyze_expression_type(expr.right)
+            
+            # Simple type inference for common operations
+            if expr.op in ['+', '-', '*']:
+                if left_type == 'str' or right_type == 'str':
+                    return 'str'  # String concatenation
+                elif left_type == 'flt' or right_type == 'flt':
+                    return 'flt'  # Float arithmetic
+                elif left_type == 'int' and right_type == 'int':
+                    return 'int'  # Integer arithmetic
+                else:
+                    return 'var'  # Mixed types default to var
+            elif expr.op == '/':
+                # Division always returns float in Lyric
+                if left_type == 'str' or right_type == 'str':
+                    return 'var'  # Invalid operation
+                else:
+                    return 'flt'  # Division always returns float
+            elif expr.op in ['==', '!=', '<', '>', '<=', '>=']:
+                return 'god'  # Comparison operations return boolean
+            else:
+                return 'var'  # Default to var for unknown operations
+        elif isinstance(expr, UnaryOpNode):
+            operand_type = self._analyze_expression_type(expr.operand)
+            if expr.op == 'not':
+                return 'god'  # Logical not returns boolean
+            elif expr.op in ['-', '+']:
+                return operand_type  # Unary plus/minus preserves type
+            else:
+                return 'var'
+        elif isinstance(expr, CallNode):
+            # Function calls - we can't determine return type without knowing the function
+            return 'var'
+        elif isinstance(expr, ListLiteralNode):
+            return 'var'  # Lists are var type
+        elif isinstance(expr, DictLiteralNode):
+            return 'var'  # Dictionaries are var type
+        elif isinstance(expr, RexNode):
+            return 'rex'  # Regex literals
+        else:
+            return 'var'  # Default to var for unknown expressions
+    
+    def _is_type_compatible(self, expected_type: str, value: Any) -> bool:
+        """Check if a value is compatible with the expected type."""
+        if expected_type == 'var':
+            return True
+        
+        if expected_type == 'None':
+            return value is None
+        
+        if expected_type == 'int':
+            return isinstance(value, int)
+        elif expected_type == 'flt':
+            return isinstance(value, (int, float))  # Allow int to be assigned to float
+        elif expected_type == 'str':
+            return isinstance(value, str)
+        elif expected_type == 'god':
+            return isinstance(value, bool)
+        elif expected_type == 'bin':
+            return isinstance(value, (int, bool))  # Allow int and bool for bin
+        elif expected_type == 'rex':
+            # Check if it's a regex object (we'll need to import the RexObject class)
+            try:
+                from lyric.runtime import RexObject
+                return isinstance(value, RexObject)
+            except ImportError:
+                return False
+        elif expected_type == 'pyobject':
+            return True  # pyobject can hold any Python object
+        
+        return False
     
     def evaluate(self, ast: ProgramNode) -> Any:
         """Evaluate a ProgramNode and return the result."""
@@ -78,6 +299,19 @@ class Interpreter:
         except Exception as e:
             if isinstance(e, RuntimeErrorLyric):
                 raise
+            # Convert Python exceptions to Lyric exceptions
+            if isinstance(e, IndexError):
+                raise IndexErrorLyric(str(e))
+            if isinstance(e, KeyError):
+                raise KeyErrorLyric(str(e))
+            if isinstance(e, TypeError):
+                raise TypeErrorLyric(str(e))
+            if isinstance(e, ValueError):
+                raise ValueErrorLyric(str(e))
+            if isinstance(e, AttributeError):
+                raise AttributeErrorLyric(str(e))
+            if isinstance(e, ZeroDivisionError):
+                raise ZeroDivisionErrorLyric(str(e))
             raise RuntimeErrorLyric(f"Runtime error: {str(e)}")
     
     def _call_function(self, func_name: str, args: List[Any]) -> Any:
@@ -86,6 +320,7 @@ class Interpreter:
             func_def = self.functions[func_name]
             params = func_def['params']
             param_types = func_def.get('param_types', [])
+            return_type = func_def.get('return_type', 'var')
             body = func_def['body']
             
             # Create local scope
@@ -115,18 +350,34 @@ class Interpreter:
             # Set local scope
             self.global_scope.update(local_scope)
             
+            # Push function scope for variable types
+            self._push_scope()
+            
             try:
                 # Execute function body
                 result = None
                 for statement in body:
                     result = self._evaluate_statement(statement)
                     if isinstance(result, ReturnValue):
-                        return result.value
-                # If no explicit return, return the last statement result
-                return result if not isinstance(result, ReturnValue) else result.value
+                        return_value = result.value
+                        # Validate return type
+                        if return_type != 'var' and not self._is_type_compatible(return_type, return_value):
+                            raise RuntimeErrorLyric(
+                                f"Type error: return value does not match declared type. "
+                                f"Expected {return_type}, but got {type(return_value).__name__}"
+                            )
+                        return return_value
+                
+                # If no explicit return, return None
+                if return_type != 'var' and return_type != 'None':
+                    raise RuntimeErrorLyric(
+                        f"Type error: function '{func_name}' declared to return {return_type}, but returns None"
+                    )
+                return None
             finally:
                 # Restore scope
                 self.global_scope = old_scope
+                self._pop_scope()
         else:
             raise RuntimeErrorLyric(f"Function '{func_name}' is not defined")
     
@@ -165,6 +416,9 @@ class Interpreter:
         # Set local scope
         self.global_scope.update(local_scope)
         
+        # Push method scope for variable types
+        self._push_scope()
+        
         try:
             # Execute method body
             result = None
@@ -177,6 +431,7 @@ class Interpreter:
         finally:
             # Restore scope
             self.global_scope = old_scope
+            self._pop_scope()
     
     
     def _evaluate_statement(self, statement) -> Any:
@@ -199,6 +454,10 @@ class Interpreter:
             return self._evaluate_function_call(statement)
         elif isinstance(statement, ReturnNode):
             return self._evaluate_return_statement(statement)
+        elif isinstance(statement, BreakNode):
+            return self._evaluate_break_statement(statement)
+        elif isinstance(statement, ContinueNode):
+            return self._evaluate_continue_statement(statement)
         elif isinstance(statement, TryNode):
             return self._evaluate_try_statement(statement)
         elif isinstance(statement, RaiseNode):
@@ -245,7 +504,7 @@ class Interpreter:
                     try:
                         index = int(index_str)
                         if index < 0 or index >= len(obj):
-                            raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}", node.line, node.column)
+                            raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}", node.line, node.column)
                         obj[index] = value
                     except ValueError:
                         raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
@@ -255,16 +514,29 @@ class Interpreter:
                 raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first", node.line, node.column)
         else:
             # Regular assignment
-            # Check type enforcement if variable was declared with a type
-            if node.name in self.variable_types:
-                expected_type = self.variable_types[node.name]
-                if expected_type != 'var' and not self._is_type_compatible(expected_type, value):
-                    raise RuntimeErrorLyric(
-                        f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {expected_type}. "
-                        f"Expected {expected_type}, but got {type(value).__name__}. "
-                        f"Use 'var {node.name} = ...' if you need dynamic typing.",
-                        node.line, node.column
-                    )
+            # Check type enforcement if variable was declared with a type in any scope
+            var_type = None
+            # Check current scope first
+            current_scope = self._get_current_scope()
+            if node.name in current_scope:
+                var_type = current_scope[node.name]
+            else:
+                # Check parent scopes
+                for scope in reversed(self.scope_stack[:-1]):
+                    if node.name in scope:
+                        var_type = scope[node.name]
+                        break
+                # Check global scope
+                if var_type is None and node.name in self.variable_types:
+                    var_type = self.variable_types[node.name]
+            
+            if var_type and var_type != 'var' and not self._is_type_compatible(var_type, value):
+                raise RuntimeErrorLyric(
+                    f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {var_type}. "
+                    f"Expected {var_type}, but got {type(value).__name__}. "
+                    f"Use 'var {node.name} = ...' if you need dynamic typing.",
+                    node.line, node.column
+                )
             
             self.global_scope[node.name] = value
         
@@ -272,10 +544,17 @@ class Interpreter:
     
     def _evaluate_type_declaration(self, node: TypeDeclarationNode) -> Any:
         """Evaluate a type declaration statement."""
+        # Check for redeclaration in current scope only
+        if node.name in self._get_current_scope():
+            raise CompileErrorLyric(
+                f"Variable '{node.name}' already declared",
+                node.line, node.column
+            )
+        
         value = self._evaluate_expression(node.expr)
         
-        # Store the variable type
-        self.variable_types[node.name] = node.type_name
+        # Store the variable type in current scope
+        self._set_variable_in_current_scope(node.name, node.type_name)
         
         # Type enforcement for strict types
         if node.type_name != 'var':
@@ -293,10 +572,18 @@ class Interpreter:
     
     def _evaluate_multi_declaration(self, node: MultiDeclarationNode) -> Any:
         """Evaluate a multi-variable declaration statement."""
-        # Declare all variables as uninitialized
+        # Check for redeclarations in current scope first
         for type_name, var_name in node.declarations:
-            # Store the variable type
-            self.variable_types[var_name] = type_name
+            if var_name in self._get_current_scope():
+                raise CompileErrorLyric(
+                    f"Variable '{var_name}' already declared",
+                    node.line, node.column
+                )
+        
+        # Declare all variables as uninitialized in current scope
+        for type_name, var_name in node.declarations:
+            # Store the variable type in current scope
+            self._set_variable_in_current_scope(var_name, type_name)
             
             # Declare the variable as uninitialized (None)
             self.global_scope[var_name] = None
@@ -351,9 +638,9 @@ class Interpreter:
         
         if isinstance(obj, (list, tuple)):
             if not isinstance(index, int):
-                raise RuntimeErrorLyric(f"Invalid list index: expected integer, but got {type(index).__name__}. List indices must be integers (0, 1, 2, ...)")
+                raise TypeErrorLyric(f"Invalid list index: expected integer, but got {type(index).__name__}. List indices must be integers (0, 1, 2, ...)")
             if index < 0 or index >= len(obj):
-                raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
+                raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
             return obj[index]
         elif isinstance(obj, dict):
             if index not in obj:
@@ -361,10 +648,10 @@ class Interpreter:
                 keys_preview = ", ".join(repr(k) for k in available_keys)
                 if len(obj) > 5:
                     keys_preview += f" (and {len(obj)-5} more)"
-                raise RuntimeErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
+                raise KeyErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
             return obj[index]
         else:
-            raise RuntimeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
+            raise TypeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
     
     def _evaluate_rex_literal(self, node: RexNode) -> 'RexObject':
         """Evaluate a regex literal and return a RexObject."""
@@ -377,9 +664,19 @@ class Interpreter:
     
     def _evaluate_function_definition(self, node: FunctionNode) -> None:
         """Evaluate a function definition."""
+        # Determine return type
+        if node.return_type:
+            # Explicit return type declared
+            return_type = node.return_type
+        else:
+            # Infer return type from function body
+            return_type = self._infer_function_return_type(node)
+        
+        # Store function with return type
         self.functions[node.name] = {
             'params': node.params,
             'param_types': node.param_types,
+            'return_type': return_type,
             'body': node.body_statements
         }
     
@@ -388,6 +685,15 @@ class Interpreter:
         class_dict = {}
         # Add a special marker to identify this as a class definition
         class_dict['__class_name__'] = node.name
+        
+        # Store constructor method separately if it exists
+        if node.constructor_method:
+            class_dict['__constructor__'] = {
+                'params': node.constructor_method.params,
+                'param_types': node.constructor_method.param_types,
+                'body': node.constructor_method.body_statements
+            }
+        
         for member in node.members_statements:
             if isinstance(member, AssignNode):
                 # Class member assignment
@@ -463,8 +769,13 @@ class Interpreter:
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
-                    for statement in node.body:
-                        self._evaluate_statement(statement)
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
             elif len(args) == 2:
                 # range(start, end)
                 start, end = args
@@ -472,8 +783,13 @@ class Interpreter:
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
-                    for statement in node.body:
-                        self._evaluate_statement(statement)
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
             elif len(args) == 3:
                 # range(start, end, step)
                 start, end, step = args
@@ -481,23 +797,38 @@ class Interpreter:
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
-                    for statement in node.body:
-                        self._evaluate_statement(statement)
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
         else:
             # Generic iterator (simplified)
             iterable = self._evaluate_expression(node.condition_or_iter)
             if isinstance(iterable, (list, tuple)):
                 for item in iterable:
-                    for statement in node.body:
-                        self._evaluate_statement(statement)
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
         
         return None
     
     def _evaluate_while_loop(self, node: LoopNode) -> Any:
         """Evaluate a while loop."""
         while self._is_truthy(self._evaluate_expression(node.condition_or_iter)):
-            for statement in node.body:
-                self._evaluate_statement(statement)
+            try:
+                for statement in node.body:
+                    self._evaluate_statement(statement)
+            except BreakSignal:
+                break  # Exit loop
+            except ContinueSignal:
+                continue  # Skip to next iteration
         return None
     
     def _evaluate_function_call(self, node: CallNode) -> Any:
@@ -620,8 +951,13 @@ class Interpreter:
             # Add instance class name marker
             instance['__instance_class__'] = node.func_name
             
-            # Check if class has an init() method and call it
-            if 'init' in instance and isinstance(instance['init'], dict):
+            # Check if class has a constructor method (method name matches class name)
+            if '__constructor__' in instance and isinstance(instance['__constructor__'], dict):
+                constructor_method = instance['__constructor__']
+                # Call the constructor method with the provided arguments
+                self._call_method(instance, constructor_method, node.args)
+            # Also check for legacy init() method for backward compatibility
+            elif 'init' in instance and isinstance(instance['init'], dict):
                 init_method = instance['init']
                 # Call the init method with the provided arguments
                 self._call_method(instance, init_method, node.args)
@@ -786,7 +1122,7 @@ class Interpreter:
             raise RuntimeErrorLyric(f"Unknown unary operator: '{node.op}'. Supported unary operators are: -, !, not")
     
     def _evaluate_try_statement(self, node: TryNode) -> Any:
-        """Evaluate a try/catch/finally statement."""
+        """Evaluate a try/catch/finally statement with typed exception binding."""
         result = None
         exception_occurred = None
         
@@ -799,20 +1135,48 @@ class Interpreter:
                     result = result
                     break
         except Exception as e:
+            # Convert Python exceptions to Lyric exceptions (check Python types first!)
+            if isinstance(e, IndexError) and not isinstance(e, IndexErrorLyric):
+                e = IndexErrorLyric(str(e))
+            elif isinstance(e, KeyError) and not isinstance(e, KeyErrorLyric):
+                e = KeyErrorLyric(str(e))
+            elif isinstance(e, TypeError) and not isinstance(e, TypeErrorLyric):
+                e = TypeErrorLyric(str(e))
+            elif isinstance(e, ValueError) and not isinstance(e, ValueErrorLyric):
+                e = ValueErrorLyric(str(e))
+            elif isinstance(e, AttributeError) and not isinstance(e, AttributeErrorLyric):
+                e = AttributeErrorLyric(str(e))
+            elif isinstance(e, ZeroDivisionError) and not isinstance(e, ZeroDivisionErrorLyric):
+                e = ZeroDivisionErrorLyric(str(e))
             # Catch any exception that occurs
             exception_occurred = e
         
-        # If an exception occurred and there's a catch block, execute it
-        if exception_occurred and node.catch_body:
-            for statement in node.catch_body:
-                result = self._evaluate_statement(statement)
-                if isinstance(result, ReturnValue):
-                    # Store result but don't return yet - finally must execute
-                    result = result
+        # If an exception occurred, try to match it with catch clauses
+        if exception_occurred and node.catch_clauses:
+            matched_clause = None
+            
+            # Find the first matching catch clause
+            for catch_clause in node.catch_clauses:
+                if self._exception_matches_clause(exception_occurred, catch_clause):
+                    matched_clause = catch_clause
                     break
             
-            # Clear the exception since it was caught
-            exception_occurred = None
+            # Execute the matching catch clause
+            if matched_clause:
+                # Bind exception to variable if specified
+                if matched_clause.variable_name:
+                    self.global_scope[matched_clause.variable_name] = exception_occurred
+                
+                # Execute catch body
+                for statement in matched_clause.body:
+                    result = self._evaluate_statement(statement)
+                    if isinstance(result, ReturnValue):
+                        # Store result but don't return yet - finally must execute
+                        result = result
+                        break
+                
+                # Clear the exception since it was caught
+                exception_occurred = None
         
         # Execute finally block if it exists (always executes)
         if node.finally_body:
@@ -831,6 +1195,21 @@ class Interpreter:
             return result
         
         return None
+    
+    def _exception_matches_clause(self, exception: Exception, catch_clause: CatchClauseNode) -> bool:
+        """Check if an exception matches a catch clause based on type."""
+        if catch_clause.exception_type is None:
+            # Bare catch clause matches all exceptions
+            return True
+        
+        # Get the exception type class
+        exception_type_class = EXCEPTION_TYPES.get(catch_clause.exception_type)
+        if exception_type_class is None:
+            # Unknown exception type - treat as bare catch
+            return True
+        
+        # Check if the exception is an instance of the specified type
+        return isinstance(exception, exception_type_class)
     
     def _evaluate_raise_statement(self, node: RaiseNode) -> None:
         """Evaluate a raise statement."""
@@ -871,6 +1250,24 @@ class Interpreter:
         self.global_scope[node.module_name] = proxy
         
         return None
+    
+    def _evaluate_return_statement(self, node: ReturnNode) -> ReturnValue:
+        """Evaluate a return statement."""
+        if node.value is not None:
+            value = self._evaluate_expression(node.value)
+        else:
+            value = None
+        return ReturnValue(value)
+    
+    def _evaluate_break_statement(self, node: BreakNode) -> None:
+        """Evaluate a break statement."""
+        # Raise BreakSignal to exit the enclosing loop
+        raise BreakSignal(node.line, node.column)
+    
+    def _evaluate_continue_statement(self, node: ContinueNode) -> None:
+        """Evaluate a continue statement."""
+        # Raise ContinueSignal to skip to next iteration of the enclosing loop
+        raise ContinueSignal(node.line, node.column)
     
     def _is_truthy(self, value: Any) -> bool:
         """Check if a value is truthy."""

@@ -1,3 +1,9 @@
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Designed and Architected by Michael (Aeonath) and ChatGPT
+# Implemented by Claude
+# Licensed under the MIT License with Source Attribution
+
 """Tests for Sprint 3 Task 5: Exception Handling."""
 
 import pytest
@@ -206,7 +212,7 @@ def test_try_without_catch_syntax_error():
         fade
     }'''
     
-    with pytest.raises(ParseError, match="try block must have a catch block"):
+    with pytest.raises(ParseError, match="try block must have at least one catch block"):
         parse(source)
 
 

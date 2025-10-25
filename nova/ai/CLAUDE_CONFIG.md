@@ -4,6 +4,16 @@
 **NEVER COMMIT ANY CHANGES WITHOUT CREATING A CHANGELOG ENTRY FIRST!**
 This applies to ALL filesystem modifications - code, config, docs, renames, deletions, etc.
 
+## 🎯 TASK COMPLETION REQUIREMENTS 🎯
+**ALWAYS COMPLETE ONE TASK AT A TIME AND STOP!**
+- **MANDATORY**: After completing any task, ALWAYS create:
+  1. Changelog entry (nova/changelog/YYYYMMDD/HHMM-CHANGELOG.md)
+  2. Sprint task summary (nova/arcs/trajectory-0.9.1/yield-0.x.x/SPRINTX_TASKX_SUMMARY.md)
+  3. Commit changes
+- **STOP EXECUTION** after task completion - do NOT proceed to next task
+- **WAIT** for user instruction before starting next task
+- **NEVER** implement multiple tasks in one session unless explicitly instructed
+
 ## 🖥️ SHELL ENVIRONMENT REMINDER 🖥️
 **YOU ARE RUNNING POWERSHELL, NOT BASH!**
 - Use PowerShell commands: `Get-Date -Format "yyyyMMdd/HHmm"` NOT `date +"%Y%m%d/%H%M"`
@@ -222,6 +232,10 @@ All generated Python files must be syntactically valid and importable.
 Unit tests must run via pytest -q without fatal errors.
 
 CLI command lyric run examples/hello.ly must work after Sprint 1 completion.
+
+## Language Specification Maintenance
+
+**IMPORTANT**: The Lyric Language Specification is now maintained manually at `../lyric-lang.org` and is no longer part of this project repository. Claude will NOT make updates to the language specification - this is handled manually by the user.
 
 ## Summary
 

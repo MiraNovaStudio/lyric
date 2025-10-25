@@ -1,3 +1,9 @@
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Designed and Architected by Michael (Aeonath) and ChatGPT
+# Implemented by Claude
+# Licensed under the MIT License with Source Attribution
+
 """Lexer module for tokenizing Lyric source code."""
 
 from dataclasses import dataclass
@@ -19,9 +25,10 @@ class Lexer:
     
     # Keywords
     KEYWORDS = {
-        'def', 'class', 'if', 'else', 'given', 'done', 'end', 
-        'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'return',
-        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'True', 'False', 'true', 'false', 'None', 'raise', 'importpy'
+        'def', 'class', 'if', 'else', 'given', 'for', 'done', 'end', 
+        'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'as', 'return',
+        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'True', 'False', 'true', 'false', 'None', 'raise', 'importpy',
+        'break', 'continue'
     }
     
     # Single character operators and delimiters
@@ -268,6 +275,9 @@ class Lexer:
                 # Type keywords can also be used as identifiers in expressions
                 # We'll let the parser decide based on context
                 self.tokens.append(Token('TYPE_OR_IDENT', value, start_line, start_col))
+            elif value == 'for':
+                # Map 'for' to 'GIVEN' token for syntactic sugar
+                self.tokens.append(Token('GIVEN', 'for', start_line, start_col))
             else:
                 self.tokens.append(Token(value.upper(), value, start_line, start_col))
         else:

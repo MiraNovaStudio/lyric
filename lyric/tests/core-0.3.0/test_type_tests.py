@@ -1,3 +1,9 @@
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Designed and Architected by Michael (Aeonath) and ChatGPT
+# Implemented by Claude
+# Licensed under the MIT License with Source Attribution
+
 """Test suite for type_tests.ly - Sprint 3 type declaration and enforcement tests."""
 
 import pytest
