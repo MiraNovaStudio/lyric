@@ -16,9 +16,9 @@ class LexError(Exception):
     
     def __str__(self):
         if self.filename:
-            return f"Lexical error in {self.filename} at line {self.line}, column {self.column}: {super().__str__()}"
+            return f"Lexical error in {self.filename}: {super().__str__()}"
         else:
-            return f"Lexical error at line {self.line}, column {self.column}: {super().__str__()}"
+            return f"Lexical error: {super().__str__()}"
 
 
 class ParseError(Exception):
@@ -31,9 +31,9 @@ class ParseError(Exception):
     
     def __str__(self):
         if self.filename:
-            return f"Parse error in {self.filename} at line {self.line}, column {self.column}: {super().__str__()}"
+            return f"Parse error in {self.filename}: {super().__str__()}"
         else:
-            return f"Parse error at line {self.line}, column {self.column}: {super().__str__()}"
+            return f"Parse error: {super().__str__()}"
 
 
 class SyntaxErrorLyric(ParseError):
@@ -51,9 +51,9 @@ class RuntimeErrorLyric(Exception):
     
     def __str__(self):
         if self.filename:
-            return f"Runtime error in {self.filename} at line {self.line}, column {self.column}: {super().__str__()}"
+            return f"Runtime error in {self.filename}: {super().__str__()}"
         else:
-            return f"Runtime error at line {self.line}, column {self.column}: {super().__str__()}"
+            return f"Runtime error: {super().__str__()}"
 
 
 class NameErrorLyric(RuntimeErrorLyric):

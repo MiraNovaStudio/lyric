@@ -340,7 +340,7 @@ class Interpreter:
                 raise AttributeErrorLyric(str(e))
             if isinstance(e, ZeroDivisionError):
                 raise ZeroDivisionErrorLyric(str(e))
-            raise RuntimeErrorLyric(f"Runtime error: {str(e)}")
+            raise RuntimeErrorLyric(str(e))
     
     def _call_function(self, func_name: str, args: List[Any]) -> Any:
         """Call a function by name with arguments."""

@@ -124,10 +124,60 @@ print match.group(1)
 
 Error: Lexical error at line 0, column 0: Unexpected character '^' at line 75, column 26
 
+The line 0 and column 0 are incorrect in the beginning and we do not need
+this information displayed twice.
 
+#### Implementation steps (for Claude):
 
+Locate Error Formatting Function
 
+Identify where lexical and syntax errors are formatted into final user-facing strings.
 
+Confirm that both the leading “line 0, column 0” and trailing “at line …, column …” values are generated in the same function or context.
+
+Determine Accurate Source Position
+
+Retrieve the actual token or character position that triggered the error (token.line, token.column, or lexer cursor state).
+
+Ensure these values are accessible when constructing the error message.
+
+Choose and Implement One of Two Output Formats:
+
+Option A: Remove the incorrect prefix entirely, keeping only the final “at line X, column Y” (the correct values).
+
+Option B: Replace the prefix’s zeroes with the actual values and remove the redundant trailing position reference.
+
+Ensure the message reads cleanly and includes only one accurate position reference.
+
+Update Error Templates
+
+Modify any global error template or exception class that automatically includes both prefixes.
+
+Verify that runtime and compile-time errors remain consistent in their output format.
+
+Add Targeted Unit Tests
+
+Create tests that intentionally trigger lexical and syntax errors at known line/column positions.
+
+Confirm that the resulting error message contains:
+
+Only one line/column reference.
+
+Correct coordinates matching the offending character.
+
+#### Acceptance Criteria
+
+✅ Only one instance of line/column information appears in error messages.
+
+✅ Reported line and column values correctly match the position of the offending token.
+
+✅ “line 0, column 0” never appears in any error output.
+
+✅ Format of error messages is consistent across lexical and syntax errors.
+
+✅ All new error-handling tests pass successfully.
+
+### Task 4: 
 
 
 
