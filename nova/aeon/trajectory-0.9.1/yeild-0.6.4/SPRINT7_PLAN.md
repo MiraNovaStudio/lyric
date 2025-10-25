@@ -7,8 +7,66 @@
 Fix bugs found from functional testing of Lyric 0.6.0 after sprint
 6 completion
 
+### Task 1: Remove parser ambiguity for rex literals
 
-### Task 1: Implement Regex Match Group Handling
+#### Summary
+
+Replace Lyric’s ambiguous /pattern/ literal syntax with a new constructor-based form:
+
+```
+rex pattern = regex("/<pattern>/")
+```
+
+This resolves parser ambiguity between the division operator (/) and regex delimiters, while preserving all existing runtime behavior and the rex type interface.
+
+The goal is to maintain feature parity with current functionality — only the syntax changes.
+
+#### Implementation Tasks
+Task 1 — Remove Direct Regex Literal Parsing
+
+Remove the /pattern/ token rule from the grammar.
+
+Ensure that / is used only for division and arithmetic expressions going forward.
+
+2. — Implement regex() Constructor built-in function
+
+Introduce a built-in function regex(str pattern, str flags="").
+
+Return a rex type instance internally.
+
+Compile the provided pattern string using Python’s re.compile() or Lyric’s equivalent.
+
+3. — Update Parser and Runtime Integration
+
+Adjust the parser so that regex("/pattern/") is treated as a normal function call expression.
+
+Verify that regex objects created through this constructor still support the existing API methods (e.g. .search(), .match()).
+
+4.  — Update Unit Tests
+
+Modify all affected tests to use the new regex("/pattern/") syntax.
+
+Add dedicated regression tests ensuring:
+
+Division expressions (a / b) still parse and evaluate correctly.
+
+Regex constructor patterns compile and function as before.
+
+#### Acceptance Criteria
+
+Acceptance Criteria
+
+✅ Regex patterns are created using regex("/pattern/").
+
+✅ /pattern/ literal syntax no longer parses or conflicts with division.
+
+✅ Existing regex operations (.search(), .match(), etc.) continue functioning without modification.
+
+✅ All updated unit tests pass.
+
+✅ Documentation and examples reflect the new constructor syntax.
+
+### Task 2: Implement Regex Match Group Handling
 
 #### Summary
 
@@ -16,7 +74,7 @@ Fix the bug where Lyric cannot interpret or execute .group(n) calls on regex mat
 Currently, expressions such as:
 
 ```
-rex title_pattern = /<title>(.*?)<\/title>/
+rex title_pattern = regex("<title>(.*?)<\/title>")
 print title_pattern.group(1)
 ```
 
@@ -78,7 +136,9 @@ print match.group(1)
 ✅ No regression in existing print or rex parsing behavior.
 
 
-### Task 2. 
+### Task 2. Ensure all Unit tests are passing 100%
+
+
 
 
 

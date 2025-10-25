@@ -11,7 +11,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -576,10 +576,6 @@ class Parser:
         if self._match('NONE'):
             token = self._previous()
             return LiteralNode(None, token.line, token.col)
-        
-        if self._match('REGEX_LITERAL'):
-            token = self._previous()
-            return RexNode(token.value, token.line, token.col)
         
         if self._match('IDENT', 'TYPE_OR_IDENT'):
             name_token = self._previous()

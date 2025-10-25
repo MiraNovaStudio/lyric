@@ -940,6 +940,17 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     except AttributeError:
                         raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{method_name}'")
+                elif isinstance(current_obj, RexMatch):
+                    # Handle RexMatch methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: RexMatch has no attribute '{method_name}'")
                 elif isinstance(current_obj, RexObject):
                     # Handle RexObject methods
                     if hasattr(current_obj, method_name):
@@ -1020,7 +1031,7 @@ class Interpreter:
         else:
             # Check if it might be a typo or suggest available functions
             available_functions = list(self.functions.keys())
-            available_builtins = ['print', 'range', 'len', 'int', 'float', 'str', 'open', 'isinstance', 'type', 'append', 'keys', 'values']
+            available_builtins = ['print', 'range', 'len', 'int', 'float', 'str', 'open', 'isinstance', 'type', 'regex', 'append', 'keys', 'values']
             all_available = available_functions + available_builtins
             
             # Find similar function names

@@ -25,25 +25,34 @@ class TestRexTypeDefinition:
         assert tokens[1].value == 'pattern'
     
     def test_regex_literal_parsing(self):
-        """Test that /.../ literals are parsed correctly."""
-        tokens = tokenize("/^abc/")
-        assert len(tokens) >= 2
-        assert tokens[0].type == 'REGEX_LITERAL'
-        assert tokens[0].value == '^abc'
+        """Test that regex constructor calls are parsed correctly."""
+        tokens = tokenize('regex("/^abc/")')
+        assert len(tokens) >= 4
+        assert tokens[0].type == 'IDENT'
+        assert tokens[0].value == 'regex'
+        assert tokens[1].type == 'LPAREN'
+        assert tokens[2].type == 'STRING'
+        assert tokens[2].value == '/^abc/'
     
     def test_regex_literal_with_special_chars(self):
-        """Test regex literals with special characters."""
-        tokens = tokenize("/\\d+/")
-        assert len(tokens) >= 2
-        assert tokens[0].type == 'REGEX_LITERAL'
-        assert tokens[0].value == '\\d+'
+        """Test that regex constructor calls with special chars are parsed correctly."""
+        tokens = tokenize('regex("/\\d+/")')
+        assert len(tokens) >= 4
+        assert tokens[0].type == 'IDENT'
+        assert tokens[0].value == 'regex'
+        assert tokens[1].type == 'LPAREN'
+        assert tokens[2].type == 'STRING'
+        assert tokens[2].value == '/\\d+/'
     
     def test_regex_literal_empty_pattern(self):
-        """Test empty regex pattern."""
-        tokens = tokenize("//")
-        assert len(tokens) >= 2
-        assert tokens[0].type == 'REGEX_LITERAL'
-        assert tokens[0].value == ''
+        """Test that empty regex constructor calls are parsed correctly."""
+        tokens = tokenize('regex("//")')
+        assert len(tokens) >= 4
+        assert tokens[0].type == 'IDENT'
+        assert tokens[0].value == 'regex'
+        assert tokens[1].type == 'LPAREN'
+        assert tokens[2].type == 'STRING'
+        assert tokens[2].value == '//'
     
     def test_regex_literal_does_not_conflict_with_division(self):
         """Test that regex literals don't conflict with division."""
@@ -54,9 +63,15 @@ class TestRexTypeDefinition:
         assert tokens[2].type == 'IDENT'
     
     def test_invalid_regex_pattern_raises_error(self):
-        """Test that invalid regex patterns raise parse-time errors."""
-        with pytest.raises(Exception):  # Should be LexError
-            tokenize("/[unclosed/")
+        """Test that invalid regex patterns in constructor raise runtime errors."""
+        # This should now parse successfully but fail at runtime
+        tokens = tokenize('regex("/[unclosed/")')
+        parser = Parser(tokens)
+        ast = parser.parse()
+        
+        interpreter = Interpreter()
+        with pytest.raises(Exception):  # Should be RuntimeErrorLyric
+            interpreter.evaluate(ast)
     
     def test_unterminated_regex_raises_error(self):
         """Test that unterminated regex literals are treated as division."""
@@ -67,16 +82,17 @@ class TestRexTypeDefinition:
         assert tokens[0].type == 'DIVIDE'
     
     def test_regex_literal_in_parser(self):
-        """Test that regex literals are parsed into RexNode."""
-        parser = Parser(tokenize("/^abc/"))
+        """Test that regex constructor calls are parsed into CallNode."""
+        parser = Parser(tokenize('regex("/^abc/")'))
         ast = parser.parse()
         assert len(ast.statements) == 1
-        # The expression should be a RexNode
-        assert hasattr(ast.statements[0], 'pattern')
+        # The expression should be a CallNode to regex()
+        assert hasattr(ast.statements[0], 'func_name')
+        assert ast.statements[0].func_name == 'regex'
     
     def test_rex_type_declaration(self):
         """Test rex type declarations."""
-        parser = Parser(tokenize("rex pattern = /^abc/"))
+        parser = Parser(tokenize("rex pattern = regex(\"/^abc/\")"))
         ast = parser.parse()
         assert len(ast.statements) == 1
         # Should be an assignment with rex type
@@ -191,7 +207,7 @@ class TestRexIntegration:
     def test_rex_assignment_and_usage(self):
         """Test assigning rex objects and using them."""
         source = """
-        rex pattern = /^abc/
+        rex pattern = regex("/^abc/")
         var result = pattern.match("abcdef")
         """
         
@@ -205,7 +221,7 @@ class TestRexIntegration:
     def test_rex_with_replace_method(self):
         """Test rex object with replace method."""
         source = """
-        rex pattern = /cat/
+        rex pattern = regex("/cat/")
         var result = pattern.replace("the cat sat", "dog")
         """
         
@@ -219,7 +235,7 @@ class TestRexIntegration:
     def test_rex_type_enforcement(self):
         """Test type enforcement for rex variables."""
         source = """
-        rex pattern = /^abc/
+        rex pattern = regex("/^abc/")
         pattern = "not a regex"
         """
         
@@ -237,7 +253,7 @@ class TestRexIntegration:
             return pattern.match("test")
         }
         
-        rex my_pattern = /^test/
+        rex my_pattern = regex("/^test/")
         var result = test_rex(my_pattern)
         """
         
