@@ -35,6 +35,7 @@ class FunctionNode(ASTNode):
     name: str
     params: List[str]
     param_types: Optional[List[str]] = None  # Optional list of parameter types
+    return_type: Optional[str] = None  # Optional return type (None means inferred)
     body_statements: List['ASTNode'] = None
     line: int = 0
     column: int = 0
@@ -46,7 +47,7 @@ class FunctionNode(ASTNode):
             self.param_types = []
     
     def __repr__(self):
-        return f"FunctionNode(name='{self.name}', params={self.params}, param_types={self.param_types}, body={len(self.body_statements)})"
+        return f"FunctionNode(name='{self.name}', params={self.params}, param_types={self.param_types}, return_type={self.return_type}, body={len(self.body_statements)})"
     
     def to_dict(self):
         return {

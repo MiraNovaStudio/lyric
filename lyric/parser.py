@@ -75,7 +75,9 @@ class Parser:
         if self._is_at_end():
             return None
         
-        if self._check('DEF'):
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
+            return self._parse_func_def()
+        elif self._check('DEF'):
             return self._parse_func_def()
         elif self._check('CLASS'):
             return self._parse_class_def()
@@ -110,7 +112,14 @@ class Parser:
             return self._parse_assignment_or_expr_stmt()
     
     def _parse_func_def(self) -> FunctionNode:
-        """Parse function definition: def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
+        """Parse function definition: [TYPE] def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
+        return_type = None
+        
+        # Check for optional return type before 'def'
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
+            type_token = self._advance()
+            return_type = type_token.value.lower()
+        
         def_token = self._consume('DEF', "Expected 'def'")
         
         name_token = self._consume('IDENT', "Expected function name")
@@ -145,7 +154,7 @@ class Parser:
         
         self._consume('RBRACE', "Expected '}' after function body")
         
-        return FunctionNode(name, params, param_types, body_statements, def_token.line, def_token.col)
+        return FunctionNode(name, params, param_types, return_type, body_statements, def_token.line, def_token.col)
     
     def _parse_param_list(self) -> tuple[List[str], List[str]]:
         """Parse parameter list: (TYPE IDENT | IDENT) ("," (TYPE IDENT | IDENT))*"""

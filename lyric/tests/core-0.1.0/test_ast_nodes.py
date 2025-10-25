@@ -138,7 +138,7 @@ def test_complex_ast_structure():
     if_stmt = IfNode(x_gt_zero, [print_call], [], None)
     
     # Function definition: def main() { x = 5; if x > 0 print("positive") end }
-    main_func = FunctionNode("main", [], [], [assign_x, if_stmt])
+    main_func = FunctionNode("main", [], [], None, [assign_x, if_stmt])
     
     # Program: def main() { ... }
     program = ProgramNode([main_func])

@@ -102,6 +102,178 @@ class Interpreter:
         current_scope = self._get_current_scope()
         current_scope[var_name] = var_type
     
+    def _infer_function_return_type(self, func_node: FunctionNode) -> str:
+        """Infer the return type of a function by analyzing all return statements."""
+        return_types = []
+        has_explicit_return = False
+        has_implicit_return = False
+        
+        # Analyze all statements in the function body recursively
+        for stmt in func_node.body_statements:
+            return_types.extend(self._find_return_statements(stmt))
+        
+        # Check if we found any return statements
+        if return_types:
+            has_explicit_return = True
+        else:
+            has_implicit_return = True
+            return_types.append('None')
+        
+        # Check for consistency
+        unique_types = set(return_types)
+        if len(unique_types) > 1:
+            # Allow int and flt to be compatible (both return flt)
+            if unique_types == {'int', 'flt'}:
+                return 'flt'  # If both int and flt, return flt
+            else:
+                raise CompileErrorLyric(
+                    f"Inconsistent return types in function '{func_node.name}': {unique_types}",
+                    func_node.line, func_node.column
+                )
+        
+        return return_types[0] if return_types else 'None'
+    
+    def _find_return_statements(self, stmt) -> List[str]:
+        """Recursively find all return statements in a statement."""
+        return_types = []
+        
+        if isinstance(stmt, ReturnNode):
+            if stmt.value is None:
+                return_types.append('None')
+            else:
+                return_type = self._analyze_expression_type(stmt.value)
+                return_types.append(return_type)
+        elif isinstance(stmt, IfNode):
+            # Check then clause
+            if stmt.then_body:
+                for then_stmt in stmt.then_body:
+                    return_types.extend(self._find_return_statements(then_stmt))
+            # Check elif clauses
+            if stmt.elifs:
+                for elif_clause in stmt.elifs:
+                    # elif_clause is a tuple of (condition, body)
+                    if isinstance(elif_clause, tuple) and len(elif_clause) > 1:
+                        for elif_stmt in elif_clause[1]:
+                            return_types.extend(self._find_return_statements(elif_stmt))
+            # Check else clause
+            if stmt.else_body:
+                for else_stmt in stmt.else_body:
+                    return_types.extend(self._find_return_statements(else_stmt))
+        elif isinstance(stmt, TryNode):
+            # Check try block
+            if stmt.try_body:
+                for try_stmt in stmt.try_body:
+                    return_types.extend(self._find_return_statements(try_stmt))
+            # Check catch block
+            if stmt.catch_body:
+                for catch_stmt in stmt.catch_body:
+                    return_types.extend(self._find_return_statements(catch_stmt))
+            # Check finally block
+            if stmt.finally_body:
+                for finally_stmt in stmt.finally_body:
+                    return_types.extend(self._find_return_statements(finally_stmt))
+        elif isinstance(stmt, LoopNode):
+            # Check loop body
+            if stmt.body:
+                for loop_stmt in stmt.body:
+                    return_types.extend(self._find_return_statements(loop_stmt))
+        
+        return return_types
+    
+    def _analyze_expression_type(self, expr) -> str:
+        """Analyze the type of an expression without evaluating it."""
+        if isinstance(expr, LiteralNode):
+            if isinstance(expr.value, bool):
+                return 'god'
+            elif isinstance(expr.value, int):
+                return 'int'
+            elif isinstance(expr.value, float):
+                return 'flt'
+            elif isinstance(expr.value, str):
+                return 'str'
+            elif expr.value is None:
+                return 'None'
+            else:
+                return 'var'
+        elif isinstance(expr, IdentifierNode):
+            # For now, we can't determine the type without evaluation
+            # This is a limitation of static analysis
+            return 'var'
+        elif isinstance(expr, BinaryOpNode):
+            # For binary operations, we need to analyze both operands
+            left_type = self._analyze_expression_type(expr.left)
+            right_type = self._analyze_expression_type(expr.right)
+            
+            # Simple type inference for common operations
+            if expr.op in ['+', '-', '*']:
+                if left_type == 'str' or right_type == 'str':
+                    return 'str'  # String concatenation
+                elif left_type == 'flt' or right_type == 'flt':
+                    return 'flt'  # Float arithmetic
+                elif left_type == 'int' and right_type == 'int':
+                    return 'int'  # Integer arithmetic
+                else:
+                    return 'var'  # Mixed types default to var
+            elif expr.op == '/':
+                # Division always returns float in Lyric
+                if left_type == 'str' or right_type == 'str':
+                    return 'var'  # Invalid operation
+                else:
+                    return 'flt'  # Division always returns float
+            elif expr.op in ['==', '!=', '<', '>', '<=', '>=']:
+                return 'god'  # Comparison operations return boolean
+            else:
+                return 'var'  # Default to var for unknown operations
+        elif isinstance(expr, UnaryOpNode):
+            operand_type = self._analyze_expression_type(expr.operand)
+            if expr.op == 'not':
+                return 'god'  # Logical not returns boolean
+            elif expr.op in ['-', '+']:
+                return operand_type  # Unary plus/minus preserves type
+            else:
+                return 'var'
+        elif isinstance(expr, CallNode):
+            # Function calls - we can't determine return type without knowing the function
+            return 'var'
+        elif isinstance(expr, ListLiteralNode):
+            return 'var'  # Lists are var type
+        elif isinstance(expr, DictLiteralNode):
+            return 'var'  # Dictionaries are var type
+        elif isinstance(expr, RexNode):
+            return 'rex'  # Regex literals
+        else:
+            return 'var'  # Default to var for unknown expressions
+    
+    def _is_type_compatible(self, expected_type: str, value: Any) -> bool:
+        """Check if a value is compatible with the expected type."""
+        if expected_type == 'var':
+            return True
+        
+        if expected_type == 'None':
+            return value is None
+        
+        if expected_type == 'int':
+            return isinstance(value, int)
+        elif expected_type == 'flt':
+            return isinstance(value, (int, float))  # Allow int to be assigned to float
+        elif expected_type == 'str':
+            return isinstance(value, str)
+        elif expected_type == 'god':
+            return isinstance(value, bool)
+        elif expected_type == 'bin':
+            return isinstance(value, (int, bool))  # Allow int and bool for bin
+        elif expected_type == 'rex':
+            # Check if it's a regex object (we'll need to import the RexObject class)
+            try:
+                from lyric.runtime import RexObject
+                return isinstance(value, RexObject)
+            except ImportError:
+                return False
+        elif expected_type == 'pyobject':
+            return True  # pyobject can hold any Python object
+        
+        return False
+    
     def evaluate(self, ast: ProgramNode) -> Any:
         """Evaluate a ProgramNode and return the result."""
         try:
@@ -125,6 +297,7 @@ class Interpreter:
             func_def = self.functions[func_name]
             params = func_def['params']
             param_types = func_def.get('param_types', [])
+            return_type = func_def.get('return_type', 'var')
             body = func_def['body']
             
             # Create local scope
@@ -163,9 +336,21 @@ class Interpreter:
                 for statement in body:
                     result = self._evaluate_statement(statement)
                     if isinstance(result, ReturnValue):
-                        return result.value
-                # If no explicit return, return the last statement result
-                return result if not isinstance(result, ReturnValue) else result.value
+                        return_value = result.value
+                        # Validate return type
+                        if return_type != 'var' and not self._is_type_compatible(return_type, return_value):
+                            raise RuntimeErrorLyric(
+                                f"Type error: return value does not match declared type. "
+                                f"Expected {return_type}, but got {type(return_value).__name__}"
+                            )
+                        return return_value
+                
+                # If no explicit return, return None
+                if return_type != 'var' and return_type != 'None':
+                    raise RuntimeErrorLyric(
+                        f"Type error: function '{func_name}' declared to return {return_type}, but returns None"
+                    )
+                return None
             finally:
                 # Restore scope
                 self.global_scope = old_scope
@@ -452,9 +637,19 @@ class Interpreter:
     
     def _evaluate_function_definition(self, node: FunctionNode) -> None:
         """Evaluate a function definition."""
+        # Determine return type
+        if node.return_type:
+            # Explicit return type declared
+            return_type = node.return_type
+        else:
+            # Infer return type from function body
+            return_type = self._infer_function_return_type(node)
+        
+        # Store function with return type
         self.functions[node.name] = {
             'params': node.params,
             'param_types': node.param_types,
+            'return_type': return_type,
             'body': node.body_statements
         }
     
