@@ -66,7 +66,7 @@ Acceptance Criteria
 
 ✅ Documentation and examples reflect the new constructor syntax.
 
-### Task 2: Implement Regex Match Group Handling
+### Task 2: Investigatge Regex Match Group Handling
 
 #### Summary
 
@@ -78,30 +78,13 @@ rex title_pattern = regex("<title>(.*?)<\/title>")
 print title_pattern.group(1)
 ```
 
-fail to parse or execute because Lyric does not recognize .group() as a valid method call on a regex object. also the parse of the title_pattern fails before it ever gets to pattern.group() method
+May fail to parse or execute because Lyric does not recognize .group() as a valid method call on a regex object. 
 
 #### Implementation Tasks
 
-1. Parser Update
+1. Investigate that pattern.group(1) is functioning properly
 
-Extend grammar to allow method calls on regex match objects.
-
-Ensure the parser correctly handles chained expressions like pattern.group(1) and match.group(0).
-
-2. Interpreter Logic
-
-Modify the runtime to support a RegexMatch object with callable methods:
-
-.group(n) → return the nth capture group as a string.
-
-If no match exists, .group() should raise a runtime error:
-RuntimeError: No active regex match.
-
-Regex Engine Integration
-
-Hook into the existing Python re module or rex internal engine.
-
-When a match is successful, wrap the Python match object inside Lyric’s RegexMatch type.
+2. Verify that pattern.group(2) is also functioning
 
 3. Unit Tests
 
@@ -113,12 +96,12 @@ Accessing a missing group raises an error.
 
 Non-match returns handled gracefully.
 
-Examples
+#### Examples
 
 Create a test example .ly script in tests/examples with the main body :
 
 ```
-rex title = /<title>(.*?)<\/title>/
+rex title = regex("<title>(.*?)<\/title>")
 var match = title.match("<title>Hello</title>")
 print match.group(1)
 ```
@@ -136,7 +119,14 @@ print match.group(1)
 ✅ No regression in existing print or rex parsing behavior.
 
 
-### Task 2. Ensure all Unit tests are passing 100%
+### Task 3. Resolve issue with line number
+
+
+Error: Lexical error at line 0, column 0: Unexpected character '^' at line 75, column 26
+
+
+
+
 
 
 
