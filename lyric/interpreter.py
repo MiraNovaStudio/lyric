@@ -21,6 +21,25 @@ from lyric.errors import (
 from lyric.runtime import register_builtins
 
 
+class RexMatch:
+    """Represents a regex match result."""
+    
+    def __init__(self, match):
+        self.match = match
+    
+    def group(self, index: int = 0) -> str:
+        """Get the matched group by index."""
+        if not isinstance(index, int):
+            raise RuntimeErrorLyric(f"Type error: group() expects an integer index, but got {type(index).__name__}")
+        try:
+            return self.match.group(index)
+        except IndexError:
+            raise RuntimeErrorLyric(f"Index error: group {index} does not exist in this match")
+    
+    def __repr__(self):
+        return f"RexMatch(match='{self.match.group(0)}')"
+
+
 class RexObject:
     """Represents a compiled regex object with methods."""
     
@@ -41,11 +60,20 @@ class RexObject:
             raise RuntimeErrorLyric(f"Type error: rex.replace() expects a string as replacement, but got {type(replacement).__name__}")
         return self.pattern.sub(replacement, source)
     
-    # TODO: Future enhancement - .search() method for mid-string matches
-    # def search(self, text: str) -> bool:
-    #     """Search for the regex pattern anywhere in the text (not just at the beginning)."""
-    #     # Implementation would use Python's re.search() instead of re.match()
-    #     # This method is deferred for future sprints to keep the initial rex implementation focused
+    def search(self, text: str) -> 'RexMatch':
+        """Search for the regex pattern anywhere in the text and return a match object."""
+        if not isinstance(text, str):
+            raise RuntimeErrorLyric(f"Type error: rex.search() expects a string, but got {type(text).__name__}")
+        match = self.pattern.search(text)
+        if match:
+            return RexMatch(match)
+        return None
+    
+    def findall(self, text: str) -> list:
+        """Find all non-overlapping matches of the regex in the text."""
+        if not isinstance(text, str):
+            raise RuntimeErrorLyric(f"Type error: rex.findall() expects a string, but got {type(text).__name__}")
+        return self.pattern.findall(text)
     
     def __repr__(self):
         return f"RexObject(pattern='{self.pattern.pattern}')"
