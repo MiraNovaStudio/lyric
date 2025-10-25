@@ -47,6 +47,18 @@ def main():
         sys.exit(1)
 
 
+def _remove_shebang(source: str) -> str:
+    """Remove shebang line from source code if present."""
+    lines = source.splitlines()
+    
+    # Check if first line is a shebang
+    if lines and lines[0].startswith('#!'):
+        # Remove the shebang line
+        return '\n'.join(lines[1:])
+    
+    return source
+
+
 def _execute_file(file_path: str):
     """Execute a Lyric source file."""
     # Check if file exists
@@ -63,6 +75,9 @@ def _execute_file(file_path: str):
         # Read and execute the file
         with open(file_path, 'r', encoding='utf-8') as f:
             source = f.read()
+        
+        # Remove shebang line if present
+        source = _remove_shebang(source)
         
         # Parse the source code
         ast = parse(source)
