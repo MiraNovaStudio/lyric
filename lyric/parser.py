@@ -5,7 +5,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -679,7 +679,7 @@ class Parser:
         return self.tokens[self.current + 4]
 
     def _parse_try_block(self) -> TryNode:
-        """Parse try/catch/finally block: try [":"] ... catch [":"] ... finally [":"] ... fade"""
+        """Parse try/catch/finally block: try [":"] ... catch [Type] [as var] [":"] ... finally [":"] ... fade"""
         try_token = self._consume('TRY', "Expected 'try'")
         
         # Make colon optional after try
@@ -699,24 +699,11 @@ class Parser:
             if stmt:
                 try_body.append(stmt)
         
-        # Parse catch block (optional)
-        catch_body = None
-        if self._match('CATCH'):
-            # Make colon optional after catch
-            self._match('COLON')  # Optional colon
-            
-            catch_body = []
-            while not self._check('FINALLY', 'FADE') and not self._is_at_end():
-                # Skip NEWLINE tokens
-                while self._match('NEWLINE'):
-                    pass
-                
-                if self._check('FINALLY', 'FADE'):
-                    break
-                    
-                stmt = self._parse_statement()
-                if stmt:
-                    catch_body.append(stmt)
+        # Parse catch clauses (multiple allowed)
+        catch_clauses = []
+        while self._match('CATCH'):
+            catch_clause = self._parse_catch_clause()
+            catch_clauses.append(catch_clause)
         
         # Parse finally block (optional)
         finally_body = None
@@ -741,11 +728,47 @@ class Parser:
         self._consume('FADE', "Expected 'fade' to end try block")
         
         # Validate: try without catch is a syntax error
-        if catch_body is None:
-            raise ParseError("try block must have a catch block at line {}, column {}".format(
+        if not catch_clauses:
+            raise ParseError("try block must have at least one catch block at line {}, column {}".format(
                 self._peek().line, self._peek().col))
         
-        return TryNode(try_body, catch_body, finally_body, try_token.line, try_token.col)
+        return TryNode(try_body, catch_clauses, finally_body, try_token.line, try_token.col)
+    
+    def _parse_catch_clause(self) -> CatchClauseNode:
+        """Parse a single catch clause: catch [Type] [as identifier] [":"] ... """
+        exception_type = None
+        variable_name = None
+        
+        # Check for exception type (IDENT after CATCH)
+        if self._check('IDENT'):
+            exception_type = self._advance().value
+        
+        # Check for 'as' keyword
+        if self._match('AS'):
+            if self._check('IDENT'):
+                variable_name = self._advance().value
+            else:
+                raise ParseError("Expected variable name after 'as' at line {}, column {}".format(
+                    self._peek().line, self._peek().col))
+        
+        # Make colon optional after catch
+        self._match('COLON')  # Optional colon
+        
+        # Parse catch body
+        catch_body = []
+        while not self._check('CATCH', 'FINALLY', 'FADE') and not self._is_at_end():
+            # Skip NEWLINE tokens
+            while self._match('NEWLINE'):
+                pass
+            
+            if self._check('CATCH', 'FINALLY', 'FADE'):
+                break
+                
+            stmt = self._parse_statement()
+            if stmt:
+                catch_body.append(stmt)
+        
+        return CatchClauseNode(exception_type, variable_name, catch_body, self._peek().line, self._peek().col)
 
     def _parse_raise_stmt(self) -> RaiseNode:
         """Parse raise statement: raise ExceptionName"""

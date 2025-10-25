@@ -5,9 +5,13 @@ import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 )
-from lyric.errors import RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric
+from lyric.errors import (
+    RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
+    IndexErrorLyric, KeyErrorLyric, TypeErrorLyric, ValueErrorLyric,
+    AttributeErrorLyric, ZeroDivisionErrorLyric
+)
 from lyric.runtime import register_builtins
 
 
@@ -165,8 +169,8 @@ class Interpreter:
                 for try_stmt in stmt.try_body:
                     return_types.extend(self._find_return_statements(try_stmt))
             # Check catch block
-            if stmt.catch_body:
-                for catch_stmt in stmt.catch_body:
+            for catch_clause in stmt.catch_clauses:
+                for catch_stmt in catch_clause.body:
                     return_types.extend(self._find_return_statements(catch_stmt))
             # Check finally block
             if stmt.finally_body:
@@ -289,6 +293,19 @@ class Interpreter:
         except Exception as e:
             if isinstance(e, RuntimeErrorLyric):
                 raise
+            # Convert Python exceptions to Lyric exceptions
+            if isinstance(e, IndexError):
+                raise IndexErrorLyric(str(e))
+            if isinstance(e, KeyError):
+                raise KeyErrorLyric(str(e))
+            if isinstance(e, TypeError):
+                raise TypeErrorLyric(str(e))
+            if isinstance(e, ValueError):
+                raise ValueErrorLyric(str(e))
+            if isinstance(e, AttributeError):
+                raise AttributeErrorLyric(str(e))
+            if isinstance(e, ZeroDivisionError):
+                raise ZeroDivisionErrorLyric(str(e))
             raise RuntimeErrorLyric(f"Runtime error: {str(e)}")
     
     def _call_function(self, func_name: str, args: List[Any]) -> Any:
@@ -477,7 +494,7 @@ class Interpreter:
                     try:
                         index = int(index_str)
                         if index < 0 or index >= len(obj):
-                            raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}", node.line, node.column)
+                            raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}", node.line, node.column)
                         obj[index] = value
                     except ValueError:
                         raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
@@ -611,9 +628,9 @@ class Interpreter:
         
         if isinstance(obj, (list, tuple)):
             if not isinstance(index, int):
-                raise RuntimeErrorLyric(f"Invalid list index: expected integer, but got {type(index).__name__}. List indices must be integers (0, 1, 2, ...)")
+                raise TypeErrorLyric(f"Invalid list index: expected integer, but got {type(index).__name__}. List indices must be integers (0, 1, 2, ...)")
             if index < 0 or index >= len(obj):
-                raise RuntimeErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
+                raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
             return obj[index]
         elif isinstance(obj, dict):
             if index not in obj:
@@ -621,10 +638,10 @@ class Interpreter:
                 keys_preview = ", ".join(repr(k) for k in available_keys)
                 if len(obj) > 5:
                     keys_preview += f" (and {len(obj)-5} more)"
-                raise RuntimeErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
+                raise KeyErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
             return obj[index]
         else:
-            raise RuntimeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
+            raise TypeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
     
     def _evaluate_rex_literal(self, node: RexNode) -> 'RexObject':
         """Evaluate a regex literal and return a RexObject."""
@@ -1056,7 +1073,7 @@ class Interpreter:
             raise RuntimeErrorLyric(f"Unknown unary operator: '{node.op}'. Supported unary operators are: -, !, not")
     
     def _evaluate_try_statement(self, node: TryNode) -> Any:
-        """Evaluate a try/catch/finally statement."""
+        """Evaluate a try/catch/finally statement with typed exception binding."""
         result = None
         exception_occurred = None
         
@@ -1069,20 +1086,48 @@ class Interpreter:
                     result = result
                     break
         except Exception as e:
+            # Convert Python exceptions to Lyric exceptions (check Python types first!)
+            if isinstance(e, IndexError) and not isinstance(e, IndexErrorLyric):
+                e = IndexErrorLyric(str(e))
+            elif isinstance(e, KeyError) and not isinstance(e, KeyErrorLyric):
+                e = KeyErrorLyric(str(e))
+            elif isinstance(e, TypeError) and not isinstance(e, TypeErrorLyric):
+                e = TypeErrorLyric(str(e))
+            elif isinstance(e, ValueError) and not isinstance(e, ValueErrorLyric):
+                e = ValueErrorLyric(str(e))
+            elif isinstance(e, AttributeError) and not isinstance(e, AttributeErrorLyric):
+                e = AttributeErrorLyric(str(e))
+            elif isinstance(e, ZeroDivisionError) and not isinstance(e, ZeroDivisionErrorLyric):
+                e = ZeroDivisionErrorLyric(str(e))
             # Catch any exception that occurs
             exception_occurred = e
         
-        # If an exception occurred and there's a catch block, execute it
-        if exception_occurred and node.catch_body:
-            for statement in node.catch_body:
-                result = self._evaluate_statement(statement)
-                if isinstance(result, ReturnValue):
-                    # Store result but don't return yet - finally must execute
-                    result = result
+        # If an exception occurred, try to match it with catch clauses
+        if exception_occurred and node.catch_clauses:
+            matched_clause = None
+            
+            # Find the first matching catch clause
+            for catch_clause in node.catch_clauses:
+                if self._exception_matches_clause(exception_occurred, catch_clause):
+                    matched_clause = catch_clause
                     break
             
-            # Clear the exception since it was caught
-            exception_occurred = None
+            # Execute the matching catch clause
+            if matched_clause:
+                # Bind exception to variable if specified
+                if matched_clause.variable_name:
+                    self.global_scope[matched_clause.variable_name] = exception_occurred
+                
+                # Execute catch body
+                for statement in matched_clause.body:
+                    result = self._evaluate_statement(statement)
+                    if isinstance(result, ReturnValue):
+                        # Store result but don't return yet - finally must execute
+                        result = result
+                        break
+                
+                # Clear the exception since it was caught
+                exception_occurred = None
         
         # Execute finally block if it exists (always executes)
         if node.finally_body:
@@ -1101,6 +1146,21 @@ class Interpreter:
             return result
         
         return None
+    
+    def _exception_matches_clause(self, exception: Exception, catch_clause: CatchClauseNode) -> bool:
+        """Check if an exception matches a catch clause based on type."""
+        if catch_clause.exception_type is None:
+            # Bare catch clause matches all exceptions
+            return True
+        
+        # Get the exception type class
+        exception_type_class = EXCEPTION_TYPES.get(catch_clause.exception_type)
+        if exception_type_class is None:
+            # Unknown exception type - treat as bare catch
+            return True
+        
+        # Check if the exception is an instance of the specified type
+        return isinstance(exception, exception_type_class)
     
     def _evaluate_raise_statement(self, node: RaiseNode) -> None:
         """Evaluate a raise statement."""

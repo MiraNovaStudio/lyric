@@ -206,7 +206,7 @@ def test_try_without_catch_syntax_error():
         fade
     }'''
     
-    with pytest.raises(ParseError, match="try block must have a catch block"):
+    with pytest.raises(ParseError, match="try block must have at least one catch block"):
         parse(source)
 
 
