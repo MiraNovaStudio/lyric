@@ -1,5 +1,6 @@
 # Lyric Programming Language
 # Copyright (c) 2025 MiraNova Studios
-# Developed by Michael (Aeonath), ChatGPT, and Claude
+# Designed and Architected by Michael (Aeonath) and ChatGPT
+# Implemented by Claude
 # Licensed under the MIT License with Source Attribution
 
