@@ -223,6 +223,8 @@ class Parser:
         self._match('COLON')  # Optional colon
         
         members_statements = []
+        constructor_method = None
+        
         while not self._check('CLASS_END') and not self._is_at_end():
             # Skip NEWLINE tokens
             while self._match('NEWLINE'):
@@ -233,11 +235,23 @@ class Parser:
                 
             stmt = self._parse_statement()
             if stmt:
-                members_statements.append(stmt)
+                # Check if this is a constructor method (method name matches class name)
+                if isinstance(stmt, FunctionNode) and stmt.name == name:
+                    if constructor_method is not None:
+                        # Multiple constructors found - this is an error
+                        raise ParseError(
+                            f"Multiple constructors found for class '{name}'. Only one constructor method is allowed per class. "
+                            f"Found constructor at line {constructor_method.line}, column {constructor_method.column} "
+                            f"and another at line {stmt.line}, column {stmt.column}",
+                            stmt.line, stmt.column
+                        )
+                    constructor_method = stmt
+                else:
+                    members_statements.append(stmt)
         
         self._consume('CLASS_END', "Expected '+++' after class body")
         
-        return ClassNode(name, members_statements, class_token.line, class_token.col)
+        return ClassNode(name, members_statements, constructor_method, class_token.line, class_token.col)
     
     def _parse_if_block(self) -> IfNode:
         """Parse if block: if expression [":"] statement* ("else" "if" expression [":"] statement*)* ("else" [":"] statement*)? "end" """

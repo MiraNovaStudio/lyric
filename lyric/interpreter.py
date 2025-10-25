@@ -679,6 +679,15 @@ class Interpreter:
         class_dict = {}
         # Add a special marker to identify this as a class definition
         class_dict['__class_name__'] = node.name
+        
+        # Store constructor method separately if it exists
+        if node.constructor_method:
+            class_dict['__constructor__'] = {
+                'params': node.constructor_method.params,
+                'param_types': node.constructor_method.param_types,
+                'body': node.constructor_method.body_statements
+            }
+        
         for member in node.members_statements:
             if isinstance(member, AssignNode):
                 # Class member assignment
@@ -936,8 +945,13 @@ class Interpreter:
             # Add instance class name marker
             instance['__instance_class__'] = node.func_name
             
-            # Check if class has an init() method and call it
-            if 'init' in instance and isinstance(instance['init'], dict):
+            # Check if class has a constructor method (method name matches class name)
+            if '__constructor__' in instance and isinstance(instance['__constructor__'], dict):
+                constructor_method = instance['__constructor__']
+                # Call the constructor method with the provided arguments
+                self._call_method(instance, constructor_method, node.args)
+            # Also check for legacy init() method for backward compatibility
+            elif 'init' in instance and isinstance(instance['init'], dict):
                 init_method = instance['init']
                 # Call the init method with the provided arguments
                 self._call_method(instance, init_method, node.args)
