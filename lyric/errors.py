@@ -116,3 +116,20 @@ EXCEPTION_TYPES = {
     'ZeroDivisionError': ZeroDivisionErrorLyric,
     'CompileError': CompileErrorLyric,
 }
+
+
+# Control flow signals (not exceptions, subclass BaseException)
+class BreakSignal(BaseException):
+    """Internal signal for break statement."""
+    def __init__(self, line: int = 0, column: int = 0):
+        super().__init__()
+        self.line = line
+        self.column = column
+
+
+class ContinueSignal(BaseException):
+    """Internal signal for continue statement."""
+    def __init__(self, line: int = 0, column: int = 0):
+        super().__init__()
+        self.line = line
+        self.column = column

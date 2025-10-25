@@ -258,6 +258,36 @@ class ReturnNode(ASTNode):
 
 
 @dataclass
+class BreakNode(ASTNode):
+    """Represents a break statement."""
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"BreakNode()"
+    
+    def to_dict(self):
+        return {
+            'type': 'BreakNode'
+        }
+
+
+@dataclass
+class ContinueNode(ASTNode):
+    """Represents a continue statement."""
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"ContinueNode()"
+    
+    def to_dict(self):
+        return {
+            'type': 'ContinueNode'
+        }
+
+
+@dataclass
 class ListLiteralNode(ASTNode):
     """Represents a list literal."""
     elements: List['ASTNode']
@@ -467,7 +497,7 @@ class RexNode(ASTNode):
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
     ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
     TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 ]

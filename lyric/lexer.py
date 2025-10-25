@@ -21,7 +21,8 @@ class Lexer:
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'given', 'for', 'done', 'end', 
         'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'as', 'return',
-        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'True', 'False', 'true', 'false', 'None', 'raise', 'importpy'
+        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'True', 'False', 'true', 'false', 'None', 'raise', 'importpy',
+        'break', 'continue'
     }
     
     # Single character operators and delimiters

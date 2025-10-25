@@ -4,7 +4,7 @@ from typing import List
 from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
     ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
@@ -16,6 +16,7 @@ class Parser:
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.current = 0
+        self.loop_depth = 0  # Track nesting level for break/continue validation
     
     def parse(self) -> ProgramNode:
         """Parse tokens into a ProgramNode."""
@@ -87,6 +88,10 @@ class Parser:
             return self._parse_loop_block()
         elif self._check('RETURN'):
             return self._parse_return_stmt()
+        elif self._check('BREAK'):
+            return self._parse_break_stmt()
+        elif self._check('CONTINUE'):
+            return self._parse_continue_stmt()
         elif self._check('TRY'):
             return self._parse_try_block()
         elif self._check('IMPORTPY'):
@@ -326,6 +331,9 @@ class Parser:
         # Make colon optional after given expression
         self._match('COLON')  # Optional colon
         
+        # Increment loop depth for break/continue validation
+        self.loop_depth += 1
+        
         body = []
         while not self._check('DONE') and not self._is_at_end():
             # Skip NEWLINE tokens
@@ -338,6 +346,9 @@ class Parser:
             stmt = self._parse_statement()
             if stmt:
                 body.append(stmt)
+        
+        # Decrement loop depth
+        self.loop_depth -= 1
         
         self._consume('DONE', "Expected 'done' after loop body")
         
@@ -401,6 +412,26 @@ class Parser:
             value = self._parse_expression()
         
         return ReturnNode(value, return_token.line, return_token.col)
+    
+    def _parse_break_stmt(self) -> BreakNode:
+        """Parse break statement: break """
+        break_token = self._consume('BREAK', "Expected 'break'")
+        
+        # Validate that break is used within a loop context
+        if self.loop_depth == 0:
+            raise ParseError(f"'break' used outside of loop at line {break_token.line}, column {break_token.col}")
+        
+        return BreakNode(break_token.line, break_token.col)
+    
+    def _parse_continue_stmt(self) -> ContinueNode:
+        """Parse continue statement: continue """
+        continue_token = self._consume('CONTINUE', "Expected 'continue'")
+        
+        # Validate that continue is used within a loop context
+        if self.loop_depth == 0:
+            raise ParseError(f"'continue' used outside of loop at line {continue_token.line}, column {continue_token.col}")
+        
+        return ContinueNode(continue_token.line, continue_token.col)
     
     def _parse_expression(self):
         """Parse an expression with proper precedence."""

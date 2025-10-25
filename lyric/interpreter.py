@@ -4,13 +4,13 @@ from typing import Any, List
 import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
-    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
+    BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
     ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
     IndexErrorLyric, KeyErrorLyric, TypeErrorLyric, ValueErrorLyric,
-    AttributeErrorLyric, ZeroDivisionErrorLyric
+    AttributeErrorLyric, ZeroDivisionErrorLyric, BreakSignal, ContinueSignal
 )
 from lyric.runtime import register_builtins
 
@@ -448,6 +448,10 @@ class Interpreter:
             return self._evaluate_function_call(statement)
         elif isinstance(statement, ReturnNode):
             return self._evaluate_return_statement(statement)
+        elif isinstance(statement, BreakNode):
+            return self._evaluate_break_statement(statement)
+        elif isinstance(statement, ContinueNode):
+            return self._evaluate_continue_statement(statement)
         elif isinstance(statement, TryNode):
             return self._evaluate_try_statement(statement)
         elif isinstance(statement, RaiseNode):
@@ -750,8 +754,13 @@ class Interpreter:
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
-                    for statement in node.body:
-                        self._evaluate_statement(statement)
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
             elif len(args) == 2:
                 # range(start, end)
                 start, end = args
@@ -759,8 +768,13 @@ class Interpreter:
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
-                    for statement in node.body:
-                        self._evaluate_statement(statement)
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
             elif len(args) == 3:
                 # range(start, end, step)
                 start, end, step = args
@@ -768,23 +782,38 @@ class Interpreter:
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
-                    for statement in node.body:
-                        self._evaluate_statement(statement)
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
         else:
             # Generic iterator (simplified)
             iterable = self._evaluate_expression(node.condition_or_iter)
             if isinstance(iterable, (list, tuple)):
                 for item in iterable:
-                    for statement in node.body:
-                        self._evaluate_statement(statement)
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
         
         return None
     
     def _evaluate_while_loop(self, node: LoopNode) -> Any:
         """Evaluate a while loop."""
         while self._is_truthy(self._evaluate_expression(node.condition_or_iter)):
-            for statement in node.body:
-                self._evaluate_statement(statement)
+            try:
+                for statement in node.body:
+                    self._evaluate_statement(statement)
+            except BreakSignal:
+                break  # Exit loop
+            except ContinueSignal:
+                continue  # Skip to next iteration
         return None
     
     def _evaluate_function_call(self, node: CallNode) -> Any:
@@ -1201,6 +1230,24 @@ class Interpreter:
         self.global_scope[node.module_name] = proxy
         
         return None
+    
+    def _evaluate_return_statement(self, node: ReturnNode) -> ReturnValue:
+        """Evaluate a return statement."""
+        if node.value is not None:
+            value = self._evaluate_expression(node.value)
+        else:
+            value = None
+        return ReturnValue(value)
+    
+    def _evaluate_break_statement(self, node: BreakNode) -> None:
+        """Evaluate a break statement."""
+        # Raise BreakSignal to exit the enclosing loop
+        raise BreakSignal(node.line, node.column)
+    
+    def _evaluate_continue_statement(self, node: ContinueNode) -> None:
+        """Evaluate a continue statement."""
+        # Raise ContinueSignal to skip to next iteration of the enclosing loop
+        raise ContinueSignal(node.line, node.column)
     
     def _is_truthy(self, value: Any) -> bool:
         """Check if a value is truthy."""
