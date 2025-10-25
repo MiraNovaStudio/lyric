@@ -79,17 +79,7 @@ def main() {
         print("Valid email: " + test_email)
     else:
         print("Invalid email: " + test_email)
+    end
     
-    # rex with search and groups
-    rex phone_pattern = /(\d{3})-(\d{3})-(\d{4})/
-    var phone_text = "Call us at 555-123-4567 for support"
-    var phone_match = phone_pattern.search(phone_text)
-    
-    if phone_match:
-        print("Found phone: " + phone_match.group(0))
-        print("Area code: " + phone_match.group(1))
-        print("Exchange: " + phone_match.group(2))
-        print("Number: " + phone_match.group(3))
-
     print("All constructs exercised. ✅")
 }

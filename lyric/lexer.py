@@ -144,7 +144,7 @@ class Lexer:
             # and must have a closing slash
             if not self._is_at_end() and self._peek() != ' ' and self._peek() != '\t' and self._peek() != '\n':
                 # Look ahead to see if there's a closing slash
-                temp_pos = self.current
+                temp_pos = self.current + 1  # Start after the opening slash
                 has_closing_slash = False
                 while temp_pos < len(self.source) and self.source[temp_pos] != '\n':
                     if self.source[temp_pos] == '/':
@@ -214,10 +214,25 @@ class Lexer:
         start_col = self.start_col
         value = ''
         
-        while self._peek() != '/' and not self._is_at_end():
-            if self._peek() == '\n':
+        while not self._is_at_end():
+            char = self._peek()
+            
+            # Check for newline (not allowed in regex)
+            if char == '\n':
                 raise LexError(f"Unterminated regex at line {start_line}, column {start_col}")
-            value += self._advance()
+            
+            # Check for closing slash
+            if char == '/':
+                # Check if this is an escaped forward slash
+                if len(value) > 0 and value[-1] == '\\':
+                    # This is an escaped forward slash, include it
+                    value += self._advance()
+                else:
+                    # This is the closing slash, break
+                    break
+            else:
+                # Regular character, include it
+                value += self._advance()
         
         if self._is_at_end():
             raise LexError(f"Unterminated regex at line {start_line}, column {start_col}")

@@ -11,7 +11,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -685,12 +685,49 @@ class Parser:
         raise SyntaxErrorLyric("Expected expression", self._peek().line, self._peek().col)
     
     def _parse_indexing_chain(self, expr):
-        """Parse chained indexing operations: expr[index][index]..."""
+        """Parse chained indexing operations: expr[index][index]... or expr[start:end:step]..."""
         while self._match('LBRACKET'):
             lbracket_token = self._previous()
-            index = self._parse_expression()
-            self._consume('RBRACKET', "Expected ']' after index")
-            expr = IndexNode(expr, index, lbracket_token.line, lbracket_token.col)
+            
+            # Check if this is slicing syntax (contains colons)
+            # Look ahead to see if there's a colon in the bracket
+            is_slice = False
+            temp_pos = self.current
+            while temp_pos < len(self.tokens) and self.tokens[temp_pos].type != 'RBRACKET':
+                if self.tokens[temp_pos].type == 'COLON':
+                    is_slice = True
+                    break
+                temp_pos += 1
+            
+            if is_slice:
+                # Parse slice: [start:end:step]
+                start = None
+                end = None
+                step = None
+                
+                # Parse start (if present)
+                if not self._check('COLON'):
+                    start = self._parse_expression()
+                
+                # Parse first colon
+                if self._match('COLON'):
+                    # Parse end (if present)
+                    if not self._check('COLON', 'RBRACKET'):
+                        end = self._parse_expression()
+                    
+                    # Parse second colon and step (if present)
+                    if self._match('COLON'):
+                        if not self._check('RBRACKET'):
+                            step = self._parse_expression()
+                
+                self._consume('RBRACKET', "Expected ']' after slice")
+                expr = SliceNode(expr, start, end, step, lbracket_token.line, lbracket_token.col)
+            else:
+                # Parse simple index: [index]
+                index = self._parse_expression()
+                self._consume('RBRACKET', "Expected ']' after index")
+                expr = IndexNode(expr, index, lbracket_token.line, lbracket_token.col)
+        
         return expr
     
     def _parse_argument_list(self) -> List:

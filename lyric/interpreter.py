@@ -11,7 +11,7 @@ import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
@@ -681,6 +681,24 @@ class Interpreter:
         else:
             raise TypeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
     
+    def _evaluate_slice(self, node: SliceNode) -> Any:
+        """Evaluate a slice operation."""
+        obj = self._evaluate_expression(node.obj)
+        
+        # Evaluate slice parameters
+        start = self._evaluate_expression(node.start) if node.start else None
+        end = self._evaluate_expression(node.end) if node.end else None
+        step = self._evaluate_expression(node.step) if node.step else None
+        
+        # Handle different object types
+        if isinstance(obj, (str, list, tuple)):
+            try:
+                return obj[start:end:step]
+            except Exception as e:
+                raise RuntimeErrorLyric(f"Slice operation failed: {str(e)}", node.line, node.column)
+        else:
+            raise TypeErrorLyric(f"Cannot slice object: '{type(obj).__name__}' does not support slicing. Only strings, lists, and tuples can be sliced with [start:end:step].", node.line, node.column)
+    
     def _evaluate_rex_literal(self, node: RexNode) -> 'RexObject':
         """Evaluate a regex literal and return a RexObject."""
         import re
@@ -1032,6 +1050,8 @@ class Interpreter:
             return self._evaluate_dict_literal(expr)
         elif isinstance(expr, IndexNode):
             return self._evaluate_index(expr)
+        elif isinstance(expr, SliceNode):
+            return self._evaluate_slice(expr)
         elif isinstance(expr, RexNode):
             return self._evaluate_rex_literal(expr)
         else:
@@ -1108,6 +1128,9 @@ class Interpreter:
         
         try:
             if node.op == '+':
+                # Handle string concatenation with mixed types
+                if isinstance(left, str) or isinstance(right, str):
+                    return str(left) + str(right)
                 return left + right
             elif node.op == '-':
                 return left - right
