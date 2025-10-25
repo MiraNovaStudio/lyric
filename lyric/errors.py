@@ -53,3 +53,8 @@ class RuntimeErrorLyric(Exception):
 class NameErrorLyric(RuntimeErrorLyric):
     """Raised when a name is not defined."""
     pass
+
+
+class CompileErrorLyric(RuntimeErrorLyric):
+    """Raised when compilation fails (e.g., redeclaration)."""
+    pass

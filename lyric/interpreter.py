@@ -7,7 +7,7 @@ from lyric.ast_nodes import (
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, 
     ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, RaiseNode, ImportPyNode, RexNode
 )
-from lyric.errors import RuntimeErrorLyric
+from lyric.errors import RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric
 from lyric.runtime import register_builtins
 
 
@@ -56,12 +56,51 @@ class Interpreter:
             'false': False,
             'None': None
         }
-        # Track variable types
-        self.variable_types = {}
+        # Track variable types with scope support
+        self.variable_types = {}  # Global scope
+        self.scope_stack = []     # Stack of scopes for nested functions/blocks
         # Register built-in functions
         register_builtins(self.global_scope)
         self.functions = {}
         self.classes = {}
+    
+    def _push_scope(self):
+        """Push a new scope onto the stack."""
+        self.scope_stack.append({})
+    
+    def _pop_scope(self):
+        """Pop the current scope from the stack."""
+        if self.scope_stack:
+            return self.scope_stack.pop()
+        return {}
+    
+    def _get_current_scope(self):
+        """Get the current scope (top of stack) or global scope."""
+        if self.scope_stack:
+            return self.scope_stack[-1]
+        return self.variable_types
+    
+    def _is_variable_declared_in_any_scope(self, var_name: str) -> bool:
+        """Check if a variable is declared in any scope (current or parent)."""
+        # Check current scope first
+        if var_name in self._get_current_scope():
+            return True
+        
+        # Check parent scopes
+        for scope in reversed(self.scope_stack[:-1]):
+            if var_name in scope:
+                return True
+        
+        # Check global scope
+        if var_name in self.variable_types:
+            return True
+        
+        return False
+    
+    def _set_variable_in_current_scope(self, var_name: str, var_type: str):
+        """Set a variable in the current scope."""
+        current_scope = self._get_current_scope()
+        current_scope[var_name] = var_type
     
     def evaluate(self, ast: ProgramNode) -> Any:
         """Evaluate a ProgramNode and return the result."""
@@ -115,6 +154,9 @@ class Interpreter:
             # Set local scope
             self.global_scope.update(local_scope)
             
+            # Push function scope for variable types
+            self._push_scope()
+            
             try:
                 # Execute function body
                 result = None
@@ -127,6 +169,7 @@ class Interpreter:
             finally:
                 # Restore scope
                 self.global_scope = old_scope
+                self._pop_scope()
         else:
             raise RuntimeErrorLyric(f"Function '{func_name}' is not defined")
     
@@ -165,6 +208,9 @@ class Interpreter:
         # Set local scope
         self.global_scope.update(local_scope)
         
+        # Push method scope for variable types
+        self._push_scope()
+        
         try:
             # Execute method body
             result = None
@@ -177,6 +223,7 @@ class Interpreter:
         finally:
             # Restore scope
             self.global_scope = old_scope
+            self._pop_scope()
     
     
     def _evaluate_statement(self, statement) -> Any:
@@ -255,16 +302,29 @@ class Interpreter:
                 raise RuntimeErrorLyric(f"Undefined variable: '{obj_name}' has not been declared. Use a type declaration (int, str, flt, var) or assign a value first", node.line, node.column)
         else:
             # Regular assignment
-            # Check type enforcement if variable was declared with a type
-            if node.name in self.variable_types:
-                expected_type = self.variable_types[node.name]
-                if expected_type != 'var' and not self._is_type_compatible(expected_type, value):
-                    raise RuntimeErrorLyric(
-                        f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {expected_type}. "
-                        f"Expected {expected_type}, but got {type(value).__name__}. "
-                        f"Use 'var {node.name} = ...' if you need dynamic typing.",
-                        node.line, node.column
-                    )
+            # Check type enforcement if variable was declared with a type in any scope
+            var_type = None
+            # Check current scope first
+            current_scope = self._get_current_scope()
+            if node.name in current_scope:
+                var_type = current_scope[node.name]
+            else:
+                # Check parent scopes
+                for scope in reversed(self.scope_stack[:-1]):
+                    if node.name in scope:
+                        var_type = scope[node.name]
+                        break
+                # Check global scope
+                if var_type is None and node.name in self.variable_types:
+                    var_type = self.variable_types[node.name]
+            
+            if var_type and var_type != 'var' and not self._is_type_compatible(var_type, value):
+                raise RuntimeErrorLyric(
+                    f"Type mismatch: cannot assign {type(value).__name__} to variable '{node.name}' declared as {var_type}. "
+                    f"Expected {var_type}, but got {type(value).__name__}. "
+                    f"Use 'var {node.name} = ...' if you need dynamic typing.",
+                    node.line, node.column
+                )
             
             self.global_scope[node.name] = value
         
@@ -272,10 +332,17 @@ class Interpreter:
     
     def _evaluate_type_declaration(self, node: TypeDeclarationNode) -> Any:
         """Evaluate a type declaration statement."""
+        # Check for redeclaration in current scope only
+        if node.name in self._get_current_scope():
+            raise CompileErrorLyric(
+                f"Variable '{node.name}' already declared",
+                node.line, node.column
+            )
+        
         value = self._evaluate_expression(node.expr)
         
-        # Store the variable type
-        self.variable_types[node.name] = node.type_name
+        # Store the variable type in current scope
+        self._set_variable_in_current_scope(node.name, node.type_name)
         
         # Type enforcement for strict types
         if node.type_name != 'var':
@@ -293,10 +360,18 @@ class Interpreter:
     
     def _evaluate_multi_declaration(self, node: MultiDeclarationNode) -> Any:
         """Evaluate a multi-variable declaration statement."""
-        # Declare all variables as uninitialized
+        # Check for redeclarations in current scope first
         for type_name, var_name in node.declarations:
-            # Store the variable type
-            self.variable_types[var_name] = type_name
+            if var_name in self._get_current_scope():
+                raise CompileErrorLyric(
+                    f"Variable '{var_name}' already declared",
+                    node.line, node.column
+                )
+        
+        # Declare all variables as uninitialized in current scope
+        for type_name, var_name in node.declarations:
+            # Store the variable type in current scope
+            self._set_variable_in_current_scope(var_name, type_name)
             
             # Declare the variable as uninitialized (None)
             self.global_scope[var_name] = None

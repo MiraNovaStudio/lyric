@@ -3,7 +3,7 @@
 
 # Test 1: Basic try/catch
 try:
-    var result = 10 / 0
+    var result1 = 10 / 0
 catch:
     print("Caught division by zero error")
 fade
@@ -11,8 +11,8 @@ fade
 # Test 2: Try/catch with finally
 var cleanup_done = False
 try:
-    var result = 10 / 2
-    print("Division successful:", result)
+    var result2 = 10 / 2
+    print("Division successful:", result2)
 catch:
     print("Caught an error")
 finally:
@@ -60,7 +60,7 @@ def safe_divide(int a, int b) {
 var counter = 0
 try:
     counter = counter + 1
-    var result = 10 / 0
+    var result3 = 10 / 0
     counter = counter + 1
 catch:
     counter = counter + 10
@@ -81,11 +81,11 @@ class Calculator
 +++
 
 var calc = Calculator()
-var result = calc.divide(10, 0)
+var result4 = calc.divide(10, 0)
 
 # Test 9: Exception with built-in functions
 try:
-    var result = append("not_a_list", 5)
+    var append_result = append("not_a_list", 5)
 catch:
     print("Caught append error")
 fade
@@ -93,7 +93,7 @@ fade
 # Test 10: Exception with indexing
 try:
     var numbers = [1, 2, 3]
-    var result = numbers[10]
+    var index_result = numbers[10]
 catch:
     print("Caught index error")
 fade
