@@ -377,8 +377,29 @@ class Parser:
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""
         if self._check('IDENT', 'TYPE_OR_IDENT'):
+            # Check for print statement syntax: print <expr>
+            if (self._peek().value == 'print' and 
+                self._peek_next().type != 'LPAREN' and 
+                not self._check('NEWLINE') and 
+                not self._check('EOF')):
+                # Parse print <expr> syntax (single or multiple arguments)
+                print_token = self._advance()
+                args = []
+                
+                # Parse first expression
+                expr = self._parse_expression()
+                args.append(expr)
+                
+                # Parse additional expressions separated by commas
+                while self._match('COMMA'):
+                    expr = self._parse_expression()
+                    args.append(expr)
+                
+                # Create CallNode with arguments to match print(<expr>) AST
+                return CallNode('print', args, print_token.line, print_token.col)
+            
             # Check if it's an assignment
-            if self._peek_next().type == 'ASSIGN':
+            elif self._peek_next().type == 'ASSIGN':
                 # Assignment: IDENT "=" expression
                 name_token = self._advance()
                 name = name_token.value

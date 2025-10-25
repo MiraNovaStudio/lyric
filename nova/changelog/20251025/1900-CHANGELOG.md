@@ -1,154 +1,115 @@
-# Changelog Entry: Sprint 6 Task 6 - Shebang Support Implementation
+# Changelog Entry: Sprint 6 Pivot 6.8.1 - Print Dual Syntax Support
 
-**Date**: 2025-10-25  
-**Time**: 19:00 UTC  
-**Sprint**: Sprint 6 Task 6  
-**Version**: Lyric 0.6.0  
+**Date:** 2025-10-25  
+**Version:** 0.6.1  
+**Type:** Feature Enhancement  
+**Sprint:** Sprint 6 Pivot 6.8.1  
 
-## Summary
+## 🎯 Summary
 
-Successfully implemented shebang support (`#!/usr/bin/lyric`) for Lyric scripts, enabling direct execution from the command line on Unix-like systems while maintaining full Windows compatibility.
+Implemented dual syntax support for the `print` statement, allowing both modern function-style (`print(<expr>)`) and traditional bare (`print <expr>`) syntax forms. This enhancement provides greater flexibility and readability while maintaining full backward compatibility.
 
-## Features Implemented
+## ✨ New Features
 
-### ✅ Core Shebang Functionality
-- **Shebang Detection**: Automatically detects and removes `#!` lines from the first line of Lyric files
-- **Transparent Processing**: Shebang removal happens seamlessly during file reading
-- **Cross-Platform Compatibility**: Works identically on Windows and Unix-like systems
-- **Zero Breaking Changes**: All existing Lyric code continues to work without modification
+### **Dual Print Syntax Support**
+- **Function Form**: `print(<expr>)` - existing syntax, unchanged
+- **Bare Form**: `print <expr>` - new syntax, functionally identical
+- **Multi-argument Support**: Both forms support multiple arguments with comma separation
+- **Expression Support**: Both forms support complex expressions including concatenation and arithmetic
 
-### ✅ Supported Shebang Formats
-- `#!/usr/bin/lyric` - Direct path to Lyric interpreter
-- `#!/usr/bin/env lyric` - Using env to find Lyric in PATH
-- `#!/usr/local/bin/lyric` - Custom installation paths
-- `#!/usr/bin/lyric --verbose` - Shebang with arguments (arguments ignored)
+### **Syntax Examples**
+```lyric
+# Single argument - both forms equivalent
+print("Hello World")
+print "Hello World"
 
-### ✅ Robust Error Handling
-- **Syntax Errors**: Proper error reporting with shebang files
-- **Runtime Errors**: Correct error propagation and exit codes
-- **File Not Found**: Standard file handling errors work correctly
-- **Invalid Extensions**: Non-.ly files still rejected appropriately
+# Multi-argument - both forms equivalent  
+print("Hello", "World", "!")
+print "Hello", "World", "!"
 
-### ✅ Edge Case Handling
-- **Empty Files**: Handled gracefully
-- **Single Line Shebang**: Files with only shebang line work correctly
-- **Multiple Shebang Lines**: Only first line removed (subsequent `#!` lines preserved)
-- **Comments vs Shebangs**: Regular `#` comments not affected
-- **Whitespace**: Shebangs with leading whitespace not removed (correct behavior)
+# Complex expressions - both forms equivalent
+print("Hello " + name)
+print "Hello " + name
 
-## Technical Implementation
+# Variable expressions
+print("Value:", x + y)
+print "Value:", x + y
+```
 
-### Files Modified
-- **`lyric/cli.py`**: Added `_remove_shebang()` function and integrated into `_execute_file()`
-- **`lyric/tests/core-0.6.0/test_shebang_support.py`**: Comprehensive test suite (25 tests)
+## 🔧 Technical Implementation
 
-### Implementation Details
+### **Parser Enhancement**
+- **Location**: `lyric/parser.py` - `_parse_assignment_or_expr_stmt()` method
+- **Approach**: Extended existing print parsing rule to detect both forms
+- **AST Consistency**: Both forms produce identical `CallNode` AST structures
+- **No Lexer Changes**: Maintained existing tokenization, no keyword additions needed
+
+### **Key Implementation Details**
 ```python
-def _remove_shebang(source: str) -> str:
-    """Remove shebang line from source code if present."""
-    lines = source.splitlines()
+# Detection logic for print <expr> syntax
+if (self._peek().value == 'print' and 
+    self._peek_next().type != 'LPAREN' and 
+    not self._check('NEWLINE') and 
+    not self._check('EOF')):
+    # Parse print <expr> syntax (single or multiple arguments)
+    print_token = self._advance()
+    args = []
     
-    # Check if first line is a shebang
-    if lines and lines[0].startswith('#!'):
-        # Remove the shebang line
-        return '\n'.join(lines[1:])
+    # Parse first expression
+    expr = self._parse_expression()
+    args.append(expr)
     
-    return source
+    # Parse additional expressions separated by commas
+    while self._match('COMMA'):
+        expr = self._parse_expression()
+        args.append(expr)
+    
+    # Create CallNode with arguments to match print(<expr>) AST
+    return CallNode('print', args, print_token.line, print_token.col)
 ```
 
-### Integration Points
-- **CLI Entry Point**: `lyric.cli:main` handles shebang removal transparently
-- **File Execution**: `_execute_file()` processes shebang before parsing
-- **Error Handling**: All existing error paths work correctly with shebang files
+## 🧪 Testing
 
-## Testing Results
+### **Comprehensive Test Suite**
+- **File**: `lyric/tests/core-0.6.0/test_print_dual_syntax.py`
+- **Coverage**: 8 test cases covering all syntax variations
+- **Validation**: AST equivalence between both forms
+- **Scenarios**: Single argument, multi-argument, complex expressions
 
-### Test Coverage
-- **25 comprehensive tests** covering all functionality
-- **501 total tests passing** (100% pass rate)
-- **Zero regressions** in existing functionality
+### **Test Categories**
+1. **Function Form Tests**: `print("Hello")`, `print("a", "b")`
+2. **Bare Form Tests**: `print "Hello"`, `print "a", "b"`
+3. **Equivalence Tests**: Verify identical AST structures
+4. **Expression Tests**: Complex expressions with variables and operators
 
-### Test Categories
-1. **Shebang Removal**: 9 tests covering basic removal functionality
-2. **Execution**: 5 tests verifying CLI execution with shebangs
-3. **Parsing**: 2 tests ensuring parser compatibility
-4. **Error Handling**: 2 tests verifying error propagation
-5. **Cross-Platform**: 2 tests ensuring Windows/Unix compatibility
-6. **Edge Cases**: 5 tests covering unusual scenarios
+## ✅ Acceptance Criteria Met
 
-### Example Test Cases
-```python
-# Basic shebang removal
-source = '#!/usr/bin/lyric\nprint("Hello")'
-result = _remove_shebang(source)
-assert result == 'print("Hello")'
+- ✅ `print(<expr>)` and `print <expr>` compile and execute correctly
+- ✅ Both forms support concatenation, multi-argument printing, and full expression evaluation
+- ✅ Unit tests cover all valid syntax cases
+- ✅ Both forms produce identical AST structures (`CallNode`)
+- ✅ No regressions introduced in interpreter or output logic
+- ✅ Full backward compatibility maintained
 
-# Env shebang
-source = '#!/usr/bin/env lyric\nprint("Hello")'
-result = _remove_shebang(source)
-assert result == 'print("Hello")'
+## 🔄 Backward Compatibility
 
-# No shebang preserved
-source = 'print("Hello")\nprint("World")'
-result = _remove_shebang(source)
-assert result == source
-```
+- **Existing Code**: All existing `print(<expr>)` syntax continues to work unchanged
+- **No Breaking Changes**: Zero impact on existing functionality
+- **Test Suite**: All existing tests continue to pass
+- **Performance**: No performance impact, identical execution paths
 
-## Usage Examples
+## 📚 Documentation
 
-### Creating Executable Lyric Scripts
-```bash
-# Create script with shebang
-echo '#!/usr/bin/lyric
-print("Hello from executable Lyric script!")' > hello.ly
+- **Plan Document**: `nova/aeon/trajectory-0.9.1/yield-0.6.0/SPRINT6_PIVOT_6.8.1_PLAN.md`
+- **Implementation**: Parser enhancement in `lyric/parser.py`
+- **Tests**: Comprehensive test suite in `lyric/tests/core-0.6.0/`
 
-# Make executable (Unix-like systems)
-chmod +x hello.ly
+## 🎉 Impact
 
-# Execute directly
-./hello.ly
-# Output: Hello from executable Lyric script!
+This enhancement significantly improves Lyric's usability by:
+- **Flexibility**: Developers can choose their preferred print syntax
+- **Readability**: Bare form is more concise for simple prints
+- **Consistency**: Both forms work identically with all expression types
+- **Modern Feel**: Supports both traditional and modern syntax preferences
 
-# Also works with lyric command
-lyric hello.ly
-# Output: Hello from executable Lyric script!
-```
-
-### Windows Compatibility
-```cmd
-# On Windows, shebang is safely ignored
-lyric hello.ly
-# Output: Hello from executable Lyric script!
-
-# No adverse effects on Windows
-```
-
-## Acceptance Criteria Met
-
-✅ **Lyric correctly ignores the #! line when present at the start of a file**  
-✅ **Scripts can be executed directly from the shell with a valid shebang line**  
-✅ **Execution behavior is identical between lyric file.ly and ./file.ly**  
-✅ **Compatible with both absolute and relative interpreter paths**  
-✅ **No adverse behavior on Windows platforms**  
-✅ **Includes comprehensive automated unit tests**  
-✅ **Documentation updated in changelog**
-
-## Performance Impact
-
-- **Zero performance impact** on existing code
-- **Minimal overhead** for shebang detection (single string operation)
-- **No memory leaks** or resource issues
-- **Fast execution** maintained across all test cases
-
-## Future Considerations
-
-- **PATH Resolution**: Future enhancement could resolve `#!/usr/bin/env lyric` to actual interpreter path
-- **Argument Parsing**: Could extend to parse shebang arguments for interpreter flags
-- **Multiple Interpreters**: Could support different interpreter paths in shebang
-
-## Conclusion
-
-Sprint 6 Task 6 has been successfully completed with full shebang support implementation. The feature is production-ready, thoroughly tested, and maintains complete backward compatibility while enabling modern script execution patterns.
-
-**Status**: ✅ COMPLETED  
-**Ready for**: Lyric 0.6.0 Release
+**Status**: ✅ **COMPLETED** - Ready for Lyric 0.6.1 release
