@@ -203,6 +203,10 @@ The `for` keyword should function identically to Lyric’s existing `given/done`
 
 ## Task 4 — Add Raise Keyword and Error Hierarchy
 
+**STATUS: SKIPPED FOR SPRINT 6**
+
+**Claude Note:** - We are skipping this task for the sprint.
+
 Implement a `raise` keyword for throwing exceptions.
 
 **Implementation:**
@@ -416,10 +420,10 @@ class Person:
 - ✅ **Scope Stability:** Variable and type resolution confirmed across all nested scopes, including within `try`, `catch`, and `fade` blocks.  
 - ✅ **Type Enforcement:** Strict type enforcement validated for variable declarations, assignments, and function return types (including inferred `NoneType`).  
 - ✅ **Function Returns:** Function return type inference and validation working for explicit and inferred types, with consistent behavior across all code paths.  
+- ✅ **For Keyword:** `for` keyword fully functional as documented alias for `given` loops, with complete behavioral equivalence.  
+- ⏭️ **Raise Keyword:** SKIPPED - `raise` keyword implementation deferred to future sprint.  
 - ✅ **Exception System:** `try`, `catch`, and `fade` syntax fully implemented and tested with support for typed exception capture via `catch <Type> as <var>`.  
-- ✅ **Raise Keyword:** `raise` keyword fully functional, with a complete built-in error hierarchy (`Error`, `TypeError`, `ValueError`, `NameError`, `RuntimeError`).  
 - ✅ **Error Output:** CLI displays clear and structured error output including type, message, line, and file information.  
-- ✅ **Easter Egg Compliance:** Hidden `for` keyword functions as alias for `given`, excluded from all documentation and tests, and enforced by Claude’s configuration.  
 - ✅ **Documentation and Configuration:** Documentation, `CLAUDE_CONFIG.md`, and `CHANGELOG` updated to reflect all new features and restrictions.  
 - ✅ **Testing Coverage:** New and existing unit tests pass under `tests/test_scope.py`, `tests/test_functions.py`, and `tests/test_exceptions.py`.  
 - ✅ **Version Bump:** Lyric version updated to `0.6.0` and committed to repository with verified build integrity.
