@@ -1,3 +1,8 @@
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Developed by Michael (Aeonath), ChatGPT, and Claude
+# Licensed under the MIT License with Source Attribution
+
 """Tests for multi-variable declarations in Lyric 0.4.0."""
 
 import pytest

@@ -1,3 +1,8 @@
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Developed by Michael (Aeonath), ChatGPT, and Claude
+# Licensed under the MIT License with Source Attribution
+
 """Parser module for converting tokens to AST."""
 
 from typing import List

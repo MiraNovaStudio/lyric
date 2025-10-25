@@ -1,3 +1,8 @@
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Developed by Michael (Aeonath), ChatGPT, and Claude
+# Licensed under the MIT License with Source Attribution
+
 """
 Test suite for Sprint 4 Task 6: Control structure syntax simplification.
 
