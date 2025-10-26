@@ -36,7 +36,7 @@ def main() {
     # Conditionals with end
     if y > 10:
         print("Branch: y > 10")
-    elif y == 10:
+    else if y == 10:
         print("Branch: y == 10")
     else:
         print("Branch: y < 10")
