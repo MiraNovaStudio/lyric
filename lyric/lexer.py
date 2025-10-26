@@ -132,9 +132,9 @@ class Lexer:
             self._scan_comment()
             return
         
-        # Handle strings
-        if char == '"':
-            self._scan_string()
+        # Handle strings (both single and double quotes)
+        if char == '"' or char == "'":
+            self._scan_string(char)
             return
         
         # Handle division operator
@@ -171,13 +171,17 @@ class Lexer:
         while self._peek() != '\n' and not self._is_at_end():
             self._advance()
     
-    def _scan_string(self):
-        """Scan a string literal with escape sequence handling."""
+    def _scan_string(self, quote_char):
+        """Scan a string literal with escape sequence handling.
+        
+        Args:
+            quote_char: The quote character that started the string ('"' or "'")
+        """
         start_line = self.line
         start_col = self.start_col
         value = ''
         
-        while self._peek() != '"' and not self._is_at_end():
+        while self._peek() != quote_char and not self._is_at_end():
             if self._peek() == '\n':
                 raise LexError(f"Unterminated string at line {start_line}, column {start_col}")
             
@@ -198,6 +202,8 @@ class Lexer:
                     value += '\\'
                 elif escaped == '"':
                     value += '"'
+                elif escaped == "'":
+                    value += "'"
                 elif escaped == '/':
                     # Preserve escaped forward slash (for regex patterns)
                     value += '/'

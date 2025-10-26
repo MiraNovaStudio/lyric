@@ -114,16 +114,6 @@ class Person:
 - `protected` methods callable from same class or derived classes.
 - All attributes remain public by design.
 
-## Task 5 — Update Documentation and Changelog
-
-Update `README.md` and `CHANGELOG.md` to include:
-
-**Content:**
-- "based on" syntax for inheritance.
-- constructor chaining behavior.
-- method overriding rules.
-- optional visibility modifiers (`public`, `private`, `protected`).
-- note that attributes are always public in this version.
 
 ### Acceptance Criteria:
 - Documentation shows examples of base and derived classes.
