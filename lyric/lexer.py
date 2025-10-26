@@ -25,7 +25,7 @@ class Lexer:
     
     # Keywords
     KEYWORDS = {
-        'def', 'class', 'if', 'else', 'elif', 'given', 'for', 'done', 'end', 
+        'def', 'class', 'if', 'else', 'elif', 'case', 'given', 'for', 'done', 'end', 
         'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'as', 'return',
         'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'True', 'False', 'true', 'false', 'None', 'raise', 'importpy',
         'break', 'continue'
@@ -234,6 +234,9 @@ class Lexer:
             elif value == 'for':
                 # Map 'for' to 'GIVEN' token for syntactic sugar
                 self.tokens.append(Token('GIVEN', 'for', start_line, start_col))
+            elif value == 'case':
+                # Map 'case' to 'ELIF' token for syntactic sugar
+                self.tokens.append(Token('ELIF', 'case', start_line, start_col))
             else:
                 self.tokens.append(Token(value.upper(), value, start_line, start_col))
         else:
