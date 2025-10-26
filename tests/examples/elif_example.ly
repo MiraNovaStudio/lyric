@@ -14,11 +14,11 @@ def main() {
         print("x is something else")
     end
     
-    # Test with else if syntax (should also work)
+    # Test with elif syntax
     y = 0
     if y > 0:
         print("positive")
-    else if y < 0:
+    elif y < 0:
         print("negative")
     else:
         print("zero")

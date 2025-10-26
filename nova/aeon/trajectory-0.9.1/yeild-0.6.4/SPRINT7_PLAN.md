@@ -204,8 +204,82 @@ Add new unit tests validating correct behavior, including mixed usage (if … el
 ✅ No regressions or syntax conflicts occur with existing if/else blocks.
 
 
+### Task 5: Remove else if Constructs, Standardize on elif
+
+#### Summary:
+We have decided to deprecate and remove all else if constructs from Lyric. The language will now exclusively use elif for conditional chaining. This change eliminates a persistent grammar ambiguity and simplifies both parsing and readability. The update will require a full parser cleanup and a very significant unit test refactor since many test scripts currently use else if.
+
+#### Implementation Tasks:
+
+Remove else if handling entirely from the parser and grammar definitions.
+
+Delete or comment out any lexer rules recognizing else if as a valid control-flow token.
+
+Ensure elif remains fully supported and properly mapped to the conditional continuation logic.
+
+Refactor all unit tests to replace else if occurrences with elif. This includes:
+
+Parser tests
+
+Interpreter logic tests
+
+Example and demo scripts under /tests and /examples
+
+Re-run all test suites and confirm 100% pass rate.
+
+Note: this is a major unit test refactor and we are not in a hurry so 
+take your time.
 
 
+Validate that mixed constructs like if … elif … else parse and execute correctly.
+
+#### Acceptance Criteria:
+
+✅ elif is the only valid form of conditional continuation.
+
+✅ Any use of else if now triggers a parser or syntax error.
+
+✅ All unit and integration tests updated and passing.
+
+✅ Syntax highlighting and tokenization correctly identify elif only.
+
+✅ No remaining references to else if anywhere in source, grammar, or documentation.
+
+
+### Task 6 - Add case as Syntactic Sugar for elif (in Lexer Only)
+
+#### Summary:
+Introduce the case keyword as an alternate form of elif for readability and future expansion. At this stage it should function only as a token alias—no parser or interpreter logic changes. The goal is to reserve case as a stylistic synonym while preserving full backward compatibility with existing elif behavior.
+
+#### Implementation Tasks:
+
+Update the lexer to recognize case as a valid keyword.
+
+Map case internally to the same token type as elif (e.g., TOKEN_ELIF).
+
+Do not introduce separate grammar or execution logic; this is lexer-level only.
+
+Confirm the parser continues to handle all conditional flow exactly as if elif were used.
+
+Add a few new unit tests under lyric/tests/core-0.6.4 to verify tokenization consistency:
+
+if … case … else … end parses without error.
+
+Mixed usage (if … elif … case … else … end) is accepted.
+
+Run the full test suite to ensure no regressions.
+
+#### Acceptance Criteria:
+
+✅ case is accepted and internally treated as elif.
+
+✅ No syntax, parsing, or runtime changes occur.
+
+✅ Existing elif tests remain valid and passing.
+
+✅ New tokenization tests for case pass successfully.
+
+✅ No other language behavior or grammar is affected.
 
 
 

@@ -120,9 +120,9 @@ def test_evaluate_else_if_sequence():
 x = 5
 if x > 10:
 print("high")
-else if x > 5:
+elif x > 5:
 print("medium")
-else if x > 0:
+elif x > 0:
 print("low")
 else:
 print("zero or negative")
