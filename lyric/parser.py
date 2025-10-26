@@ -269,12 +269,12 @@ class Parser:
         self._match('COLON')  # Optional colon
         
         then_body = []
-        while not self._check('ELSE', 'END') and not self._is_at_end():
+        while not self._check('ELSE', 'ELIF', 'END') and not self._is_at_end():
             # Skip NEWLINE tokens
             while self._match('NEWLINE'):
                 pass
             
-            if self._check('ELSE', 'END'):
+            if self._check('ELSE', 'ELIF', 'END'):
                 break
                 
             stmt = self._parse_statement()
@@ -284,21 +284,45 @@ class Parser:
         elifs = []
         else_body = None
         
-        while self._match('ELSE'):
-            if self._match('IF'):
-                # elif clause
+        while self._check('ELIF', 'ELSE'):
+            # Handle elif keyword directly
+            if self._match('ELIF'):
+                # elif clause using 'elif' keyword
                 elif_condition = self._parse_expression()
                 
                 # Make colon optional after elif condition
                 self._match('COLON')  # Optional colon
                 
                 elif_body = []
-                while not self._check('ELSE', 'END') and not self._is_at_end():
+                while not self._check('ELSE', 'ELIF', 'END') and not self._is_at_end():
                     # Skip NEWLINE tokens
                     while self._match('NEWLINE'):
                         pass
                     
-                    if self._check('ELSE', 'END'):
+                    if self._check('ELSE', 'ELIF', 'END'):
+                        break
+                        
+                    stmt = self._parse_statement()
+                    if stmt:
+                        elif_body.append(stmt)
+                
+                elifs.append((elif_condition, elif_body))
+            elif self._check('ELSE') and self._peek_next().type == 'IF':
+                # elif clause using 'else if' syntax - consume both tokens
+                self._advance()  # consume ELSE
+                self._advance()  # consume IF
+                elif_condition = self._parse_expression()
+                
+                # Make colon optional after elif condition
+                self._match('COLON')  # Optional colon
+                
+                elif_body = []
+                while not self._check('ELSE', 'ELIF', 'END') and not self._is_at_end():
+                    # Skip NEWLINE tokens
+                    while self._match('NEWLINE'):
+                        pass
+                    
+                    if self._check('ELSE', 'ELIF', 'END'):
                         break
                         
                     stmt = self._parse_statement()
@@ -307,7 +331,10 @@ class Parser:
                 
                 elifs.append((elif_condition, elif_body))
             else:
-                # else clause
+                # else clause - consume ELSE token here
+                if not self._match('ELSE'):
+                    break  # No else token, exit loop
+                    
                 # Make colon optional after else
                 self._match('COLON')  # Optional colon
                 

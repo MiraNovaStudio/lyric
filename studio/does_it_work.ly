@@ -24,10 +24,11 @@ class Example
 
 # ——— Main entrypoint ———
 def main() {
+    greet("Lyric")
+    
     # Vars and (optional) explicit typing
     int x = 5
     var y = add(x, 7)
-    greet("Lyric")
 
     print("x = ", x)
     print("y = ", y)
@@ -35,7 +36,7 @@ def main() {
     # Conditionals with end
     if y > 10:
         print("Branch: y > 10")
-    else if y == 10:
+    elif y == 10:
         print("Branch: y == 10")
     else:
         print("Branch: y < 10")

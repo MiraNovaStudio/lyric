@@ -179,6 +179,29 @@ Correct coordinates matching the offending character.
 
 ### Task 4: 
 
+Add elif as an Alternative to else if
+
+#### Summary
+Re-enable the elif keyword in Lyric as a direct alternative to else if. Both forms should function identically in syntax and behavior. This allows developers coming from Python or C-style backgrounds to use their preferred conditional style without altering control-flow semantics.
+
+#### Implementation Tasks
+
+Update the lexer to recognize elif as a valid token mapped to the same internal construct as else if.
+
+Adjust the parser’s conditional rule to accept either else if or elif in chained conditions.
+
+Ensure code generation or interpreter evaluation treats both forms equivalently.
+
+Add new unit tests validating correct behavior, including mixed usage (if … elif … else and if … else if … else).
+
+
+#### Acceptance Criteria
+
+✅ elif executes correctly and produces identical logic flow to else if.
+
+✅ Mixed constructs (if … elif … else and if … else if … else) parse and run successfully.
+
+✅ No regressions or syntax conflicts occur with existing if/else blocks.
 
 
 
