@@ -503,10 +503,38 @@ class RexNode(ASTNode):
         }
 
 
+@dataclass
+class SliceNode(ASTNode):
+    """Represents a slice operation: obj[start:end:step]."""
+    obj: 'ASTNode'
+    start: Optional['ASTNode'] = None
+    end: Optional['ASTNode'] = None
+    step: Optional['ASTNode'] = None
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        start_str = str(self.start) if self.start else ""
+        end_str = str(self.end) if self.end else ""
+        step_str = f":{self.step}" if self.step else ""
+        return f"SliceNode({self.obj}[{start_str}:{end_str}{step_str}])"
+    
+    def to_dict(self):
+        return {
+            'type': 'SliceNode',
+            'obj': self.obj.to_dict() if self.obj else None,
+            'start': self.start.to_dict() if self.start else None,
+            'end': self.end.to_dict() if self.end else None,
+            'step': self.step.to_dict() if self.step else None,
+            'line': self.line,
+            'column': self.column
+        }
+
+
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
     TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 ]

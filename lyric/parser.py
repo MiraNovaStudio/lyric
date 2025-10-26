@@ -11,7 +11,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -269,12 +269,12 @@ class Parser:
         self._match('COLON')  # Optional colon
         
         then_body = []
-        while not self._check('ELSE', 'END') and not self._is_at_end():
+        while not self._check('ELSE', 'ELIF', 'END') and not self._is_at_end():
             # Skip NEWLINE tokens
             while self._match('NEWLINE'):
                 pass
             
-            if self._check('ELSE', 'END'):
+            if self._check('ELSE', 'ELIF', 'END'):
                 break
                 
             stmt = self._parse_statement()
@@ -284,21 +284,22 @@ class Parser:
         elifs = []
         else_body = None
         
-        while self._match('ELSE'):
-            if self._match('IF'):
-                # elif clause
+        while self._check('ELIF', 'ELSE'):
+            # Handle elif keyword directly
+            if self._match('ELIF'):
+                # elif clause using 'elif' keyword
                 elif_condition = self._parse_expression()
                 
                 # Make colon optional after elif condition
                 self._match('COLON')  # Optional colon
                 
                 elif_body = []
-                while not self._check('ELSE', 'END') and not self._is_at_end():
+                while not self._check('ELSE', 'ELIF', 'END') and not self._is_at_end():
                     # Skip NEWLINE tokens
                     while self._match('NEWLINE'):
                         pass
                     
-                    if self._check('ELSE', 'END'):
+                    if self._check('ELSE', 'ELIF', 'END'):
                         break
                         
                     stmt = self._parse_statement()
@@ -306,8 +307,17 @@ class Parser:
                         elif_body.append(stmt)
                 
                 elifs.append((elif_condition, elif_body))
+            elif self._check('ELSE') and self._peek_next().type == 'IF':
+                # 'else if' is deprecated - use 'elif' instead
+                raise ParseError(
+                    "Use 'elif' instead of 'else if'. 'else if' syntax has been removed for grammar clarity. "
+                    f"at line {self._peek().line}, column {self._peek().col}"
+                )
             else:
-                # else clause
+                # else clause - consume ELSE token here
+                if not self._match('ELSE'):
+                    break  # No else token, exit loop
+                    
                 # Make colon optional after else
                 self._match('COLON')  # Optional colon
                 
@@ -377,8 +387,29 @@ class Parser:
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""
         if self._check('IDENT', 'TYPE_OR_IDENT'):
+            # Check for print statement syntax: print <expr>
+            if (self._peek().value == 'print' and 
+                self._peek_next().type != 'LPAREN' and 
+                not self._check('NEWLINE') and 
+                not self._check('EOF')):
+                # Parse print <expr> syntax (single or multiple arguments)
+                print_token = self._advance()
+                args = []
+                
+                # Parse first expression
+                expr = self._parse_expression()
+                args.append(expr)
+                
+                # Parse additional expressions separated by commas
+                while self._match('COMMA'):
+                    expr = self._parse_expression()
+                    args.append(expr)
+                
+                # Create CallNode with arguments to match print(<expr>) AST
+                return CallNode('print', args, print_token.line, print_token.col)
+            
             # Check if it's an assignment
-            if self._peek_next().type == 'ASSIGN':
+            elif self._peek_next().type == 'ASSIGN':
                 # Assignment: IDENT "=" expression
                 name_token = self._advance()
                 name = name_token.value
@@ -556,10 +587,6 @@ class Parser:
             token = self._previous()
             return LiteralNode(None, token.line, token.col)
         
-        if self._match('REGEX_LITERAL'):
-            token = self._previous()
-            return RexNode(token.value, token.line, token.col)
-        
         if self._match('IDENT', 'TYPE_OR_IDENT'):
             name_token = self._previous()
             name = name_token.value
@@ -664,12 +691,49 @@ class Parser:
         raise SyntaxErrorLyric("Expected expression", self._peek().line, self._peek().col)
     
     def _parse_indexing_chain(self, expr):
-        """Parse chained indexing operations: expr[index][index]..."""
+        """Parse chained indexing operations: expr[index][index]... or expr[start:end:step]..."""
         while self._match('LBRACKET'):
             lbracket_token = self._previous()
-            index = self._parse_expression()
-            self._consume('RBRACKET', "Expected ']' after index")
-            expr = IndexNode(expr, index, lbracket_token.line, lbracket_token.col)
+            
+            # Check if this is slicing syntax (contains colons)
+            # Look ahead to see if there's a colon in the bracket
+            is_slice = False
+            temp_pos = self.current
+            while temp_pos < len(self.tokens) and self.tokens[temp_pos].type != 'RBRACKET':
+                if self.tokens[temp_pos].type == 'COLON':
+                    is_slice = True
+                    break
+                temp_pos += 1
+            
+            if is_slice:
+                # Parse slice: [start:end:step]
+                start = None
+                end = None
+                step = None
+                
+                # Parse start (if present)
+                if not self._check('COLON'):
+                    start = self._parse_expression()
+                
+                # Parse first colon
+                if self._match('COLON'):
+                    # Parse end (if present)
+                    if not self._check('COLON', 'RBRACKET'):
+                        end = self._parse_expression()
+                    
+                    # Parse second colon and step (if present)
+                    if self._match('COLON'):
+                        if not self._check('RBRACKET'):
+                            step = self._parse_expression()
+                
+                self._consume('RBRACKET', "Expected ']' after slice")
+                expr = SliceNode(expr, start, end, step, lbracket_token.line, lbracket_token.col)
+            else:
+                # Parse simple index: [index]
+                index = self._parse_expression()
+                self._consume('RBRACKET', "Expected ']' after index")
+                expr = IndexNode(expr, index, lbracket_token.line, lbracket_token.col)
+        
         return expr
     
     def _parse_argument_list(self) -> List:

@@ -92,7 +92,7 @@ class B +++"""
 
 
 def test_else_if_tokens():
-    """Test that 'else if' is tokenized as separate ELSE and IF tokens."""
+    """Test that 'else if' is tokenized as separate ELSE and IF tokens (deprecated but still tokenizes correctly)."""
     source = "else if x > 0:"
     
     tokens = tokenize(source)

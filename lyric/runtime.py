@@ -58,6 +58,43 @@ def open_builtin(path: str) -> Iterator[str]:
             yield line.rstrip('\n\r')
 
 
+def regex_builtin(pattern: str, flags: str = "") -> Any:
+    """Built-in regex constructor function that creates a rex object."""
+    try:
+        import re
+        
+        # Strip leading and trailing slashes from pattern if present
+        if pattern.startswith('/') and pattern.endswith('/'):
+            pattern = pattern[1:-1]
+        
+        # Parse flags if provided
+        flag_value = 0
+        if flags:
+            for flag_char in flags:
+                if flag_char == 'i':
+                    flag_value |= re.IGNORECASE
+                elif flag_char == 'm':
+                    flag_value |= re.MULTILINE
+                elif flag_char == 's':
+                    flag_value |= re.DOTALL
+                elif flag_char == 'x':
+                    flag_value |= re.VERBOSE
+                else:
+                    raise RuntimeErrorLyric(f"Unknown regex flag: '{flag_char}'. Supported flags: i, m, s, x")
+        
+        # Compile the regex pattern
+        compiled_pattern = re.compile(pattern, flag_value)
+        
+        # Import RexObject from interpreter to avoid circular imports
+        from lyric.interpreter import RexObject
+        return RexObject(compiled_pattern)
+        
+    except re.error as e:
+        raise RuntimeErrorLyric(f"Invalid regex pattern '{pattern}': {e}")
+    except Exception as e:
+        raise RuntimeErrorLyric(f"Error creating regex: {e}")
+
+
 def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
     """Built-in isinstance function for checking type names."""
     # Handle Lyric class instances
@@ -179,6 +216,7 @@ def register_builtins(env: dict) -> None:
     env['open'] = open_builtin
     env['isinstance'] = isinstance_builtin
     env['type'] = type_builtin
+    env['regex'] = regex_builtin
     env['append'] = append_builtin
     env['keys'] = keys_builtin
     env['values'] = values_builtin

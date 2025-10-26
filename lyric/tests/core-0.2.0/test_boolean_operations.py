@@ -169,7 +169,7 @@ def main() {
     given i in range(3):
         if i == 0:
             print("First iteration")
-        else if i == 1:
+        elif i == 1:
             print("Second iteration")
         else:
             print("Third iteration")

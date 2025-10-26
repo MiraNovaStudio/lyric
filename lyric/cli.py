@@ -103,7 +103,7 @@ def _execute_file(file_path: str):
         if hasattr(e, 'line') and e.line > 0:
             print(f"Runtime error [line {e.line}]: {e.args[0] if e.args else str(e)}")
         else:
-            print(f"Runtime error: {e}")
+            print(f"{e}")
         sys.exit(1)
     except Exception as e:
         print(f"Unexpected error: {e}")

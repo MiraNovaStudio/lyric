@@ -83,7 +83,7 @@ end
 x = 0
 if x > 0
 print("positive")
-else if x == 0
+elif x == 0
 print("zero")
 else
 print("negative")
@@ -279,7 +279,7 @@ end
 x = 0
 if x > 0:
 print("positive")
-else if x == 0:
+elif x == 0:
 print("zero")
 else:
 print("negative")
@@ -481,7 +481,7 @@ x = 1
 given x < 3
 if x == 1
 print("first iteration")
-else if x == 2
+elif x == 2
 print("second iteration")
 else
 print("other iteration")

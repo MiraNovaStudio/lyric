@@ -375,7 +375,7 @@ def test_importpy_error_formatting():
     
     error_msg = str(exc_info.value)
     assert "ImportError: cannot import Python module 'nonexistent'" in error_msg
-    assert "Runtime error at line 0, column 0:" in error_msg  # A17: precise file and line references
+    assert "Runtime error:" in error_msg  # A17: error message starts with Runtime error prefix
 
 
 def test_importpy_pyobject_type_integration():

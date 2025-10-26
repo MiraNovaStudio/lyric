@@ -25,7 +25,7 @@ class Lexer:
     
     # Keywords
     KEYWORDS = {
-        'def', 'class', 'if', 'else', 'given', 'for', 'done', 'end', 
+        'def', 'class', 'if', 'else', 'elif', 'case', 'given', 'for', 'done', 'end', 
         'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'as', 'return',
         'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'True', 'False', 'true', 'false', 'None', 'raise', 'importpy',
         'break', 'continue'
@@ -132,31 +132,13 @@ class Lexer:
             self._scan_comment()
             return
         
-        # Handle strings
-        if char == '"':
-            self._scan_string()
+        # Handle strings (both single and double quotes)
+        if char == '"' or char == "'":
+            self._scan_string(char)
             return
         
-        # Handle regex literals
+        # Handle division operator
         if char == '/':
-            # Check if this is a regex literal or division
-            # Regex literals must be followed by a non-whitespace character
-            # and must have a closing slash
-            if not self._is_at_end() and self._peek() != ' ' and self._peek() != '\t' and self._peek() != '\n':
-                # Look ahead to see if there's a closing slash
-                temp_pos = self.current
-                has_closing_slash = False
-                while temp_pos < len(self.source) and self.source[temp_pos] != '\n':
-                    if self.source[temp_pos] == '/':
-                        has_closing_slash = True
-                        break
-                    temp_pos += 1
-                
-                if has_closing_slash:
-                    self._scan_regex()
-                    return
-            
-            # If not a regex literal, treat as division
             self.tokens.append(Token('DIVIDE', char, self.line, self.start_col))
             return
         
@@ -189,16 +171,47 @@ class Lexer:
         while self._peek() != '\n' and not self._is_at_end():
             self._advance()
     
-    def _scan_string(self):
-        """Scan a string literal."""
+    def _scan_string(self, quote_char):
+        """Scan a string literal with escape sequence handling.
+        
+        Args:
+            quote_char: The quote character that started the string ('"' or "'")
+        """
         start_line = self.line
         start_col = self.start_col
         value = ''
         
-        while self._peek() != '"' and not self._is_at_end():
+        while self._peek() != quote_char and not self._is_at_end():
             if self._peek() == '\n':
                 raise LexError(f"Unterminated string at line {start_line}, column {start_col}")
-            value += self._advance()
+            
+            # Handle escape sequences
+            if self._peek() == '\\':
+                self._advance()  # consume the backslash
+                if self._is_at_end():
+                    raise LexError(f"Unterminated string at line {start_line}, column {start_col}")
+                
+                escaped = self._advance()
+                if escaped == 'n':
+                    value += '\n'
+                elif escaped == 't':
+                    value += '\t'
+                elif escaped == 'r':
+                    value += '\r'
+                elif escaped == '\\':
+                    value += '\\'
+                elif escaped == '"':
+                    value += '"'
+                elif escaped == "'":
+                    value += "'"
+                elif escaped == '/':
+                    # Preserve escaped forward slash (for regex patterns)
+                    value += '/'
+                else:
+                    # Unknown escape sequence - include both characters
+                    value += '\\' + escaped
+            else:
+                value += self._advance()
         
         if self._is_at_end():
             raise LexError(f"Unterminated string at line {start_line}, column {start_col}")
@@ -207,32 +220,6 @@ class Lexer:
         self._advance()
         
         self.tokens.append(Token('STRING', value, start_line, start_col))
-    
-    def _scan_regex(self):
-        """Scan a regex literal."""
-        start_line = self.line
-        start_col = self.start_col
-        value = ''
-        
-        while self._peek() != '/' and not self._is_at_end():
-            if self._peek() == '\n':
-                raise LexError(f"Unterminated regex at line {start_line}, column {start_col}")
-            value += self._advance()
-        
-        if self._is_at_end():
-            raise LexError(f"Unterminated regex at line {start_line}, column {start_col}")
-        
-        # Consume the closing slash
-        self._advance()
-        
-        # Validate regex pattern
-        try:
-            import re
-            re.compile(value)
-        except re.error as e:
-            raise LexError(f"Invalid regex pattern '{value}' at line {start_line}, column {start_col}: {e}")
-        
-        self.tokens.append(Token('REGEX_LITERAL', value, start_line, start_col))
     
     def _scan_number(self, first_char: str):
         """Scan a number (integer or float)."""
@@ -278,6 +265,9 @@ class Lexer:
             elif value == 'for':
                 # Map 'for' to 'GIVEN' token for syntactic sugar
                 self.tokens.append(Token('GIVEN', 'for', start_line, start_col))
+            elif value == 'case':
+                # Map 'case' to 'ELIF' token for syntactic sugar
+                self.tokens.append(Token('ELIF', 'case', start_line, start_col))
             else:
                 self.tokens.append(Token(value.upper(), value, start_line, start_col))
         else:

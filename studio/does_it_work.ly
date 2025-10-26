@@ -24,20 +24,21 @@ class Example
 
 # ——— Main entrypoint ———
 def main() {
+    greet("Lyric")
+    
     # Vars and (optional) explicit typing
     int x = 5
     var y = add(x, 7)
-    greet("Lyric")
 
     print("x = ", x)
     print("y = ", y)
 
     # Conditionals with end
-    if y > 10
+    if y > 10:
         print("Branch: y > 10")
-    else if y == 10
+    case y == 10:
         print("Branch: y == 10")
-    else
+    else:
         print("Branch: y < 10")
     end
 
@@ -55,8 +56,8 @@ def main() {
     try:
         var bad = items[5]      # should raise IndexError
         print("This should not print")
-    #catch IndexError as e:
-    #    print("Caught IndexError: " + e)
+    catch IndexError as e:
+        print("Caught IndexError: " + e)
     catch:
         print("Caught some other error")
     finally:
@@ -71,5 +72,15 @@ def main() {
     var s = math.sin(radians)
     print("sin(pi/2) from Python math: ", s)
 
+    # rex datatype usage for regex operations
+    rex email_pattern = regex("/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/")
+    var test_email = "user@example.com"
+    
+    if email_pattern.match(test_email):
+        print("Valid email: " + test_email)
+    else:
+        print("Invalid email: " + test_email)
+    end
+    
     print("All constructs exercised. ✅")
 }

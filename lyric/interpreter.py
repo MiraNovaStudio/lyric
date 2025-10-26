@@ -11,7 +11,7 @@ import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
@@ -19,6 +19,25 @@ from lyric.errors import (
     AttributeErrorLyric, ZeroDivisionErrorLyric, BreakSignal, ContinueSignal
 )
 from lyric.runtime import register_builtins
+
+
+class RexMatch:
+    """Represents a regex match result."""
+    
+    def __init__(self, match):
+        self.match = match
+    
+    def group(self, index: int = 0) -> str:
+        """Get the matched group by index."""
+        if not isinstance(index, int):
+            raise RuntimeErrorLyric(f"Type error: group() expects an integer index, but got {type(index).__name__}")
+        try:
+            return self.match.group(index)
+        except IndexError:
+            raise RuntimeErrorLyric(f"Index error: group {index} does not exist in this match")
+    
+    def __repr__(self):
+        return f"RexMatch(match='{self.match.group(0)}')"
 
 
 class RexObject:
@@ -41,11 +60,20 @@ class RexObject:
             raise RuntimeErrorLyric(f"Type error: rex.replace() expects a string as replacement, but got {type(replacement).__name__}")
         return self.pattern.sub(replacement, source)
     
-    # TODO: Future enhancement - .search() method for mid-string matches
-    # def search(self, text: str) -> bool:
-    #     """Search for the regex pattern anywhere in the text (not just at the beginning)."""
-    #     # Implementation would use Python's re.search() instead of re.match()
-    #     # This method is deferred for future sprints to keep the initial rex implementation focused
+    def search(self, text: str) -> 'RexMatch':
+        """Search for the regex pattern anywhere in the text and return a match object."""
+        if not isinstance(text, str):
+            raise RuntimeErrorLyric(f"Type error: rex.search() expects a string, but got {type(text).__name__}")
+        match = self.pattern.search(text)
+        if match:
+            return RexMatch(match)
+        return None
+    
+    def findall(self, text: str) -> list:
+        """Find all non-overlapping matches of the regex in the text."""
+        if not isinstance(text, str):
+            raise RuntimeErrorLyric(f"Type error: rex.findall() expects a string, but got {type(text).__name__}")
+        return self.pattern.findall(text)
     
     def __repr__(self):
         return f"RexObject(pattern='{self.pattern.pattern}')"
@@ -312,7 +340,7 @@ class Interpreter:
                 raise AttributeErrorLyric(str(e))
             if isinstance(e, ZeroDivisionError):
                 raise ZeroDivisionErrorLyric(str(e))
-            raise RuntimeErrorLyric(f"Runtime error: {str(e)}")
+            raise RuntimeErrorLyric(str(e))
     
     def _call_function(self, func_name: str, args: List[Any]) -> Any:
         """Call a function by name with arguments."""
@@ -653,6 +681,24 @@ class Interpreter:
         else:
             raise TypeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
     
+    def _evaluate_slice(self, node: SliceNode) -> Any:
+        """Evaluate a slice operation."""
+        obj = self._evaluate_expression(node.obj)
+        
+        # Evaluate slice parameters
+        start = self._evaluate_expression(node.start) if node.start else None
+        end = self._evaluate_expression(node.end) if node.end else None
+        step = self._evaluate_expression(node.step) if node.step else None
+        
+        # Handle different object types
+        if isinstance(obj, (str, list, tuple)):
+            try:
+                return obj[start:end:step]
+            except Exception as e:
+                raise RuntimeErrorLyric(f"Slice operation failed: {str(e)}", node.line, node.column)
+        else:
+            raise TypeErrorLyric(f"Cannot slice object: '{type(obj).__name__}' does not support slicing. Only strings, lists, and tuples can be sliced with [start:end:step].", node.line, node.column)
+    
     def _evaluate_rex_literal(self, node: RexNode) -> 'RexObject':
         """Evaluate a regex literal and return a RexObject."""
         import re
@@ -894,6 +940,17 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     except AttributeError:
                         raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{method_name}'")
+                elif isinstance(current_obj, RexMatch):
+                    # Handle RexMatch methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: RexMatch has no attribute '{method_name}'")
                 elif isinstance(current_obj, RexObject):
                     # Handle RexObject methods
                     if hasattr(current_obj, method_name):
@@ -974,7 +1031,7 @@ class Interpreter:
         else:
             # Check if it might be a typo or suggest available functions
             available_functions = list(self.functions.keys())
-            available_builtins = ['print', 'range', 'len', 'int', 'float', 'str', 'open', 'isinstance', 'type', 'append', 'keys', 'values']
+            available_builtins = ['print', 'range', 'len', 'int', 'float', 'str', 'open', 'isinstance', 'type', 'regex', 'append', 'keys', 'values']
             all_available = available_functions + available_builtins
             
             # Find similar function names
@@ -1004,6 +1061,8 @@ class Interpreter:
             return self._evaluate_dict_literal(expr)
         elif isinstance(expr, IndexNode):
             return self._evaluate_index(expr)
+        elif isinstance(expr, SliceNode):
+            return self._evaluate_slice(expr)
         elif isinstance(expr, RexNode):
             return self._evaluate_rex_literal(expr)
         else:
@@ -1080,6 +1139,9 @@ class Interpreter:
         
         try:
             if node.op == '+':
+                # Handle string concatenation with mixed types
+                if isinstance(left, str) or isinstance(right, str):
+                    return str(left) + str(right)
                 return left + right
             elif node.op == '-':
                 return left - right
