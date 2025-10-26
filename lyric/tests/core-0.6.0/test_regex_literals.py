@@ -56,7 +56,7 @@ class TestRegexConstructorSyntax:
         # The value should be a CallNode to regex()
         assert decl_node.expr.func_name == 'regex'
         assert len(decl_node.expr.args) == 1
-        assert '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$/' in decl_node.expr.args[0].value
+        assert '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/' in decl_node.expr.args[0].value
     
     def test_regex_with_groups(self):
         """Test regex constructor with capturing groups."""
@@ -74,7 +74,7 @@ class TestRegexConstructorSyntax:
         # The value should be a CallNode to regex()
         assert decl_node.expr.func_name == 'regex'
         assert len(decl_node.expr.args) == 1
-        assert '(\\\\d{3})-(\\\\d{3})-(\\\\d{4})' in decl_node.expr.args[0].value
+        assert '(\\d{3})-(\\d{3})-(\\d{4})' in decl_node.expr.args[0].value
     
     def test_regex_match_method(self):
         """Test regex match method."""

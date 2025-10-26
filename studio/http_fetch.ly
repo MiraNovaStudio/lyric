@@ -13,7 +13,7 @@ def fetch(str url): {
     print title_pattern.group(1)
     
 
-    rex link_pattern = /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/
+    rex link_pattern = regex("<a[^>]+href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/")
     var links = link_pattern.findall(r.text)
 
     print "Found " + str(len(links)) + " links:"

@@ -172,7 +172,7 @@ class Lexer:
             self._advance()
     
     def _scan_string(self):
-        """Scan a string literal."""
+        """Scan a string literal with escape sequence handling."""
         start_line = self.line
         start_col = self.start_col
         value = ''
@@ -180,7 +180,32 @@ class Lexer:
         while self._peek() != '"' and not self._is_at_end():
             if self._peek() == '\n':
                 raise LexError(f"Unterminated string at line {start_line}, column {start_col}")
-            value += self._advance()
+            
+            # Handle escape sequences
+            if self._peek() == '\\':
+                self._advance()  # consume the backslash
+                if self._is_at_end():
+                    raise LexError(f"Unterminated string at line {start_line}, column {start_col}")
+                
+                escaped = self._advance()
+                if escaped == 'n':
+                    value += '\n'
+                elif escaped == 't':
+                    value += '\t'
+                elif escaped == 'r':
+                    value += '\r'
+                elif escaped == '\\':
+                    value += '\\'
+                elif escaped == '"':
+                    value += '"'
+                elif escaped == '/':
+                    # Preserve escaped forward slash (for regex patterns)
+                    value += '/'
+                else:
+                    # Unknown escape sequence - include both characters
+                    value += '\\' + escaped
+            else:
+                value += self._advance()
         
         if self._is_at_end():
             raise LexError(f"Unterminated string at line {start_line}, column {start_col}")
