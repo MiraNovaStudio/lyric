@@ -400,6 +400,8 @@ This project follows a structured sprint-based development approach:
 
 The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
 
+Licensed under the GNU General Public License v3 or later.
+
 ## Contributing
 
 This project is currently in active development following a structured sprint methodology. The development process emphasizes:

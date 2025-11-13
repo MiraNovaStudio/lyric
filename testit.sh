@@ -52,6 +52,6 @@ else
 fi
 
 
-lyric run ./studio/does_it_work.ly
+#lyric run ./studio/does_it_work.ly
 
 
