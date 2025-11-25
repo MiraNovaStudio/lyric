@@ -28,17 +28,71 @@ def input_builtin(prompt: str = "") -> str:
 
 def int_builtin(value: Any) -> int:
     """Built-in int conversion function."""
+    # Handle arr type (list) - return length
+    if isinstance(value, list):
+        return len(value)
+    # Handle map type (dict) - return number of keys
+    elif isinstance(value, dict) and not ('__instance_class__' in value):
+        return len(value)
+    # Default behavior for other types
     return int(value)
 
 
 def float_builtin(value: Any) -> float:
     """Built-in float conversion function."""
+    # Handle arr type (list) - return length as float
+    if isinstance(value, list):
+        return float(len(value))
+    # Handle map type (dict) - return number of keys as float
+    elif isinstance(value, dict) and not ('__instance_class__' in value):
+        return float(len(value))
+    # Default behavior for other types
     return float(value)
 
 
 def str_builtin(value: Any) -> str:
     """Built-in str conversion function."""
+    # Note: str(arr) and str(map) return string representations
+    # Getting the variable name would require tracking at the interpreter level
     return str(value)
+
+
+def arr_builtin(value: Any) -> list:
+    """Built-in arr conversion function to create lists."""
+    # Handle string - convert to list of characters
+    if isinstance(value, str):
+        return list(value)
+    # Handle dict (map) - convert to list of values
+    elif isinstance(value, dict) and not ('__instance_class__' in value):
+        return list(value.values())
+    # Handle already a list
+    elif isinstance(value, list):
+        return value
+    # Try to convert iterable types
+    else:
+        try:
+            return list(value)
+        except TypeError:
+            raise RuntimeErrorLyric(f"Cannot convert {type(value).__name__} to arr")
+
+
+def map_builtin(value: Any) -> dict:
+    """Built-in map conversion function to create dictionaries."""
+    # Handle list (arr) - convert to dict with string keys "1", "2", "3", etc.
+    if isinstance(value, list):
+        return {str(i + 1): val for i, val in enumerate(value)}
+    # Handle string - not directly supported, raise error
+    elif isinstance(value, str):
+        raise RuntimeErrorLyric("Cannot directly convert str to map. Consider using dict comprehension or manual construction.")
+    # Handle already a dict
+    elif isinstance(value, dict):
+        return value
+    # Try to convert other dict-like types
+    else:
+        try:
+            return dict(value)
+        except (TypeError, ValueError) as e:
+            raise RuntimeErrorLyric(f"Cannot convert {type(value).__name__} to map: {e}")
 
 
 def range_builtin(n: int) -> Iterator[int]:
@@ -211,6 +265,8 @@ def register_builtins(env: dict) -> None:
     env['int'] = int_builtin
     env['float'] = float_builtin
     env['str'] = str_builtin
+    env['arr'] = arr_builtin
+    env['map'] = map_builtin
     env['range'] = range_builtin
     env['len'] = len_builtin
     env['open'] = open_builtin

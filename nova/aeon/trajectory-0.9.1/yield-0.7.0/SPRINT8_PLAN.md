@@ -84,6 +84,11 @@ Define conversion rules between `arr` and other compatible types to ensure consi
 **Implementation Items:**  
 - Implement `arr(str)` and `arr(map)` constructors.  
 - Support conversions where element coercion is valid.
+- int(mylist) should return the number of elements in mylist
+- flt(mylist) should return the number of elements as float eg. 3.0
+- str(mylist) should return the name of the list in the the code
+- map(mylist) should return a dict with all of the values in the list and the keys 
+  should be the strings "1", "2", "3", etc
 
 **Acceptance Criteria:**  
 - Valid casts succeed with correct data conversion.  
@@ -99,6 +104,10 @@ Extend Lyric’s type interoperability by supporting conversions to and from `ma
 **Implementation Items:**  
 - Implement `map(arr)` and `map(str)` conversion rules.  
 - Enforce proper type inference for keys and values.
+- int(mymap) should return the number of keys in the map
+- flt(mymap) should return the number of keys in the map as a float, e.g. 3.0
+- str(mymap) should return the name of the map in the code
+- arr(mymap) should return a list with the values as the elements of the array
 
 **Acceptance Criteria:**  
 - `map` conversions yield correctly typed dictionary objects.  
@@ -193,4 +202,18 @@ Also add support for `key in dict` membership checks during iteration, and itera
 - Built-in behaviors (`len()`, `sorted()`, membership checks, iteration) function correctly.  
 - Iterating a dict produces keys in insertion order.  
 - All new tests pass in the Lyric test runner.
+
+### Task 10 - add the obj keyword
+
+**Summary:**  
+Introduce a dedicated `obj` type mapped to Python’s native `class`, giving Lyric consistent class behavior and better parity with other typed languages.
+
+**Implementation Items:**  
+- Add `obj` token to the type registry.  
+- Map internally to Python’s `class` object.  
+- `var` type should still work with class objects
+
+**Acceptance Criteria:**  
+- `obj` type behaves as a class equivalent in all basic operations.  
+- Add and update related unit tests in `lyric/tests/core-0.7.0`.
 
