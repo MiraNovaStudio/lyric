@@ -1414,16 +1414,56 @@ class Interpreter:
         # Variables (including arrays, maps, etc.) are NOT imported
         # However, functions need to retain access to their module's global scope
         
-        # Import functions with their module scope
-        for name, func in module_interpreter.functions.items():
-            # Attach module scope to function so it can access module variables
-            func_with_scope = func.copy()
-            func_with_scope['module_scope'] = module_interpreter.global_scope
-            self.functions[name] = func_with_scope
-        
-        # Import classes
-        for name, cls in module_interpreter.classes.items():
-            self.classes[name] = cls
+        if node.symbols:
+            # Selective import: import module; symbol1, symbol2
+            for symbol_name, alias in node.symbols:
+                # Check if it's a function
+                if symbol_name in module_interpreter.functions:
+                    func = module_interpreter.functions[symbol_name]
+                    func_with_scope = func.copy()
+                    func_with_scope['module_scope'] = module_interpreter.global_scope
+                    
+                    # Use alias if provided, otherwise use original name
+                    target_name = alias if alias else symbol_name
+                    self.functions[target_name] = func_with_scope
+                
+                # Check if it's a class
+                elif symbol_name in module_interpreter.classes:
+                    cls = module_interpreter.classes[symbol_name]
+                    
+                    # Classes are imported into the classes dict
+                    # Aliases are not supported for classes - user should use var alias = ClassName()
+                    if alias:
+                        raise RuntimeErrorLyric(
+                            f"ImportError: 'as' keyword is not supported for class imports. "
+                            f"To create an alias for '{symbol_name}', use: var {alias} = {symbol_name}() after importing.",
+                            node.line,
+                            node.column
+                        )
+                    
+                    self.classes[symbol_name] = cls
+                
+                # Symbol not found
+                else:
+                    raise RuntimeErrorLyric(
+                        f"ImportError: cannot import name '{symbol_name}' from module '{module_name}'. "
+                        f"'{symbol_name}' is not a function or class in the module.",
+                        node.line,
+                        node.column
+                    )
+        else:
+            # Import all functions and classes from the module
+            
+            # Import functions with their module scope
+            for name, func in module_interpreter.functions.items():
+                # Attach module scope to function so it can access module variables
+                func_with_scope = func.copy()
+                func_with_scope['module_scope'] = module_interpreter.global_scope
+                self.functions[name] = func_with_scope
+            
+            # Import classes
+            for name, cls in module_interpreter.classes.items():
+                self.classes[name] = cls
         
         return None
     

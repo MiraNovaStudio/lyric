@@ -1,4 +1,5 @@
 # does_it_work.ly
+import mathlib
 
 # ——— Python interop (importpy) ———
 importpy datetime
@@ -81,6 +82,27 @@ def main() {
     else:
         print("Invalid email: " + test_email)
     end
-    
+
+    arr numbers = [10, 20, 30, 40, 50]
+    int sum = 0
+    for num in numbers:
+        sum = sum + num
+    done
+    print sum
+
+    map person = {"name": "Alice", "age": 30, "city": "Seattle"}
+    print person["name"]
+    print person["age"]
+    person["occupation"] = "Engineer"
+    print person["occupation"]
+
+    int result = add(5, 7)
+    print result
+    Calculator calc = Calculator(10)
+    calc.add(5)
+    print calc.value
+    int hidden = get_secret()
+    print hidden
+        
     print("All constructs exercised. ✅")
 }

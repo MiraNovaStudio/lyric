@@ -958,11 +958,42 @@ class Parser:
         return MultiDeclarationNode(declarations, line, column)
     
     def _parse_import_stmt(self) -> ImportNode:
-        """Parse import statement: import IDENT"""
+        """Parse import statement: import IDENT or import IDENT; symbol1, symbol2 as alias"""
         import_token = self._consume('IMPORT', "Expected 'import'")
         module_token = self._consume('IDENT', "Expected module name after 'import'")
         
-        return ImportNode(module_token.value, import_token.line, import_token.col)
+        symbols = None
+        
+        # Check for selective import syntax: import module; symbol1, symbol2
+        if self._check('SEMICOLON'):
+            self._consume('SEMICOLON', "Expected ';'")
+            symbols = []
+            
+            # Parse first symbol
+            symbol_name = self._consume('IDENT', "Expected symbol name after ';'").value
+            alias = None
+            
+            # Check for 'as' keyword
+            if self._check('AS'):
+                self._consume('AS', "Expected 'as'")
+                alias = self._consume('IDENT', "Expected alias name after 'as'").value
+            
+            symbols.append((symbol_name, alias))
+            
+            # Parse additional symbols separated by commas
+            while self._check('COMMA'):
+                self._consume('COMMA', "Expected ','")
+                symbol_name = self._consume('IDENT', "Expected symbol name after ','").value
+                alias = None
+                
+                # Check for 'as' keyword
+                if self._check('AS'):
+                    self._consume('AS', "Expected 'as'")
+                    alias = self._consume('IDENT', "Expected alias name after 'as'").value
+                
+                symbols.append((symbol_name, alias))
+        
+        return ImportNode(module_token.value, symbols, import_token.line, import_token.col)
     
     def _parse_importpy_stmt(self) -> ImportPyNode:
         """Parse importpy statement: importpy IDENT"""
