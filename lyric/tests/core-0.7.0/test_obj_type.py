@@ -4,10 +4,10 @@
 # Implemented by Claude
 # Licensed under the GNU General Public License v3.0
 
-"""
+"""def main() {\n    
 Test suite for obj type (class instances).
 Tests that obj can be used to explicitly type class instances.
-"""
+\n}"""
 
 import pytest
 from lyric.parser import parse
@@ -16,10 +16,10 @@ from lyric.errors import RuntimeErrorLyric
 
 
 class TestObjType:
-    """Test cases for obj type with class instances."""
+    """def main() {\n    Test cases for obj type with class instances.\n}"""
     
     def test_obj_type_declaration_with_class_instance(self):
-        """Test that obj type can hold a class instance."""
+        """def main() {\n    Test that obj type can hold a class instance.\n}"""
         code = """
 class Person
     def init(str name) {
@@ -43,7 +43,7 @@ var name_value = person.name
         assert interpreter.global_scope['name_value'] == "Alice"
     
     def test_obj_type_with_methods(self):
-        """Test that obj instances can call methods."""
+        """def main() {\n    Test that obj instances can call methods.\n}"""
         code = """
 class Calculator
     def init(int initial) {
@@ -66,7 +66,7 @@ var result = calc.add(5)
         assert interpreter.global_scope['result'] == 15
     
     def test_obj_type_multiple_instances(self):
-        """Test multiple obj instances of the same class."""
+        """def main() {\n    Test multiple obj instances of the same class.\n}"""
         code = """
 class Counter
     def init() {
@@ -96,7 +96,7 @@ counter2.increment()
         assert counter2['count'] == 1
     
     def test_obj_type_reassignment(self):
-        """Test that obj variables can be reassigned to different instances."""
+        """def main() {\n    Test that obj variables can be reassigned to different instances.\n}"""
         code = """
 class Box
     def init(int size) {
@@ -115,7 +115,7 @@ var final_size = box.size
         assert interpreter.global_scope['final_size'] == 20
     
     def test_obj_type_with_var_interchangeable(self):
-        """Test that var can also hold class instances (backward compatibility)."""
+        """def main() {\n    Test that var can also hold class instances (backward compatibility).\n}"""
         code = """
 class Animal
     def init(str name) {
@@ -137,7 +137,7 @@ var name2 = animal2.name
         assert interpreter.global_scope['name2'] == "Cat"
     
     def test_obj_type_error_when_not_class(self):
-        """Test that obj type rejects non-class values."""
+        """def main() {\n    Test that obj type rejects non-class values.\n}"""
         code = """
 obj my_obj = 42
 """
@@ -151,7 +151,7 @@ obj my_obj = 42
         assert "Type mismatch" in error_msg or "cannot assign" in error_msg
     
     def test_obj_type_error_with_string(self):
-        """Test that obj type rejects string values."""
+        """def main() {\n    Test that obj type rejects string values.\n}"""
         code = """
 obj my_obj = "Hello"
 """
@@ -165,7 +165,7 @@ obj my_obj = "Hello"
         assert "Type mismatch" in error_msg or "cannot assign" in error_msg
     
     def test_obj_type_error_with_list(self):
-        """Test that obj type rejects list values."""
+        """def main() {\n    Test that obj type rejects list values.\n}"""
         code = """
 obj my_obj = [1, 2, 3]
 """
@@ -179,7 +179,7 @@ obj my_obj = [1, 2, 3]
         assert "Type mismatch" in error_msg or "cannot assign" in error_msg
     
     def test_obj_in_function_parameter(self):
-        """Test passing obj as function parameter."""
+        """def main() {\n    Test passing obj as function parameter.\n}"""
         code = """
 class Point
     def init(int x, int y) {
@@ -202,7 +202,7 @@ var x_value = get_x(p)
         assert interpreter.global_scope['x_value'] == 10
     
     def test_obj_function_return_type(self):
-        """Test that functions can return obj type."""
+        """def main() {\n    Test that functions can return obj type.\n}"""
         code = """
 class Item
     def init(str name) {
@@ -224,7 +224,7 @@ var item_name = my_item.name
         assert interpreter.global_scope['item_name'] == "Sword"
     
     def test_obj_type_in_arr(self):
-        """Test storing obj instances in an arr."""
+        """def main() {\n    Test storing obj instances in an arr.\n}"""
         code = """
 class Book
     def init(str title) {

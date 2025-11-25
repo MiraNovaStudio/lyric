@@ -4,10 +4,10 @@
 # Implemented by Claude
 # Licensed under the GNU General Public License v3.0
 
-"""
+"""def main() {\n    
 Test suite for bin() and god() casting functions.
 Tests boolean conversion from various types.
-"""
+\n}"""
 
 import pytest
 from lyric.parser import parse
@@ -15,10 +15,10 @@ from lyric.interpreter import Interpreter
 
 
 class TestBinCasting:
-    """Test cases for bin() boolean casting function."""
+    """def main() {\n    Test cases for bin() boolean casting function.\n}"""
     
     def test_bin_with_nonzero_int(self):
-        """Test bin() with non-zero integer returns True."""
+        """def main() {\n    Test bin() with non-zero integer returns True.\n}"""
         code = """
 int x = 5
 god result = bin(x)
@@ -30,7 +30,7 @@ god result = bin(x)
         assert interpreter.global_scope['result'] is True
     
     def test_bin_with_zero_int(self):
-        """Test bin() with zero integer returns False."""
+        """def main() {\n    Test bin() with zero integer returns False.\n}"""
         code = """
 int y = 0
 god result = bin(y)
@@ -42,7 +42,7 @@ god result = bin(y)
         assert interpreter.global_scope['result'] is False
     
     def test_bin_with_negative_int(self):
-        """Test bin() with negative integer returns True."""
+        """def main() {\n    Test bin() with negative integer returns True.\n}"""
         code = """
 int z = -10
 god result = bin(z)
@@ -54,7 +54,7 @@ god result = bin(z)
         assert interpreter.global_scope['result'] is True
     
     def test_bin_with_nonzero_float(self):
-        """Test bin() with non-zero float returns True."""
+        """def main() {\n    Test bin() with non-zero float returns True.\n}"""
         code = """
 flt x = 3.14
 god result = bin(x)
@@ -66,7 +66,7 @@ god result = bin(x)
         assert interpreter.global_scope['result'] is True
     
     def test_bin_with_zero_float(self):
-        """Test bin() with zero float returns False."""
+        """def main() {\n    Test bin() with zero float returns False.\n}"""
         code = """
 flt y = 0.0
 god result = bin(y)
@@ -78,7 +78,7 @@ god result = bin(y)
         assert interpreter.global_scope['result'] is False
     
     def test_bin_with_nonempty_string(self):
-        """Test bin() with non-empty string returns True."""
+        """def main() {\n    Test bin() with non-empty string returns True.\n}"""
         code = """
 str s = "hello"
 god result = bin(s)
@@ -90,7 +90,7 @@ god result = bin(s)
         assert interpreter.global_scope['result'] is True
     
     def test_bin_with_empty_string(self):
-        """Test bin() with empty string returns False."""
+        """def main() {\n    Test bin() with empty string returns False.\n}"""
         code = """
 str s = ""
 god result = bin(s)
@@ -102,7 +102,7 @@ god result = bin(s)
         assert interpreter.global_scope['result'] is False
     
     def test_bin_with_nonempty_arr(self):
-        """Test bin() with non-empty array returns True."""
+        """def main() {\n    Test bin() with non-empty array returns True.\n}"""
         code = """
 arr items = [1, 2, 3]
 god result = bin(items)
@@ -114,7 +114,7 @@ god result = bin(items)
         assert interpreter.global_scope['result'] is True
     
     def test_bin_with_empty_arr(self):
-        """Test bin() with empty array returns False."""
+        """def main() {\n    Test bin() with empty array returns False.\n}"""
         code = """
 arr items = []
 god result = bin(items)
@@ -126,7 +126,7 @@ god result = bin(items)
         assert interpreter.global_scope['result'] is False
     
     def test_bin_with_nonempty_map(self):
-        """Test bin() with non-empty map returns True."""
+        """def main() {\n    Test bin() with non-empty map returns True.\n}"""
         code = """
 map data = {"key": "value"}
 god result = bin(data)
@@ -138,7 +138,7 @@ god result = bin(data)
         assert interpreter.global_scope['result'] is True
     
     def test_bin_with_empty_map(self):
-        """Test bin() with empty map returns False."""
+        """def main() {\n    Test bin() with empty map returns False.\n}"""
         code = """
 map data = {}
 god result = bin(data)
@@ -150,7 +150,7 @@ god result = bin(data)
         assert interpreter.global_scope['result'] is False
     
     def test_bin_with_true(self):
-        """Test bin() with True returns True."""
+        """def main() {\n    Test bin() with True returns True.\n}"""
         code = """
 god x = True
 god result = bin(x)
@@ -162,7 +162,7 @@ god result = bin(x)
         assert interpreter.global_scope['result'] is True
     
     def test_bin_with_false(self):
-        """Test bin() with False returns False."""
+        """def main() {\n    Test bin() with False returns False.\n}"""
         code = """
 god x = False
 god result = bin(x)
@@ -175,10 +175,10 @@ god result = bin(x)
 
 
 class TestGodCasting:
-    """Test cases for god() boolean casting function."""
+    """def main() {\n    Test cases for god() boolean casting function.\n}"""
     
     def test_god_with_nonzero_int(self):
-        """Test god() with non-zero integer returns True."""
+        """def main() {\n    Test god() with non-zero integer returns True.\n}"""
         code = """
 int x = 5
 god result = god(x)
@@ -190,7 +190,7 @@ god result = god(x)
         assert interpreter.global_scope['result'] is True
     
     def test_god_with_zero_int(self):
-        """Test god() with zero integer returns False."""
+        """def main() {\n    Test god() with zero integer returns False.\n}"""
         code = """
 int y = 0
 god result = god(y)
@@ -202,7 +202,7 @@ god result = god(y)
         assert interpreter.global_scope['result'] is False
     
     def test_god_with_negative_int(self):
-        """Test god() with negative integer returns True."""
+        """def main() {\n    Test god() with negative integer returns True.\n}"""
         code = """
 int z = -10
 god result = god(z)
@@ -214,7 +214,7 @@ god result = god(z)
         assert interpreter.global_scope['result'] is True
     
     def test_god_with_nonzero_float(self):
-        """Test god() with non-zero float returns True."""
+        """def main() {\n    Test god() with non-zero float returns True.\n}"""
         code = """
 flt x = 3.14
 god result = god(x)
@@ -226,7 +226,7 @@ god result = god(x)
         assert interpreter.global_scope['result'] is True
     
     def test_god_with_zero_float(self):
-        """Test god() with zero float returns False."""
+        """def main() {\n    Test god() with zero float returns False.\n}"""
         code = """
 flt y = 0.0
 god result = god(y)
@@ -238,7 +238,7 @@ god result = god(y)
         assert interpreter.global_scope['result'] is False
     
     def test_god_with_nonempty_string(self):
-        """Test god() with non-empty string returns True."""
+        """def main() {\n    Test god() with non-empty string returns True.\n}"""
         code = """
 str s = "hello"
 god result = god(s)
@@ -250,7 +250,7 @@ god result = god(s)
         assert interpreter.global_scope['result'] is True
     
     def test_god_with_empty_string(self):
-        """Test god() with empty string returns False."""
+        """def main() {\n    Test god() with empty string returns False.\n}"""
         code = """
 str s = ""
 god result = god(s)
@@ -262,7 +262,7 @@ god result = god(s)
         assert interpreter.global_scope['result'] is False
     
     def test_god_with_nonempty_arr(self):
-        """Test god() with non-empty array returns True."""
+        """def main() {\n    Test god() with non-empty array returns True.\n}"""
         code = """
 arr items = [1, 2, 3]
 god result = god(items)
@@ -274,7 +274,7 @@ god result = god(items)
         assert interpreter.global_scope['result'] is True
     
     def test_god_with_empty_arr(self):
-        """Test god() with empty array returns False."""
+        """def main() {\n    Test god() with empty array returns False.\n}"""
         code = """
 arr items = []
 god result = god(items)
@@ -286,7 +286,7 @@ god result = god(items)
         assert interpreter.global_scope['result'] is False
     
     def test_god_with_nonempty_map(self):
-        """Test god() with non-empty map returns True."""
+        """def main() {\n    Test god() with non-empty map returns True.\n}"""
         code = """
 map data = {"key": "value"}
 god result = god(data)
@@ -298,7 +298,7 @@ god result = god(data)
         assert interpreter.global_scope['result'] is True
     
     def test_god_with_empty_map(self):
-        """Test god() with empty map returns False."""
+        """def main() {\n    Test god() with empty map returns False.\n}"""
         code = """
 map data = {}
 god result = god(data)
@@ -310,7 +310,7 @@ god result = god(data)
         assert interpreter.global_scope['result'] is False
     
     def test_god_with_true(self):
-        """Test god() with True returns True."""
+        """def main() {\n    Test god() with True returns True.\n}"""
         code = """
 god x = True
 god result = god(x)
@@ -322,7 +322,7 @@ god result = god(x)
         assert interpreter.global_scope['result'] is True
     
     def test_god_with_false(self):
-        """Test god() with False returns False."""
+        """def main() {\n    Test god() with False returns False.\n}"""
         code = """
 god x = False
 god result = god(x)

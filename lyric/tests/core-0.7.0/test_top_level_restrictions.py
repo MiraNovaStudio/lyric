@@ -4,7 +4,7 @@
 # Implemented by Claude
 # Licensed under the GNU General Public License v3.0
 
-"""Unit tests for top-level statement restrictions."""
+"""def main() {\n    Unit tests for top-level statement restrictions.\n}"""
 
 import pytest
 from lyric.lexer import tokenize
@@ -13,7 +13,7 @@ from lyric.errors import SyntaxErrorLyric
 
 
 def test_top_level_variable_declaration_allowed():
-    """Test that variable declarations are allowed at top level."""
+    """def main() {\n    Test that variable declarations are allowed at top level.\n}"""
     code = """
 int x = 10
 str name = "test"
@@ -28,7 +28,7 @@ def main() {
 
 
 def test_top_level_function_definition_allowed():
-    """Test that function definitions are allowed at top level."""
+    """def main() {\n    Test that function definitions are allowed at top level.\n}"""
     code = """
 int add(int a, int b) {
     return a + b
@@ -44,7 +44,7 @@ def main() {
 
 
 def test_top_level_class_definition_allowed():
-    """Test that class definitions are allowed at top level."""
+    """def main() {\n    Test that class definitions are allowed at top level.\n}"""
     code = """
 class Person
     str name
@@ -65,7 +65,7 @@ def main() {
 
 
 def test_top_level_if_statement_not_allowed():
-    """Test that if statements are not allowed at top level."""
+    """def main() {\n    Test that if statements are not allowed at top level.\n}"""
     code = """
 int x = 1
 if x == 1
@@ -86,7 +86,7 @@ def main() {
 
 
 def test_top_level_loop_not_allowed():
-    """Test that loops are not allowed at top level."""
+    """def main() {\n    Test that loops are not allowed at top level.\n}"""
     code = """
 int x = 1
 given x < 10:
@@ -107,7 +107,7 @@ def main() {
 
 
 def test_top_level_try_block_not_allowed():
-    """Test that try blocks are not allowed at top level."""
+    """def main() {\n    Test that try blocks are not allowed at top level.\n}"""
     code = """
 try:
     int x = 10
@@ -129,7 +129,7 @@ def main() {
 
 
 def test_top_level_return_not_allowed():
-    """Test that return statements are not allowed at top level."""
+    """def main() {\n    Test that return statements are not allowed at top level.\n}"""
     code = """
 int x = 10
 return x
@@ -148,7 +148,7 @@ def main() {
 
 
 def test_top_level_function_call_not_allowed():
-    """Test that function calls are not allowed at top level."""
+    """def main() {\n    Test that function calls are not allowed at top level.\n}"""
     code = """
 def helper() {
     return 42
@@ -170,7 +170,7 @@ def main() {
 
 
 def test_top_level_import_allowed():
-    """Test that import statements are allowed at top level."""
+    """def main() {\n    Test that import statements are allowed at top level.\n}"""
     code = """
 import some_module
 
@@ -184,7 +184,7 @@ def main() {
 
 
 def test_statements_allowed_inside_functions():
-    """Test that all statements are allowed inside functions."""
+    """def main() {\n    Test that all statements are allowed inside functions.\n}"""
     code = """
 int x = 10
 

@@ -25,16 +25,16 @@ def parse(source: str):
 
 
 def evaluate(ast):
-    """Helper to evaluate an AST."""
+    """def main() {\n    Helper to evaluate an AST.\n}"""
     interpreter = Interpreter()
     return interpreter.evaluate(ast)
 
 
 class TestArrCasting:
-    """Test arr type casting operations."""
+    """def main() {\n    Test arr type casting operations.\n}"""
 
     def test_int_arr_returns_length(self):
-        """Test that int(arr) returns the length of the array."""
+        """def main() {\n    Test that int(arr) returns the length of the array.\n}"""
         code = """
 arr numbers = [10, 20, 30, 40, 50]
 int length = int(numbers)
@@ -45,7 +45,7 @@ print length
         # Should print 5
 
     def test_float_arr_returns_length_as_float(self):
-        """Test that float(arr) returns the length as a float."""
+        """def main() {\n    Test that float(arr) returns the length as a float.\n}"""
         code = """
 arr items = [1, 2, 3]
 flt length = float(items)
@@ -56,7 +56,7 @@ print length
         # Should print 3.0
 
     def test_str_arr_returns_string_representation(self):
-        """Test that str(arr) returns a string representation."""
+        """def main() {\n    Test that str(arr) returns a string representation.\n}"""
         code = """
 arr colors = ["red", "green", "blue"]
 str representation = str(colors)
@@ -67,7 +67,7 @@ print representation
         # Should print string representation of list
 
     def test_map_arr_converts_to_dict_with_string_keys(self):
-        """Test that map(arr) converts array to dict with string keys "1", "2", "3", etc."""
+        """def main() {\n    Test that map(arr) converts array to dict with string keys "1", "2", "3", etc.\n}"""
         code = """
 arr values = [100, 200, 300]
 map result = map(values)
@@ -80,7 +80,7 @@ print result["3"]
         # Should print 100, 200, 300
 
     def test_arr_str_converts_to_list_of_characters(self):
-        """Test that arr(str) converts a string to a list of characters."""
+        """def main() {\n    Test that arr(str) converts a string to a list of characters.\n}"""
         code = """
 str word = "hello"
 arr chars = arr(word)
@@ -95,7 +95,7 @@ print chars[4]
         # Should print h, e, l, l, o
 
     def test_arr_map_converts_dict_values_to_list(self):
-        """Test that arr(map) converts dict values to a list."""
+        """def main() {\n    Test that arr(map) converts dict values to a list.\n}"""
         code = """
 map person = {"name": "Alice", "age": 30, "city": "Seattle"}
 arr values = arr(person)
@@ -106,7 +106,7 @@ print values.len()
         # Should print 3
 
     def test_int_empty_arr(self):
-        """Test that int() on an empty array returns 0."""
+        """def main() {\n    Test that int() on an empty array returns 0.\n}"""
         code = """
 arr empty = []
 int count = int(empty)
@@ -117,7 +117,7 @@ print count
         # Should print 0
 
     def test_float_empty_arr(self):
-        """Test that float() on an empty array returns 0.0."""
+        """def main() {\n    Test that float() on an empty array returns 0.0.\n}"""
         code = """
 arr empty = []
 flt count = float(empty)
@@ -128,7 +128,7 @@ print count
         # Should print 0.0
 
     def test_arr_empty_string(self):
-        """Test that arr() on an empty string returns an empty list."""
+        """def main() {\n    Test that arr() on an empty string returns an empty list.\n}"""
         code = """
 str empty = ""
 arr chars = arr(empty)
@@ -139,7 +139,7 @@ print int(chars)
         # Should print 0
 
     def test_map_empty_arr(self):
-        """Test that map() on an empty array returns an empty dict."""
+        """def main() {\n    Test that map() on an empty array returns an empty dict.\n}"""
         code = """
 arr empty = []
 map result = map(empty)
@@ -150,7 +150,7 @@ print int(result)
         # Should print 0
 
     def test_arr_preserves_list_reference(self):
-        """Test that arr(list) returns the same list."""
+        """def main() {\n    Test that arr(list) returns the same list.\n}"""
         code = """
 arr original = [1, 2, 3]
 arr copy = arr(original)
@@ -161,7 +161,7 @@ print int(copy)
         # Should print 3
 
     def test_map_preserves_dict_reference(self):
-        """Test that map(dict) returns the same dict."""
+        """def main() {\n    Test that map(dict) returns the same dict.\n}"""
         code = """
 map original = {"a": 1, "b": 2}
 map copy = map(original)
@@ -172,7 +172,7 @@ print int(copy)
         # Should print 2
 
     def test_arr_string_with_spaces(self):
-        """Test that arr(str) handles strings with spaces."""
+        """def main() {\n    Test that arr(str) handles strings with spaces.\n}"""
         code = """
 str phrase = "hi there"
 arr chars = arr(phrase)
@@ -183,7 +183,7 @@ print chars[2]
         # Should print space character
 
     def test_map_arr_with_mixed_types(self):
-        """Test that map(arr) works with arrays containing mixed types."""
+        """def main() {\n    Test that map(arr) works with arrays containing mixed types.\n}"""
         code = """
 arr mixed = [42, "text", 3.14]
 map result = map(mixed)
@@ -195,7 +195,7 @@ print result["2"]
         # Should print 42, text
 
     def test_chained_casting_arr_to_map_to_arr(self):
-        """Test chaining conversions: arr -> map -> arr."""
+        """def main() {\n    Test chaining conversions: arr -> map -> arr.\n}"""
         code = """
 arr original = [10, 20, 30]
 map as_map = map(original)
@@ -207,7 +207,7 @@ print int(back_to_arr)
         # Should print 3 (three values)
 
     def test_casting_in_expressions(self):
-        """Test using casting in arithmetic expressions."""
+        """def main() {\n    Test using casting in arithmetic expressions.\n}"""
         code = """
 arr items = [1, 2, 3, 4, 5]
 int double_length = int(items) * 2
@@ -218,7 +218,7 @@ print double_length
         # Should print 10
 
     def test_float_casting_in_division(self):
-        """Test using float(arr) in division."""
+        """def main() {\n    Test using float(arr) in division.\n}"""
         code = """
 arr data = [1, 2, 3, 4]
 flt average = 10 / float(data)
@@ -229,7 +229,7 @@ print average
         # Should print 2.5
 
     def test_arr_of_arr(self):
-        """Test arr() on nested arrays."""
+        """def main() {\n    Test arr() on nested arrays.\n}"""
         code = """
 arr nested = [[1, 2], [3, 4]]
 int length = int(nested)
@@ -240,7 +240,7 @@ print length
         # Should print 2
 
     def test_map_arr_single_element(self):
-        """Test map(arr) with a single element."""
+        """def main() {\n    Test map(arr) with a single element.\n}"""
         code = """
 arr single = [999]
 map result = map(single)

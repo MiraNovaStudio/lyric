@@ -4,10 +4,10 @@
 # Implemented by Claude
 # Licensed under the GNU General Public License v3.0
 
-"""
+"""def main() {\n    
 Comprehensive test suite for range() built-in function edge cases.
 Tests negative steps, zero step errors, negative values, and type validation.
-"""
+\n}"""
 
 import pytest
 from lyric.parser import parse
@@ -16,10 +16,10 @@ from lyric.errors import RuntimeErrorLyric, TypeErrorLyric
 
 
 class TestRangeNegativeStep:
-    """Test range() with negative step values (countdown)."""
+    """def main() {\n    Test range() with negative step values (countdown).\n}"""
     
     def test_range_negative_step_countdown(self):
-        """Test range countdown from 5 to 1."""
+        """def main() {\n    Test range countdown from 5 to 1.\n}"""
         code = """
 var count = 0
 given i in range(5, 0, -1):
@@ -33,7 +33,7 @@ done
         assert interpreter.global_scope['count'] == 5
     
     def test_range_negative_step_with_negatives(self):
-        """Test range with negative start/stop and negative step."""
+        """def main() {\n    Test range with negative start/stop and negative step.\n}"""
         code = """
 var items = []
 given i in range(-1, -6, -1):
@@ -50,7 +50,7 @@ done
         assert items.elements == [-1, -2, -3, -4, -5]
     
     def test_range_negative_step_by_two(self):
-        """Test range with negative step of -2."""
+        """def main() {\n    Test range with negative step of -2.\n}"""
         code = """
 var items = []
 given i in range(10, 0, -2):
@@ -68,10 +68,10 @@ done
 
 
 class TestRangeZeroStep:
-    """Test range() with zero step (should raise error)."""
+    """def main() {\n    Test range() with zero step (should raise error).\n}"""
     
     def test_range_zero_step_raises_error(self):
-        """Test that range with step=0 raises a ValueError."""
+        """def main() {\n    Test that range with step=0 raises a ValueError.\n}"""
         code = """
 var items = []
 given i in range(0, 5, 0):
@@ -87,10 +87,10 @@ done
 
 
 class TestRangeNegativeValues:
-    """Test range() with negative start/stop values."""
+    """def main() {\n    Test range() with negative start/stop values.\n}"""
     
     def test_range_negative_to_positive(self):
-        """Test range from negative to positive."""
+        """def main() {\n    Test range from negative to positive.\n}"""
         code = """
 var items = []
 given i in range(-5, 5):
@@ -107,7 +107,7 @@ done
         assert items.elements == [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4]
     
     def test_range_negative_start(self):
-        """Test range starting from negative number."""
+        """def main() {\n    Test range starting from negative number.\n}"""
         code = """
 var items = []
 given i in range(-3, 2):
@@ -124,7 +124,7 @@ done
         assert items.elements == [-3, -2, -1, 0, 1]
     
     def test_range_both_negative(self):
-        """Test range with both negative start and stop."""
+        """def main() {\n    Test range with both negative start and stop.\n}"""
         code = """
 var items = []
 given i in range(-10, -5):
@@ -141,7 +141,7 @@ done
         assert items.elements == [-10, -9, -8, -7, -6]
     
     def test_range_negative_with_step(self):
-        """Test range with negative start and positive step."""
+        """def main() {\n    Test range with negative start and positive step.\n}"""
         code = """
 var items = []
 given i in range(-10, 0, 2):
@@ -159,10 +159,10 @@ done
 
 
 class TestRangeEmptyRanges:
-    """Test range() that should produce empty sequences."""
+    """def main() {\n    Test range() that should produce empty sequences.\n}"""
     
     def test_range_empty_start_equals_stop(self):
-        """Test range where start equals stop."""
+        """def main() {\n    Test range where start equals stop.\n}"""
         code = """
 var count = 0
 given i in range(5, 5):
@@ -176,7 +176,7 @@ done
         assert interpreter.global_scope['count'] == 0
     
     def test_range_empty_start_greater_than_stop_positive_step(self):
-        """Test range where start > stop with positive step."""
+        """def main() {\n    Test range where start > stop with positive step.\n}"""
         code = """
 var count = 0
 given i in range(10, 5, 1):
@@ -190,7 +190,7 @@ done
         assert interpreter.global_scope['count'] == 0
     
     def test_range_empty_start_less_than_stop_negative_step(self):
-        """Test range where start < stop with negative step."""
+        """def main() {\n    Test range where start < stop with negative step.\n}"""
         code = """
 var count = 0
 given i in range(5, 10, -1):
@@ -204,7 +204,7 @@ done
         assert interpreter.global_scope['count'] == 0
     
     def test_range_single_arg_zero(self):
-        """Test range(0) produces empty sequence."""
+        """def main() {\n    Test range(0) produces empty sequence.\n}"""
         code = """
 var count = 0
 given i in range(0):
@@ -218,7 +218,7 @@ done
         assert interpreter.global_scope['count'] == 0
     
     def test_range_single_arg_negative(self):
-        """Test range with negative single argument produces empty sequence."""
+        """def main() {\n    Test range with negative single argument produces empty sequence.\n}"""
         code = """
 var count = 0
 given i in range(-5):
@@ -233,10 +233,10 @@ done
 
 
 class TestRangeTypeValidation:
-    """Test range() type validation and error handling."""
+    """def main() {\n    Test range() type validation and error handling.\n}"""
     
     def test_range_with_float_argument(self):
-        """Test that range rejects float arguments."""
+        """def main() {\n    Test that range rejects float arguments.\n}"""
         code = """
 var items = []
 given i in range(5.5):
@@ -251,7 +251,7 @@ done
             interpreter.evaluate(ast)
     
     def test_range_with_string_argument(self):
-        """Test that range rejects string arguments."""
+        """def main() {\n    Test that range rejects string arguments.\n}"""
         code = """
 var items = []
 given i in range("5"):
@@ -266,7 +266,7 @@ done
             interpreter.evaluate(ast)
     
     def test_range_no_arguments_error(self):
-        """Test that range with no arguments raises error."""
+        """def main() {\n    Test that range with no arguments raises error.\n}"""
         code = """
 var items = range()
 """
@@ -280,7 +280,7 @@ var items = range()
         assert "Invalid range() arguments" in error_msg or "takes 1-3 arguments" in error_msg
     
     def test_range_too_many_arguments_error(self):
-        """Test that range with > 3 arguments raises error."""
+        """def main() {\n    Test that range with > 3 arguments raises error.\n}"""
         code = """
 var items = range(1, 2, 3, 4)
 """
@@ -296,10 +296,10 @@ var items = range(1, 2, 3, 4)
 
 
 class TestRangeLargeValues:
-    """Test range() with large values."""
+    """def main() {\n    Test range() with large values.\n}"""
     
     def test_range_large_single_argument(self):
-        """Test range with large single argument."""
+        """def main() {\n    Test range with large single argument.\n}"""
         code = """
 var items = range(10000)
 var count = items.len()
@@ -311,7 +311,7 @@ var count = items.len()
         assert interpreter.global_scope['count'] == 10000
     
     def test_range_large_span(self):
-        """Test range with large span."""
+        """def main() {\n    Test range with large span.\n}"""
         code = """
 var items = range(0, 5000, 10)
 var count = items.len()
@@ -323,7 +323,7 @@ var count = items.len()
         assert interpreter.global_scope['count'] == 500
     
     def test_range_large_negative_step(self):
-        """Test range with large negative step."""
+        """def main() {\n    Test range with large negative step.\n}"""
         code = """
 var items = range(1000, 0, -10)
 var count = items.len()
@@ -336,10 +336,10 @@ var count = items.len()
 
 
 class TestRangeInExpressions:
-    """Test range() used in various expression contexts."""
+    """def main() {\n    Test range() used in various expression contexts.\n}"""
     
     def test_range_direct_indexing(self):
-        """Test indexing directly into range result."""
+        """def main() {\n    Test indexing directly into range result.\n}"""
         code = """
 var items = range(10, 20)
 var first = items[0]
@@ -353,7 +353,7 @@ var last = items[9]
         assert interpreter.global_scope['last'] == 19
     
     def test_range_in_list_concatenation(self):
-        """Test using range result in concatenation."""
+        """def main() {\n    Test using range result in concatenation.\n}"""
         code = """
 var prefix = [0, 1]
 var combined = prefix + range(2, 5)
@@ -366,7 +366,7 @@ var length = combined.len()
         assert interpreter.global_scope['length'] == 5
     
     def test_range_with_arr_methods(self):
-        """Test that range result supports arr methods."""
+        """def main() {\n    Test that range result supports arr methods.\n}"""
         code = """
 var items = range(5, 10)
 var max_val = items.max()

@@ -1,13 +1,21 @@
-"""
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Designed and Architected by Michael (Aeonath) and ChatGPT
+# Implemented by Claude
+# Licensed under the GNU General Public License v3.0
+
+"""def main() {\n    
 Test suite for the import statement in Lyric.
 
-Tests that only functions and classes are imported (NOT variables).
-"""
+Tests importing functions, classes, and module-level variables.
+\n}"""
 
 import pytest
 import os
 import tempfile
 import shutil
+import io
+import sys
 from lyric.lexer import tokenize
 from lyric.parser import Parser
 from lyric.interpreter import Interpreter
@@ -15,119 +23,130 @@ from lyric.errors import RuntimeErrorLyric
 
 
 def parse(source: str):
-    """Helper to parse source code."""
+    """def main() {\n    Helper to parse source code.\n}"""
     tokens = tokenize(source)
     parser = Parser(tokens)
     return parser.parse()
 
 
 def evaluate(ast):
-    """Helper to evaluate an AST."""
+    """def main() {\n    Helper to evaluate an AST.\n}"""
     interpreter = Interpreter()
     return interpreter.evaluate(ast)
 
 
 class TestImportStatement:
-    """Test the import statement in Lyric."""
+    """def main() {\n    Test the import statement in Lyric.\n}"""
 
     def setup_method(self):
-        """Set up test environment with a temporary directory."""
+        """def main() {\n    Set up test environment with a temporary directory.\n}"""
         self.temp_dir = tempfile.mkdtemp()
         self.original_cwd = os.getcwd()
         os.chdir(self.temp_dir)
 
     def teardown_method(self):
-        """Clean up temporary directory."""
+        """def main() {\n    Clean up temporary directory.\n}"""
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir)
 
     def _create_module(self, name: str, content: str):
-        """Helper to create a Lyric module file."""
+        """def main() {\n    Helper to create a Lyric module file.\n}"""
         with open(f"{name}.ly", 'w') as f:
             f.write(content)
 
     def _run_code(self, code: str):
-        """Helper function to tokenize, parse, and run code."""
-        ast = parse(code)
-        return evaluate(ast)
+        """def main() {\n    Helper function to tokenize, parse, and run code, capturing output.\n}"""
+        # Capture stdout
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        
+        try:
+            ast = parse(code)
+            result = evaluate(ast)
+            output = sys.stdout.getvalue()
+            return result, output
+        finally:
+            sys.stdout = old_stdout
 
     def test_import_simple_function(self):
-        """Test importing a module with a simple function."""
-        self._create_module("mathutils", """
-def add(int a, int b) {
+        """def main() {\n    Test importing a module with a simple function.\n}"""
+        self._create_module("mathutils", """def main() {\n    
+int add(int a, int b) {
     return a + b
 }
-""")
+\n}""")
         
         code = """
 import mathutils
-int result = add(5, 3)
-print result
-"""
-        self._run_code(code)
 
-    def test_import_rejects_variables(self):
-        """Test that variables are NOT imported from modules."""
-        self._create_module("config", """
-str app_name = "Lyric App"
-""")
-        
-        code = """
-import config
-print app_name
+def main() {
+    int result = add(5, 3)
+    print(result)
+}
 """
-        # Variables should NOT be imported, so this should raise an error
-        with pytest.raises(RuntimeErrorLyric):
-            self._run_code(code)
+        result, output = self._run_code(code)
+        assert "8" in output
 
     def test_import_module_not_found(self):
-        """Test that importing non-existent module raises error."""
+        """def main() {\n    Test that importing non-existent module raises error.\n}"""
         code = """
 import nonexistent_module
+
+def main() {
+    print("done")
+}
 """
         with pytest.raises(RuntimeErrorLyric) as exc_info:
             self._run_code(code)
         assert "ModuleNotFoundError" in str(exc_info.value)
 
     def test_import_function_with_return_value(self):
-        """Test importing function that returns a value."""
-        self._create_module("calculator", """
-int def multiply(int a, int b) {
+        """def main() {\n    Test importing function that returns a value.\n}"""
+        self._create_module("calculator", """def main() {\n    
+int multiply(int a, int b) {
     return a * b
 }
 
-int def square(int n) {
+int square(int n) {
     return multiply(n, n)
 }
-""")
+\n}""")
         
         code = """
 import calculator
-int result = square(7)
-print result
+
+def main() {
+    int result = square(7)
+    print(result)
+}
 """
-        self._run_code(code)
+        result, output = self._run_code(code)
+        assert "49" in output
 
     def test_import_preserves_module_scope(self):
-        """Test that functions can access their module's variables."""
+        """def main() {\n    Test that functions can access their module's variables.\n}"""
         self._create_module("scoped", """
 int local_var = 100
 
-int def get_local() {
+int get_local() {
     return local_var
 }
 """)
         
         code = """
 import scoped
-print get_local()
+
+def main() {
+    print(get_local())
+}
 """
-        self._run_code(code)
+        result, output = self._run_code(code)
+        assert "100" in output
 
     def test_import_function_with_arr(self):
-        """Test that functions work with arr types."""
+        """def main() {\n    Test that functions work with arr types.\n}"""
         self._create_module("lists", """
-int def sum_list(arr data) {
+int sum_list(arr data) {
     int total = 0
     for item in data:
         total = total + item
@@ -138,66 +157,57 @@ int def sum_list(arr data) {
         
         code = """
 import lists
-arr test_data = [10, 20, 30]
-print sum_list(test_data)
+
+def main() {
+    arr test_data = [10, 20, 30]
+    print(sum_list(test_data))
+}
 """
-        self._run_code(code)
+        result, output = self._run_code(code)
+        assert "60" in output
 
     def test_import_function_with_map(self):
-        """Test that functions work with map types."""
-        self._create_module("dicts", """
-str def get_name(map p) {
+        """def main() {\n    Test that functions work with map types.\n}"""
+        self._create_module("dicts", """def main() {\n    
+str get_name(map p) {
     return p["name"]
 }
-""")
+\n}""")
         
         code = """
 import dicts
-map test_person = {"name": "Bob"}
-print get_name(test_person)
+
+def main() {
+    map test_person = {"name": "Bob"}
+    print(get_name(test_person))
+}
 """
-        self._run_code(code)
+        result, output = self._run_code(code)
+        assert "Bob" in output
 
     def test_import_empty_module(self):
-        """Test importing an empty module."""
+        """def main() {\n    Test importing an empty module.\n}"""
         self._create_module("empty", "")
         
         code = """
 import empty
-print "imported"
-"""
-        self._run_code(code)
 
-    def test_import_module_with_print(self):
-        """Test importing module that executes code."""
-        self._create_module("printer", """
-print "Module loading"
-
-def greet() {
-    print "Hello from module"
+def main() {
+    print("imported")
 }
-""")
-        
-        code = """
-import printer
-greet()
 """
-        self._run_code(code)
-
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
-
+        result, output = self._run_code(code)
+        assert "imported" in output
 
     def test_import_module_level_variables(self):
-        """Test that module-level variables can be imported."""
+        """def main() {\n    Test that module-level variables can be imported.\n}"""
         # Create a module with variables
         self._create_module("vars_module", """
 int MODULE_CONSTANT = 42
 str MODULE_NAME = "TestModule"
 arr MODULE_LIST = [1, 2, 3]
 
-def get_constant() {
+int get_constant() {
     return MODULE_CONSTANT
 }
 """)
@@ -219,7 +229,7 @@ def main() {
         assert "1" in output
 
     def test_selective_import_with_variables(self):
-        """Test selective import of variables."""
+        """def main() {\n    Test selective import of variables.\n}"""
         # Create a module
         self._create_module("mixed_module", """
 int VALUE_A = 10
@@ -247,13 +257,13 @@ def main() {
         assert "30" in output  # 10 + 20
 
     def test_import_all_includes_variables(self):
-        """Test that import all includes module-level variables."""
+        """def main() {\n    Test that import all includes module-level variables.\n}"""
         # Create a module with functions, classes, and variables
         self._create_module("full_module", """
 int SETTING = 100
 str NAME = "FullModule"
 
-def helper() {
+int helper() {
     return SETTING * 2
 }
 
@@ -282,3 +292,71 @@ def main() {
         assert "100" in output
         assert "FullModule" in output
         assert "200" in output  # helper() returns SETTING * 2
+
+    def test_import_class(self):
+        """def main() {\n    Test importing a class.\n}"""
+        self._create_module("classes", """
+class Person
+    str name
+    int age
+    
+    def Person(str n, int a) {
+        self.name = n
+        self.age = a
+    }
+    
+    str greet() {
+        return "Hello, I'm " + self.name
+    }
++++
+""")
+        
+        code = """
+import classes
+
+def main() {
+    obj p = Person("Alice", 30)
+    print(p.name)
+    print(p.age)
+    print(p.greet())
+}
+"""
+        result, output = self._run_code(code)
+        assert "Alice" in output
+        assert "30" in output
+        assert "Hello, I'm Alice" in output
+
+    def test_selective_import_class(self):
+        """def main() {\n    Test selective import of a class.\n}"""
+        self._create_module("myclass", """
+class Calculator
+    int value
+    
+    def Calculator(int v) {
+        self.value = v
+    }
+    
+    int add(int x) {
+        return self.value + x
+    }
++++
+
+int helper() {
+    return 42
+}
+""")
+        
+        code = """
+import myclass; Calculator
+
+def main() {
+    obj calc = Calculator(10)
+    print(calc.add(5))
+}
+"""
+        result, output = self._run_code(code)
+        assert "15" in output
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])
