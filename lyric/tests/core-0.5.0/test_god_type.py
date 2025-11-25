@@ -24,7 +24,7 @@ def test_god_keyword_recognized():
 def test_true_false_literals():
     """Test that true and false literals are recognized."""
     source = "var x = true\nvar y = false"
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     interpreter = evaluate(ast)
     # Evaluation should not raise errors
 
@@ -32,7 +32,7 @@ def test_true_false_literals():
 def test_god_type_declaration():
     """Test god type declaration with true literal."""
     source = "god ready = true\nprint(ready)"
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # Should execute without errors
 
@@ -40,7 +40,7 @@ def test_god_type_declaration():
 def test_god_type_false():
     """Test god type declaration with false literal."""
     source = "god flag = false\nprint(flag)"
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # Should execute without errors
 
@@ -54,7 +54,7 @@ if ready
     result = 1
 end
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -68,7 +68,7 @@ var result1 = a and b
 var result2 = a or b
 var result3 = not a
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -81,7 +81,7 @@ god b = false
 var same = a == a
 var different = a != b
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -97,7 +97,7 @@ def check_status(god is_ready) {
 }
 var result = check_status(true)
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # Should execute without errors
 
@@ -110,7 +110,7 @@ def is_valid() {
 }
 god status = is_valid()
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -120,7 +120,7 @@ def test_god_type_enforcement():
     source = """
 god flag = 42
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         evaluate(ast)
     assert "Type mismatch" in str(exc_info.value)
@@ -133,7 +133,7 @@ def test_god_type_reassignment_error():
 god flag = true
 flag = 42
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         evaluate(ast)
     assert "Type mismatch" in str(exc_info.value)
@@ -144,7 +144,7 @@ def test_type_function_returns_god():
     source = """
 var result = type(true)
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should return "god"
 
@@ -155,7 +155,7 @@ def test_isinstance_with_god():
 god flag = true
 var result = isinstance(flag, "god")
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -166,7 +166,7 @@ def test_god_in_list():
 var flags = [true, false, true]
 god first = flags[0]
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -177,7 +177,7 @@ def test_god_in_dict():
 var config = {"enabled": true, "debug": false}
 god enabled = config["enabled"]
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -189,7 +189,7 @@ god flag1, god flag2
 flag1 = true
 flag2 = false
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -200,7 +200,7 @@ def test_god_with_var():
 var x = true
 var y = false
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -211,7 +211,7 @@ def test_true_false_case_sensitive():
 var x = true
 var y = false
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -227,7 +227,7 @@ else
     result = 20
 end
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -242,7 +242,7 @@ given should_run and count < 3
     should_run = false
 done
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -260,7 +260,7 @@ class Config
 
 var cfg = Config()
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -270,7 +270,7 @@ def test_god_type_with_none():
     source = """
 god flag = None
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         evaluate(ast)
     assert "Type mismatch" in str(exc_info.value)
@@ -284,7 +284,7 @@ str y = "hello"
 god flag = true
 flt z = 3.14
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -295,7 +295,7 @@ def test_uppercase_true_false_still_work():
 var x = True
 var y = False
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 

@@ -24,7 +24,7 @@ def test_bin_keyword_recognized():
 def test_bin_type_declaration():
     """Test bin type declaration with true literal."""
     source = "bin ready = true\nprint(ready)"
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # Should execute without errors
 
@@ -32,7 +32,7 @@ def test_bin_type_declaration():
 def test_bin_type_false():
     """Test bin type declaration with false literal."""
     source = "bin flag = false\nprint(flag)"
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # Should execute without errors
 
@@ -46,7 +46,7 @@ if ready
     result = 1
 end
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -60,7 +60,7 @@ var result1 = a and b
 var result2 = a or b
 var result3 = not a
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -73,7 +73,7 @@ bin b = false
 var same = a == a
 var different = a != b
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -89,7 +89,7 @@ def check_status(bin is_ready) {
 }
 var result = check_status(true)
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # Should execute without errors
 
@@ -102,7 +102,7 @@ def is_valid() {
 }
 bin status = is_valid()
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -112,7 +112,7 @@ def test_bin_type_enforcement():
     source = """
 bin flag = 42
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         evaluate(ast)
     assert "Type mismatch" in str(exc_info.value)
@@ -125,7 +125,7 @@ def test_bin_type_reassignment_error():
 bin flag = true
 flag = 42
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         evaluate(ast)
     assert "Type mismatch" in str(exc_info.value)
@@ -137,7 +137,7 @@ def test_isinstance_with_bin():
 bin flag = true
 var result = isinstance(flag, "bin")
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -148,7 +148,7 @@ def test_bin_in_list():
 var flags = [true, false, true]
 bin first = flags[0]
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -159,7 +159,7 @@ def test_bin_in_dict():
 var config = {"enabled": true, "debug": false}
 bin enabled = config["enabled"]
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -171,7 +171,7 @@ bin flag1, bin flag2
 flag1 = true
 flag2 = false
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -182,7 +182,7 @@ def test_bin_with_var():
 var x = true
 var y = false
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -198,7 +198,7 @@ else
     result = 20
 end
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -213,7 +213,7 @@ given should_run and count < 3
     should_run = false
 done
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -231,7 +231,7 @@ class Config
 
 var cfg = Config()
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -241,7 +241,7 @@ def test_bin_type_with_none():
     source = """
 bin flag = None
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         evaluate(ast)
     assert "Type mismatch" in str(exc_info.value)
@@ -255,7 +255,7 @@ str y = "hello"
 bin flag = true
 flt z = 3.14
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -268,7 +268,7 @@ bin flag2 = false
 var same = flag1 == flag2
 var both_true = flag1 and flag1
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -281,7 +281,7 @@ def check(god flag1, bin flag2) {
 }
 var result = check(true, false)
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -298,7 +298,7 @@ def get_bin() {
 bin result1 = get_god()
 god result2 = get_bin()
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -310,7 +310,7 @@ god flag1, bin flag2
 flag1 = true
 flag2 = false
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -325,7 +325,7 @@ var check2 = isinstance(flag2, "bin")
 var check3 = isinstance(flag1, "bin")  # Should be false
 var check4 = isinstance(flag2, "god")  # Should be false
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -345,7 +345,7 @@ class Settings
 
 var settings = Settings()
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -358,7 +358,7 @@ bin flag2 = true
 var same = flag1 == flag2
 var different = flag1 != flag2
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors
 
@@ -373,6 +373,6 @@ var or_result = flag1 or flag2
 var not_result1 = not flag1
 var not_result2 = not flag2
 """
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     evaluate(ast)
     # Should execute without errors

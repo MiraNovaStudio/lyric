@@ -86,6 +86,8 @@ class TestRexTypeDefinition:
     def test_regex_literal_in_parser(self):
         """Test that regex constructor calls are parsed into CallNode."""
         parser = Parser(tokenize('regex("/^abc/")'))
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         assert len(ast.statements) == 1
         # The expression should be a CallNode to regex()
@@ -242,6 +244,8 @@ class TestRexIntegration:
         """
         
         parser = Parser(tokenize(source))
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
