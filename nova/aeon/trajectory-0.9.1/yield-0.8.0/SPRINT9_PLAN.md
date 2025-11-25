@@ -10,6 +10,8 @@ Implement single-inheritance support using the "based on" syntax.
 - Add optional constructors that automatically chain base → child.
 - Introduce `public`, `private`, and `protected` access modifiers for class methods.
 - All attributes remain public for now.
+- Introduce getopts and argument processing
+
 
 ## Task 1 — Implement Inheritance Syntax
 
@@ -115,10 +117,63 @@ class Person:
 - All attributes remain public by design.
 
 
-### Acceptance Criteria:
-- Documentation shows examples of base and derived classes.
-- Examples demonstrate automatic constructor order and visibility rules.
-- CHANGELOG updated for version 0.2.9.
+## Task 5 - getopts support
+
+The goal is to provide convenient getopts support via a built in function 
+getopts.  If they want more fine grained support they will use the python
+getopts funciton or similar.
+
+**Implementation**
+- add the getopts built-in funtion
+- getopts("a") will return an option specified with -a
+- getopts("verbose") will return an option specified with --verbose
+- any option longer than one character will have to use --
+- any option which doesn't have an argument will either be true or false
+- if a flag is passed that is not defined by getopts throw an error
+
+**Example**
+
+call lyric myProgram.ly -a --verbose --file=myfile
+```lyric
+def main () {
+    god a = getopts("a")
+    int v = getopts("verbose")
+    str filename = getopts("file")
+    int x = getopts("x") # is false because variable was not passed on command line
+}
+```
+
+### Acceptance criteria
+
+- options are processed and passed when command line options are present
+- unit tests are present to test option combinations and corner cases
+- actual arguments to the script itself will be implemented in the next task
+
+## Task 6 - Script arguments
+
+The goal is to allow arguments to be passed to the script on the command line.
+
+**Implementation**
+- add the ability to specify arguments on the command line in the cli
+- the arguments are passed to the main function by user defined parameters to main
+
+**Example**
+call lyric myprogram -a arg1 arg2
+
+```lyric
+def main(int argc, arr argv) {
+    god a = getopts("a")
+    if argc == 2
+        str var1 = argv[0]
+        str var2 = argv[1]
+    end
+}
+```
+
+### Acceptance Criteria
+
+- arguments are processed and passed when command line arguments are present
+- unit tests are present to test arguments and argc and argv parameters and corner cases
 
 ## Definition of Done
 
@@ -126,5 +181,6 @@ class Person:
 - Automatic constructor chaining works base → child.
 - Constructors are optional and skipped when absent.
 - Method overriding confirmed functional.
-- `public`/`private`/`protected` modifiers supported for methods.
-- Documentation and CHANGELOG updated.
+- `public`/`private`/`protected` modifiers supported for methods
+- getopts functions properly
+- command line parameters function correctly
