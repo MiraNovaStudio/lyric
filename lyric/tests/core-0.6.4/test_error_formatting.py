@@ -65,6 +65,8 @@ class TestErrorLineNumberFormatting:
         
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         from lyric.interpreter import Interpreter
@@ -103,6 +105,8 @@ class TestErrorLineNumberFormatting:
         # Test runtime error
         tokens = tokenize("var x = undefined")
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         with pytest.raises(RuntimeErrorLyric) as runtime_exc:

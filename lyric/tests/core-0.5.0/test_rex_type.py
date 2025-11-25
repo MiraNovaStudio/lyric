@@ -67,6 +67,8 @@ class TestRexTypeDefinition:
         # This should now parse successfully but fail at runtime
         tokens = tokenize('regex("/[unclosed/")')
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()

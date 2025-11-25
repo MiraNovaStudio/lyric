@@ -47,6 +47,8 @@ class TestExceptionTests:
         
         tokens = tokenize(source)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -70,6 +72,8 @@ class TestExceptionTests:
         
         tokens = tokenize(source)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -94,6 +98,8 @@ class TestExceptionTests:
         
         tokens = tokenize(source)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -139,6 +145,8 @@ class TestExceptionTests:
         
         tokens = tokenize(source)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -172,6 +180,8 @@ class TestExceptionTests:
         
         tokens = tokenize(source)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -203,6 +213,8 @@ class TestExceptionTests:
         
         tokens = tokenize(source)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -233,6 +245,8 @@ class TestExceptionTests:
         
         tokens = tokenize(source)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -254,6 +268,8 @@ class TestExceptionTests:
         
         tokens = tokenize(source)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -273,6 +289,8 @@ class TestExceptionTests:
         
         tokens = tokenize(source)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         

@@ -28,7 +28,10 @@ class Parser:
     def parse(self) -> ProgramNode:
         """Parse tokens into a ProgramNode."""
         statements = []
-        self.is_top_level = True  # Start at top level
+        # Preserve is_top_level if it was explicitly set (e.g., for interactive mode)
+        # Otherwise, default to True for normal file parsing
+        if not hasattr(self, '_interactive_mode'):
+            self.is_top_level = True  # Start at top level by default
         
         while not self._is_at_end():
             stmt = self._parse_statement()

@@ -22,6 +22,8 @@ class TestTask8Specific:
         
         # Verify the pattern parses
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should parse successfully

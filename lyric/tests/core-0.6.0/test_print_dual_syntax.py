@@ -27,6 +27,8 @@ class TestPrintDualSyntax:
         code = 'print("Hello")'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with single argument
@@ -43,6 +45,8 @@ class TestPrintDualSyntax:
         code = 'print "Hello"'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with single argument (same as function form)
@@ -59,6 +63,8 @@ class TestPrintDualSyntax:
         code = 'print("a", "b")'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with multiple arguments
@@ -77,6 +83,8 @@ class TestPrintDualSyntax:
         code = 'print "a", "b"'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with multiple arguments (same as function form)
@@ -95,6 +103,8 @@ class TestPrintDualSyntax:
         code = 'print "Hello " + name'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with binary expression
