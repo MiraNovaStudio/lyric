@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Test integration with importpy_tests.ly example file."""
 
@@ -36,6 +36,8 @@ print(result)
         lexer = Lexer(source)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -61,6 +63,8 @@ print(now.year)
         lexer = Lexer(source)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -90,6 +94,8 @@ print(result)
         lexer = Lexer(source)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -113,6 +119,8 @@ importpy nonexistent_module
         lexer = Lexer(source)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -134,6 +142,8 @@ var result = math.nonexistent_function(5)
         lexer = Lexer(source)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -158,6 +168,8 @@ print(result)
         lexer = Lexer(source)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -189,6 +201,8 @@ print("Multiple modules imported successfully")
         lexer = Lexer(source)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         
@@ -219,6 +233,8 @@ print(result)
         lexer = Lexer(source)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         

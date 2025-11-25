@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """
 Test suite for Lyric CLI functionality.
@@ -29,7 +29,7 @@ class TestCLI:
                 with patch('builtins.print') as mock_print:
                     from lyric.cli import main
                     main()
-                    mock_print.assert_called_with("Lyric 0.5.0")
+                    mock_print.assert_called_with("Lyric 0.7.4")
     
     def test_run_command_valid_file(self):
         """Test run command with valid .ly file."""

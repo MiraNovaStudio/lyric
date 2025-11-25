@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Test suite for Sprint 7 Task 1: Regex Match Group Handling."""
 
@@ -27,6 +27,8 @@ class TestRegexGroupHandling:
         code = 'rex pattern = regex("/hello/")'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a type declaration with CallNode
@@ -45,6 +47,8 @@ class TestRegexGroupHandling:
         code = 'rex title_pattern = regex("/<title>(.*?)<\\/title>/")'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a type declaration with CallNode
@@ -67,6 +71,8 @@ class TestRegexGroupHandling:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -86,6 +92,8 @@ class TestRegexGroupHandling:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -104,6 +112,8 @@ class TestRegexGroupHandling:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -122,6 +132,8 @@ class TestRegexGroupHandling:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -141,6 +153,8 @@ class TestRegexGroupHandling:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -159,6 +173,8 @@ class TestRegexGroupHandling:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -179,6 +195,8 @@ class TestRegexGroupHandling:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()

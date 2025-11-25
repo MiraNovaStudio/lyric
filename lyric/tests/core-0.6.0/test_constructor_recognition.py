@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Test suite for Sprint 6 Task 8: Constructor Recognition."""
 
@@ -36,7 +36,7 @@ class TestConstructorRecognition:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_constructor_with_parameters(self):
@@ -67,7 +67,7 @@ class TestConstructorRecognition:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_constructor_without_parameters(self):
@@ -95,7 +95,7 @@ class TestConstructorRecognition:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_constructor_with_mixed_parameters(self):
@@ -131,7 +131,7 @@ class TestConstructorRecognition:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_multiple_constructors_error(self):
@@ -152,7 +152,7 @@ class TestConstructorRecognition:
         """
         
         with pytest.raises(ParseError) as exc_info:
-            ast = parse(source)
+            ast = parse(source, interactive=True)
         
         assert "Multiple constructors found for class 'Person'" in str(exc_info.value)
         assert "Only one constructor method is allowed per class" in str(exc_info.value)
@@ -196,7 +196,7 @@ class TestConstructorRecognition:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_class_without_constructor(self):
@@ -222,7 +222,7 @@ class TestConstructorRecognition:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_constructor_with_self_access(self):
@@ -265,7 +265,7 @@ class TestConstructorRecognition:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_constructor_parameter_type_enforcement(self):
@@ -293,7 +293,7 @@ class TestConstructorRecognition:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_constructor_with_complex_logic(self):
@@ -333,7 +333,7 @@ class TestConstructorRecognition:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
 
 
@@ -361,7 +361,7 @@ class TestConstructorBackwardCompatibility:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_constructor_priority_over_init(self):
@@ -391,7 +391,7 @@ class TestConstructorBackwardCompatibility:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
 
 
@@ -420,7 +420,7 @@ class TestConstructorErrorHandling:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         with pytest.raises(RuntimeErrorLyric) as exc_info:
             evaluate(ast)
         
@@ -445,7 +445,7 @@ class TestConstructorErrorHandling:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         with pytest.raises(RuntimeErrorLyric) as exc_info:
             evaluate(ast)
         
@@ -488,7 +488,7 @@ class TestConstructorIntegration:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_constructor_with_loops(self):
@@ -518,7 +518,7 @@ class TestConstructorIntegration:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)
     
     def test_constructor_with_function_calls(self):
@@ -555,5 +555,5 @@ class TestConstructorIntegration:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         evaluate(ast)

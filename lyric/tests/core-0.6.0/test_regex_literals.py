@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Test suite for Sprint 7 Task 1: Constructor-based Regex Syntax."""
 
@@ -27,6 +27,8 @@ class TestRegexConstructorSyntax:
         code = 'rex pattern = regex("/hello/")'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a type declaration with CallNode
@@ -45,6 +47,8 @@ class TestRegexConstructorSyntax:
         code = 'rex email = regex("/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$/")'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a type declaration with CallNode
@@ -63,6 +67,8 @@ class TestRegexConstructorSyntax:
         code = 'rex phone = regex("/(\\\\d{3})-(\\\\d{3})-(\\\\d{4})/")'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a type declaration with CallNode
@@ -84,6 +90,8 @@ class TestRegexConstructorSyntax:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -101,6 +109,8 @@ class TestRegexConstructorSyntax:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -119,6 +129,8 @@ class TestRegexConstructorSyntax:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -138,6 +150,8 @@ class TestRegexConstructorSyntax:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -158,6 +172,8 @@ class TestRegexConstructorSyntax:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -178,6 +194,8 @@ class TestRegexConstructorSyntax:
         
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -200,6 +218,8 @@ class TestRegexConstructorSyntax:
         '''
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()

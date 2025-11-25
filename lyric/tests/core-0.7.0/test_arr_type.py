@@ -18,29 +18,32 @@ from lyric.interpreter import Interpreter
 from lyric.errors import TypeErrorLyric, IndexErrorLyric, RuntimeErrorLyric
 
 
-def parse(source: str):
+def parse(source: str, interactive: bool = False):
     """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
 def evaluate(ast):
-    """Helper to evaluate an AST."""
+    """def main() {\n    Helper to evaluate an AST.\n}"""
     interpreter = Interpreter()
     return interpreter.evaluate(ast)
 
 
 class TestArrType:
-    """Test the arr type in Lyric."""
+    """def main() {\n    Test the arr type in Lyric.\n}"""
 
     def _run_code(self, code: str):
-        """Helper function to tokenize, parse, and run code."""
-        ast = parse(code)
+        """def main() {\n    Helper function to tokenize, parse, and run code.\n}"""
+        ast = parse(code, interactive=True)
         return evaluate(ast)
 
     def test_arr_declaration_empty_list(self):
-        """Test arr declaration with empty list."""
+        """def main() {\n    Test arr declaration with empty list.\n}"""
         code = """
 arr mylist = []
 print mylist
@@ -49,7 +52,7 @@ print mylist
         # The print output would be [], no exception should be raised
 
     def test_arr_declaration_with_elements(self):
-        """Test arr declaration with list elements."""
+        """def main() {\n    Test arr declaration with list elements.\n}"""
         code = """
 arr numbers = [1, 2, 3, 4, 5]
 print numbers
@@ -58,7 +61,7 @@ print numbers
         # Should print [1, 2, 3, 4, 5]
 
     def test_arr_indexing_positive(self):
-        """Test arr indexing with positive index."""
+        """def main() {\n    Test arr indexing with positive index.\n}"""
         code = """
 arr fruits = ["apple", "banana", "cherry"]
 print fruits[0]
@@ -69,7 +72,7 @@ print fruits[2]
         # Should print apple, banana, cherry
 
     def test_arr_indexing_negative(self):
-        """Test arr indexing with standard positive indices."""
+        """def main() {\n    Test arr indexing with standard positive indices.\n}"""
         code = """
 arr numbers = [10, 20, 30, 40]
 print numbers[0]
@@ -79,7 +82,7 @@ print numbers[3]
         # Should print 10, 40
 
     def test_arr_indexing_out_of_bounds(self):
-        """Test arr indexing with out of bounds index."""
+        """def main() {\n    Test arr indexing with out of bounds index.\n}"""
         code = """
 arr items = [1, 2, 3]
 print items[5]
@@ -88,7 +91,7 @@ print items[5]
             self._run_code(code)
 
     def test_arr_slicing_basic(self):
-        """Test basic arr slicing [start:end]."""
+        """def main() {\n    Test basic arr slicing [start:end].\n}"""
         code = """
 arr numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 print numbers[2:5]
@@ -97,7 +100,7 @@ print numbers[2:5]
         # Should print [2, 3, 4]
 
     def test_arr_slicing_with_step(self):
-        """Test arr slicing with step [start:end:step]."""
+        """def main() {\n    Test arr slicing with step [start:end:step].\n}"""
         code = """
 arr numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 print numbers[0:10:2]
@@ -106,7 +109,7 @@ print numbers[0:10:2]
         # Should print [0, 2, 4, 6, 8]
 
     def test_arr_slicing_negative_step(self):
-        """Test arr slicing with negative step (reverse)."""
+        """def main() {\n    Test arr slicing with negative step (reverse).\n}"""
         code = """
 arr numbers = [1, 2, 3, 4, 5]
 print numbers[::-1]
@@ -115,7 +118,7 @@ print numbers[::-1]
         # Should print [5, 4, 3, 2, 1]
 
     def test_arr_slicing_omit_start(self):
-        """Test arr slicing with omitted start [:end]."""
+        """def main() {\n    Test arr slicing with omitted start [:end].\n}"""
         code = """
 arr letters = ["a", "b", "c", "d", "e"]
 print letters[:3]
@@ -124,7 +127,7 @@ print letters[:3]
         # Should print ['a', 'b', 'c']
 
     def test_arr_slicing_omit_end(self):
-        """Test arr slicing with omitted end [start:]."""
+        """def main() {\n    Test arr slicing with omitted end [start:].\n}"""
         code = """
 arr letters = ["a", "b", "c", "d", "e"]
 print letters[2:]
@@ -133,7 +136,7 @@ print letters[2:]
         # Should print ['c', 'd', 'e']
 
     def test_arr_iteration_for_loop(self):
-        """Test iterating over arr using for loop."""
+        """def main() {\n    Test iterating over arr using for loop.\n}"""
         code = """
 arr colors = ["red", "green", "blue"]
 for color in colors:
@@ -144,7 +147,7 @@ done
         # Should print red, green, blue
 
     def test_arr_iteration_given_loop(self):
-        """Test iterating over arr using given loop."""
+        """def main() {\n    Test iterating over arr using given loop.\n}"""
         code = """
 arr numbers = [10, 20, 30]
 given num in numbers:
@@ -155,7 +158,7 @@ done
         # Should print 10, 20, 30
 
     def test_arr_nested_lists(self):
-        """Test arr with nested list structure."""
+        """def main() {\n    Test arr with nested list structure.\n}"""
         code = """
 arr matrix = [[1, 2], [3, 4], [5, 6]]
 print matrix[0]
@@ -165,7 +168,7 @@ print matrix[1][0]
         # Should print [1, 2] and 3
 
     def test_arr_mixed_types(self):
-        """Test arr with mixed element types."""
+        """def main() {\n    Test arr with mixed element types.\n}"""
         code = """
 arr mixed = [1, "hello", 3.14, true]
 print mixed[0]
@@ -177,7 +180,7 @@ print mixed[3]
         # Should print 1, hello, 3.14, true
 
     def test_arr_assignment_update(self):
-        """Test updating arr elements via assignment."""
+        """def main() {\n    Test updating arr elements via assignment.\n}"""
         code = """
 arr values = [1, 2, 3]
 values[1] = 99
@@ -187,7 +190,7 @@ print values
         # Should print [1, 99, 3]
 
     def test_arr_type_validation_strict(self):
-        """Test arr type validation rejects non-list values."""
+        """def main() {\n    Test arr type validation rejects non-list values.\n}"""
         code = """
 arr mylist = 42
 """
@@ -195,7 +198,7 @@ arr mylist = 42
             self._run_code(code)
 
     def test_arr_type_validation_string(self):
-        """Test arr type validation rejects string values."""
+        """def main() {\n    Test arr type validation rejects string values.\n}"""
         code = """
 arr mylist = "not a list"
 """
@@ -203,7 +206,7 @@ arr mylist = "not a list"
             self._run_code(code)
 
     def test_arr_empty_list_iteration(self):
-        """Test iterating over empty arr."""
+        """def main() {\n    Test iterating over empty arr.\n}"""
         code = """
 arr empty = []
 for item in empty:
@@ -215,7 +218,7 @@ print "done"
         # Should only print "done"
 
     def test_arr_length_builtin(self):
-        """Test using len() method with arr."""
+        """def main() {\n    Test using len() method with arr.\n}"""
         code = """
 arr items = [1, 2, 3, 4, 5]
 print items.len()
@@ -224,7 +227,7 @@ print items.len()
         # Should print 5
 
     def test_arr_in_function_parameter(self):
-        """Test passing arr as function parameter."""
+        """def main() {\n    Test passing arr as function parameter.\n}"""
         code = """
 def process_list(arr data) {
     for item in data:
@@ -239,7 +242,7 @@ process_list(mydata)
         # Should print 10, 20, 30
 
     def test_arr_in_function_return(self):
-        """Test returning arr from function."""
+        """def main() {\n    Test returning arr from function.\n}"""
         code = """
 arr def get_list() {
     return [1, 2, 3]

@@ -2,7 +2,7 @@
 
 Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. This project is being developed from scratch to test our development processes and create a clean, educational programming language implementation.
 
-**Status**: Active Development - Version 0.7.0 (Pre-Alpha)
+**Status**: Active Development - Version 0.7.4 (Pre-Alpha)
 
 ## Project Goals
 

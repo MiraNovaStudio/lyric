@@ -19,45 +19,48 @@ from lyric.interpreter import Interpreter
 from lyric.errors import RuntimeErrorLyric
 
 
-def parse(source: str):
+def parse(source: str, interactive: bool = False):
     """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
 def evaluate(ast):
-    """Helper to evaluate an AST."""
+    """def main() {\n    Helper to evaluate an AST.\n}"""
     interpreter = Interpreter()
     return interpreter.evaluate(ast)
 
 
 class TestSelectiveImports:
-    """Test selective import functionality."""
+    """def main() {\n    Test selective import functionality.\n}"""
 
     def setup_method(self):
-        """Set up test environment with a temporary directory."""
+        """def main() {\n    Set up test environment with a temporary directory.\n}"""
         self.temp_dir = tempfile.mkdtemp()
         self.original_cwd = os.getcwd()
         os.chdir(self.temp_dir)
 
     def teardown_method(self):
-        """Clean up temporary directory."""
+        """def main() {\n    Clean up temporary directory.\n}"""
         os.chdir(self.original_cwd)
         shutil.rmtree(self.temp_dir)
 
     def _create_module(self, name: str, content: str):
-        """Helper to create a Lyric module file."""
+        """def main() {\n    Helper to create a Lyric module file.\n}"""
         with open(f"{name}.ly", 'w') as f:
             f.write(content)
 
     def _run_code(self, code: str):
-        """Helper function to tokenize, parse, and run code."""
-        ast = parse(code)
+        """def main() {\n    Helper function to tokenize, parse, and run code.\n}"""
+        ast = parse(code, interactive=True)
         return evaluate(ast)
 
     def test_selective_function_import_single(self):
-        """Test importing a single function selectively."""
+        """def main() {\n    Test importing a single function selectively.\n}"""
         self._create_module("mathlib", """
 def add(int a, int b) {
     return a + b
@@ -77,7 +80,7 @@ print result
         # Should print 8, subtract should NOT be imported
 
     def test_selective_function_import_multiple(self):
-        """Test importing multiple functions selectively."""
+        """def main() {\n    Test importing multiple functions selectively.\n}"""
         self._create_module("mathlib", """
 def add(int a, int b) {
     return a + b
@@ -101,7 +104,7 @@ print multiply(4, 2)
         # Should print 8, 8. divide should NOT be imported
 
     def test_selective_class_import(self):
-        """Test importing a class selectively."""
+        """def main() {\n    Test importing a class selectively.\n}"""
         self._create_module("shapes", """
 class Circle
     int radius = 0
@@ -129,7 +132,7 @@ print c.radius
         # Should print 5, Square should NOT be imported
 
     def test_class_import_with_variable_alias(self):
-        """Test creating a class alias using variable assignment."""
+        """def main() {\n    Test creating a class alias using variable assignment.\n}"""
         self._create_module("mathlib", """
 class Calculator
     int value = 0
@@ -153,7 +156,7 @@ print calc.value
         # Should print 10
 
     def test_mixed_function_and_class_import(self):
-        """Test importing both functions and classes selectively."""
+        """def main() {\n    Test importing both functions and classes selectively.\n}"""
         self._create_module("utils", """
 def helper(int x) {
     return x * 2
@@ -178,7 +181,7 @@ print t.value
         # Should print 10, 10
 
     def test_import_undefined_symbol(self):
-        """Test importing a symbol that doesn't exist."""
+        """def main() {\n    Test importing a symbol that doesn't exist.\n}"""
         self._create_module("mathlib", """
 def add(int a, int b) {
     return a + b
@@ -194,7 +197,7 @@ import mathlib; nonexistent
         assert "nonexistent" in str(exc_info.value)
 
     def test_selective_import_multiple_classes(self):
-        """Test importing multiple classes selectively."""
+        """def main() {\n    Test importing multiple classes selectively.\n}"""
         self._create_module("shapes", """
 class Circle
     int radius = 0
@@ -227,7 +230,7 @@ print circ.area()
         self._run_code(code)
 
     def test_function_without_as_keyword(self):
-        """Test that functions cannot use 'as' keyword (only classes)."""
+        """def main() {\n    Test that functions cannot use 'as' keyword (only classes).\n}"""
         self._create_module("mathlib", """
 def add(int a, int b) {
     return a + b
@@ -242,7 +245,7 @@ print add(5, 3)
         self._run_code(code)
 
     def test_selective_import_preserves_module_scope(self):
-        """Test that selectively imported functions preserve module scope."""
+        """def main() {\n    Test that selectively imported functions preserve module scope.\n}"""
         self._create_module("config", """
 int secret = 42
 
@@ -263,7 +266,7 @@ print get_secret()
         # Should print 42
 
     def test_all_import_vs_selective_import(self):
-        """Test that selective import only imports specified symbols."""
+        """def main() {\n    Test that selective import only imports specified symbols.\n}"""
         self._create_module("mathlib", """
 def add(int a, int b) {
     return a + b
@@ -283,7 +286,7 @@ print result
         # multiply should NOT be available
 
     def test_class_alias_with_as_throws_error(self):
-        """Test that using 'as' keyword with classes throws an error."""
+        """def main() {\n    Test that using 'as' keyword with classes throws an error.\n}"""
         self._create_module("mathlib", """
 class Calculator
     int value = 0

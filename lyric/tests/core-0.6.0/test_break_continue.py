@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Comprehensive tests for break and continue keywords (Sprint 6 Pivot 6.5.1)."""
 
@@ -15,10 +15,13 @@ from lyric.interpreter import Interpreter
 from lyric.errors import ParseError
 
 
-def parse(source: str):
+def parse(source: str, interactive: bool = False):
     """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
@@ -46,7 +49,7 @@ class TestBreakKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -67,7 +70,7 @@ class TestBreakKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         
         # Capture print output
         old_stdout = sys.stdout
@@ -107,7 +110,7 @@ class TestBreakKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -125,7 +128,7 @@ class TestBreakKeyword:
         """
         
         with pytest.raises(ParseError, match="'break' used outside of loop"):
-            parse(source)
+            parse(source, interactive=True)
     
     def test_break_in_while_loop(self):
         """Test break in a while-style loop."""
@@ -142,7 +145,7 @@ class TestBreakKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -168,7 +171,7 @@ class TestContinueKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -192,7 +195,7 @@ class TestContinueKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         
         # Capture print output
         old_stdout = sys.stdout
@@ -231,7 +234,7 @@ class TestContinueKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -249,7 +252,7 @@ class TestContinueKeyword:
         """
         
         with pytest.raises(ParseError, match="'continue' used outside of loop"):
-            parse(source)
+            parse(source, interactive=True)
     
     def test_continue_in_while_loop(self):
         """Test continue in a while-style loop."""
@@ -268,7 +271,7 @@ class TestContinueKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -304,7 +307,7 @@ class TestBreakContinueTogether:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -335,7 +338,7 @@ class TestBreakContinueTogether:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -368,7 +371,7 @@ class TestBreakContinueWithTryCatch:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -394,7 +397,7 @@ class TestBreakContinueWithTryCatch:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -419,7 +422,7 @@ class TestBreakContinueEdgeCases:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -439,7 +442,7 @@ class TestBreakContinueEdgeCases:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -459,7 +462,7 @@ class TestBreakContinueEdgeCases:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])

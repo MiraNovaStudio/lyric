@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Tests for rex type functionality in Sprint 5 Task 1."""
 
@@ -67,6 +67,8 @@ class TestRexTypeDefinition:
         # This should now parse successfully but fail at runtime
         tokens = tokenize('regex("/[unclosed/")')
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter = Interpreter()
@@ -84,6 +86,8 @@ class TestRexTypeDefinition:
     def test_regex_literal_in_parser(self):
         """Test that regex constructor calls are parsed into CallNode."""
         parser = Parser(tokenize('regex("/^abc/")'))
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         assert len(ast.statements) == 1
         # The expression should be a CallNode to regex()
@@ -240,6 +244,8 @@ class TestRexIntegration:
         """
         
         parser = Parser(tokenize(source))
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         

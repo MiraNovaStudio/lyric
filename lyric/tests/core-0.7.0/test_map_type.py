@@ -18,29 +18,32 @@ from lyric.interpreter import Interpreter
 from lyric.errors import TypeErrorLyric, KeyErrorLyric, RuntimeErrorLyric
 
 
-def parse(source: str):
+def parse(source: str, interactive: bool = False):
     """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
 def evaluate(ast):
-    """Helper to evaluate an AST."""
+    """def main() {\n    Helper to evaluate an AST.\n}"""
     interpreter = Interpreter()
     return interpreter.evaluate(ast)
 
 
 class TestMapType:
-    """Test the map type in Lyric."""
+    """def main() {\n    Test the map type in Lyric.\n}"""
 
     def _run_code(self, code: str):
-        """Helper function to tokenize, parse, and run code."""
-        ast = parse(code)
+        """def main() {\n    Helper function to tokenize, parse, and run code.\n}"""
+        ast = parse(code, interactive=True)
         return evaluate(ast)
 
     def test_map_declaration_empty_dict(self):
-        """Test map declaration with empty dictionary."""
+        """def main() {\n    Test map declaration with empty dictionary.\n}"""
         code = """
 map mydict = {}
 print mydict
@@ -49,7 +52,7 @@ print mydict
         # Should print {}
 
     def test_map_declaration_with_pairs(self):
-        """Test map declaration with key-value pairs."""
+        """def main() {\n    Test map declaration with key-value pairs.\n}"""
         code = """
 map person = {"name": "Alice", "age": 30, "city": "NYC"}
 print person
@@ -58,7 +61,7 @@ print person
         # Should print the dictionary
 
     def test_map_key_access_string_key(self):
-        """Test accessing map values with string keys."""
+        """def main() {\n    Test accessing map values with string keys.\n}"""
         code = """
 map data = {"x": 10, "y": 20}
 print data["x"]
@@ -68,7 +71,7 @@ print data["y"]
         # Should print 10, 20
 
     def test_map_key_access_int_key(self):
-        """Test accessing map values with integer keys."""
+        """def main() {\n    Test accessing map values with integer keys.\n}"""
         code = """
 map numbers = {1: "one", 2: "two", 3: "three"}
 print numbers[1]
@@ -78,7 +81,7 @@ print numbers[2]
         # Should print one, two
 
     def test_map_key_access_missing_key(self):
-        """Test accessing non-existent key raises KeyError."""
+        """def main() {\n    Test accessing non-existent key raises KeyError.\n}"""
         code = """
 map data = {"a": 1, "b": 2}
 print data["c"]
@@ -87,7 +90,7 @@ print data["c"]
             self._run_code(code)
 
     def test_map_key_assignment_new(self):
-        """Test adding new key-value pair to map."""
+        """def main() {\n    Test adding new key-value pair to map.\n}"""
         code = """
 map data = {"x": 10}
 data["y"] = 20
@@ -97,7 +100,7 @@ print data["y"]
         # Should print 20
 
     def test_map_key_assignment_update(self):
-        """Test updating existing key in map."""
+        """def main() {\n    Test updating existing key in map.\n}"""
         code = """
 map scores = {"alice": 85, "bob": 90}
 scores["alice"] = 95
@@ -107,7 +110,7 @@ print scores["alice"]
         # Should print 95
 
     def test_map_mixed_key_types(self):
-        """Test map with mixed key types."""
+        """def main() {\n    Test map with mixed key types.\n}"""
         code = """
 map mixed = {"name": "Alice", 1: "first", 2.5: "two-and-half"}
 print mixed["name"]
@@ -118,7 +121,7 @@ print mixed[2.5]
         # Should print Alice, first, two-and-half
 
     def test_map_mixed_value_types(self):
-        """Test map with mixed value types."""
+        """def main() {\n    Test map with mixed value types.\n}"""
         code = """
 map data = {"count": 42, "name": "test", "active": true, "items": [1, 2, 3]}
 print data["count"]
@@ -129,7 +132,7 @@ print data["active"]
         # Should print values
 
     def test_map_nested_dict(self):
-        """Test map with nested dictionary structure."""
+        """def main() {\n    Test map with nested dictionary structure.\n}"""
         code = """
 map person = {"name": "Alice", "address": {"city": "NYC", "zip": "10001"}}
 print person["name"]
@@ -139,7 +142,7 @@ print person["address"]["city"]
         # Should print Alice, NYC
 
     def test_map_iteration_keys(self):
-        """Test iterating over map yields keys."""
+        """def main() {\n    Test iterating over map yields keys.\n}"""
         code = """
 map data = {"a": 1, "b": 2, "c": 3}
 for key in data:
@@ -150,7 +153,7 @@ done
         # Should print a, b, c
 
     def test_map_type_validation_strict(self):
-        """Test map type validation rejects non-dict values."""
+        """def main() {\n    Test map type validation rejects non-dict values.\n}"""
         code = """
 map mydict = 42
 """
@@ -158,7 +161,7 @@ map mydict = 42
             self._run_code(code)
 
     def test_map_type_validation_list(self):
-        """Test map type validation rejects list values."""
+        """def main() {\n    Test map type validation rejects list values.\n}"""
         code = """
 map mydict = [1, 2, 3]
 """
@@ -166,7 +169,7 @@ map mydict = [1, 2, 3]
             self._run_code(code)
 
     def test_map_type_validation_string(self):
-        """Test map type validation rejects string values."""
+        """def main() {\n    Test map type validation rejects string values.\n}"""
         code = """
 map mydict = "not a dict"
 """
@@ -174,7 +177,7 @@ map mydict = "not a dict"
             self._run_code(code)
 
     def test_map_empty_dict_iteration(self):
-        """Test iterating over empty map."""
+        """def main() {\n    Test iterating over empty map.\n}"""
         code = """
 map empty = {}
 for key in empty:
@@ -186,7 +189,7 @@ print "done"
         # Should only print "done"
 
     def test_map_with_list_values(self):
-        """Test map containing list values."""
+        """def main() {\n    Test map containing list values.\n}"""
         code = """
 map data = {"numbers": [1, 2, 3], "names": ["alice", "bob"]}
 print data["numbers"][0]
@@ -196,7 +199,7 @@ print data["names"][1]
         # Should print 1, bob
 
     def test_map_in_function_parameter(self):
-        """Test passing map as function parameter."""
+        """def main() {\n    Test passing map as function parameter.\n}"""
         code = """
 def print_keys(map data) {
     for key in data:
@@ -211,7 +214,7 @@ print_keys(mydata)
         # Should print x, y
 
     def test_map_in_function_return(self):
-        """Test returning map from function."""
+        """def main() {\n    Test returning map from function.\n}"""
         code = """
 map def get_dict() {
     return {"status": "ok", "code": 200}
@@ -224,7 +227,7 @@ print result["status"]
         # Should print ok
 
     def test_map_len_builtin(self):
-        """Test using len() method with map."""
+        """def main() {\n    Test using len() method with map.\n}"""
         code = """
 map data = {"a": 1, "b": 2, "c": 3}
 print data.len()
@@ -233,7 +236,7 @@ print data.len()
         # Should print 3
 
     def test_map_multiple_assignments(self):
-        """Test multiple key assignments in sequence."""
+        """def main() {\n    Test multiple key assignments in sequence.\n}"""
         code = """
 map config = {}
 config["host"] = "localhost"
@@ -247,7 +250,7 @@ print config["debug"]
         # Should print localhost, 8080, true
 
     def test_map_overwrite_value(self):
-        """Test overwriting existing values multiple times."""
+        """def main() {\n    Test overwriting existing values multiple times.\n}"""
         code = """
 map counter = {"count": 0}
 counter["count"] = 1

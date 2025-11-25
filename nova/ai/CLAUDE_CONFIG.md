@@ -234,6 +234,36 @@ Unit tests must run via pytest -q without fatal errors.
 
 CLI command lyric run examples/hello.ly must work after Sprint 1 completion.
 
+## License Header Standard
+
+**🚨 CRITICAL REQUIREMENT 🚨**: 
+**ALL SOURCE FILES AND UNIT TESTS MUST USE THE GPL VERSION 3 LICENSE HEADER!**
+
+**Standard License Header Format:**
+```python
+# Lyric Programming Language
+# Copyright (c) 2025 MiraNova Studios
+# Designed and Architected by Michael (Aeonath) and ChatGPT
+# Implemented by Claude
+# Licensed under the GNU General Public License v3.0
+```
+
+**This header MUST appear at the top of:**
+- All core source files in `/lyric/`
+- All unit test files in `/lyric/tests/`
+- All example files in `/lyric/tests/examples/`
+- Any new Python files created in the project
+
+**❌ OLD LICENSE (DO NOT USE):**
+```python
+# Licensed under the MIT License with Source Attribution
+```
+
+**✅ NEW LICENSE (ALWAYS USE):**
+```python
+# Licensed under the GNU General Public License v3.0
+```
+
 ## Language Specification Maintenance
 
 **IMPORTANT**: The Lyric Language Specification is now maintained manually at `../lyric-lang.org` and is no longer part of this project repository. Claude will NOT make updates to the language specification - this is handled manually by the user.

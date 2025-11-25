@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Tests for the `for` keyword (Task 3 - Sprint 6)."""
 
@@ -14,10 +14,13 @@ from lyric.parser import Parser
 from lyric.interpreter import Interpreter
 
 
-def parse(source: str):
+def parse(source: str, interactive: bool = False):
     """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
@@ -40,7 +43,7 @@ class TestForKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         
         # Capture print output
         old_stdout = sys.stdout
@@ -68,7 +71,7 @@ class TestForKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         result = interpreter._call_function('main', [])
@@ -88,7 +91,7 @@ class TestForKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         
         # Capture print output
         old_stdout = sys.stdout
@@ -118,7 +121,7 @@ class TestForKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         
         # Capture print output
         old_stdout = sys.stdout
@@ -202,7 +205,7 @@ class TestForKeyword:
         """
         
         try:
-            ast = parse(source)
+            ast = parse(source, interactive=True)
             
             # Capture print output
             old_stdout = sys.stdout
@@ -235,7 +238,7 @@ class TestForKeyword:
         }
         """
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         
         # Capture print output
         old_stdout = sys.stdout

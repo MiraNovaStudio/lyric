@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Test suite for Sprint 6 Pivot 6.8.1: Print Dual Syntax Support."""
 
@@ -27,6 +27,8 @@ class TestPrintDualSyntax:
         code = 'print("Hello")'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with single argument
@@ -43,6 +45,8 @@ class TestPrintDualSyntax:
         code = 'print "Hello"'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with single argument (same as function form)
@@ -59,6 +63,8 @@ class TestPrintDualSyntax:
         code = 'print("a", "b")'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with multiple arguments
@@ -77,6 +83,8 @@ class TestPrintDualSyntax:
         code = 'print "a", "b"'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with multiple arguments (same as function form)
@@ -95,6 +103,8 @@ class TestPrintDualSyntax:
         code = 'print "Hello " + name'
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         # Should create a CallNode with binary expression
@@ -113,10 +123,14 @@ class TestPrintDualSyntax:
         
         tokens1 = tokenize(code1)
         parser1 = Parser(tokens1)
+        parser1._interactive_mode = True
+        parser1.is_top_level = False
         ast1 = parser1.parse()
         
         tokens2 = tokenize(code2)
         parser2 = Parser(tokens2)
+        parser2._interactive_mode = True
+        parser2.is_top_level = False
         ast2 = parser2.parse()
         
         # Both should produce identical CallNode structures
@@ -138,10 +152,14 @@ class TestPrintDualSyntax:
         
         tokens1 = tokenize(code1)
         parser1 = Parser(tokens1)
+        parser1._interactive_mode = True
+        parser1.is_top_level = False
         ast1 = parser1.parse()
         
         tokens2 = tokenize(code2)
         parser2 = Parser(tokens2)
+        parser2._interactive_mode = True
+        parser2.is_top_level = False
         ast2 = parser2.parse()
         
         # Both should produce identical CallNode structures

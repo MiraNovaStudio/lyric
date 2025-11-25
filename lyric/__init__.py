@@ -2,8 +2,8 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Lyric programming language interpreter."""
 
-__version__ = "0.7.0"
+__version__ = "0.7.4"

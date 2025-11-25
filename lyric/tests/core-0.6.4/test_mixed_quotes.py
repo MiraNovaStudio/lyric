@@ -103,6 +103,8 @@ print match.group(1)
         lexer = Lexer(source)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         interpreter.evaluate(ast)

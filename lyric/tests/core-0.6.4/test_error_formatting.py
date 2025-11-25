@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Test suite for Sprint 7 Task 3: Error Message Line Number Formatting."""
 
@@ -47,6 +47,8 @@ class TestErrorLineNumberFormatting:
         
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         
         with pytest.raises(ParseError) as exc_info:
             parser.parse()
@@ -65,6 +67,8 @@ class TestErrorLineNumberFormatting:
         
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         
         from lyric.interpreter import Interpreter
@@ -93,6 +97,8 @@ class TestErrorLineNumberFormatting:
         # Test parse error
         tokens = tokenize("if true\nprint \"hello\"")
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         with pytest.raises(ParseError) as parse_exc:
             parser.parse()
         
@@ -103,6 +109,8 @@ class TestErrorLineNumberFormatting:
         # Test runtime error
         tokens = tokenize("var x = undefined")
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
         with pytest.raises(RuntimeErrorLyric) as runtime_exc:
@@ -126,10 +134,14 @@ class TestErrorLineNumberFormatting:
                 elif error_type == "syntax":
                     tokens = tokenize(code)
                     parser = Parser(tokens)
+                    parser._interactive_mode = True
+                    parser.is_top_level = False
                     parser.parse()
                 elif error_type == "runtime":
                     tokens = tokenize(code)
                     parser = Parser(tokens)
+                    parser._interactive_mode = True
+                    parser.is_top_level = False
                     ast = parser.parse()
                     interpreter = Interpreter()
                     interpreter.evaluate(ast)
