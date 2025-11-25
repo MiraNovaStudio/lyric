@@ -121,11 +121,13 @@ Extend Lyric’s type interoperability by supporting conversions to and from `ma
 Simplify function declaration syntax by removing redundant keyword combinations and enabling both explicit typing and automatic type inference.
 
 **Implementation Items:**  
-- Remove `str def func()` form.  
+- Remove `str def func()` form.  This may not be currently implemented  
 - Support:
   - `str funcname()` → explicit typed return  
   - `def funcname()` → inferred or void return  
 - Update parser logic and documentation accordingly.
+- examples, int get_sum(int x, int y) { return x + y }
+- def should be inferred if used or return None if no return 
 
 **Acceptance Criteria:**  
 - New syntax compiles and executes correctly.  
@@ -216,4 +218,19 @@ Introduce a dedicated `obj` type mapped to Python’s native `class`, giving Lyr
 **Acceptance Criteria:**  
 - `obj` type behaves as a class equivalent in all basic operations.  
 - Add and update related unit tests in `lyric/tests/core-0.7.0`.
+
+### Task 11 - add casting for bin and god types
+
+**Summary:** 
+Introduce bin() and god() casting functions to cast other types to this type
+
+**Implementation** 
+- Add bin() and god() casting functions
+- cast example int x = 5, god(x) returns true
+- cast example int y = 0, god(y) returns false
+
+**Acceptance Criteria**
+- bin and god casting funcitons behave properly
+- add and update related unit tests in lyric/tests/core-0.7.0
+
 
