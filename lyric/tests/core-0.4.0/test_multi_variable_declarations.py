@@ -20,7 +20,7 @@ class TestMultiVariableDeclarations:
         """Test basic multi-variable declaration parsing."""
         source = "var x, int y, str z"
         tokens = tokenize(source)
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         
         # Should parse successfully
         assert ast is not None
@@ -47,7 +47,7 @@ class TestMultiVariableDeclarations:
         """
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # Check that variables are declared and can be assigned
@@ -65,7 +65,7 @@ class TestMultiVariableDeclarations:
         source = "var x, int y, str z"
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # Check that variables are declared but uninitialized
@@ -78,7 +78,7 @@ class TestMultiVariableDeclarations:
         source = "var a, int b, str c, flt d"
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # Check that all variables are declared
@@ -98,7 +98,7 @@ class TestMultiVariableDeclarations:
         source = "var x"
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # Check that single variable is declared
@@ -115,7 +115,7 @@ class TestMultiVariableDeclarations:
         """
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # Should work fine
@@ -130,7 +130,7 @@ class TestMultiVariableDeclarations:
         """
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         
         with pytest.raises(RuntimeErrorLyric) as exc_info:
             interpreter.evaluate(ast)
@@ -143,7 +143,7 @@ class TestMultiVariableDeclarations:
         source = "pyobject x, int y"
         
         with pytest.raises(ParseError) as exc_info:
-            parse(source)
+            parse(source, interactive=True)
         
         assert "Type 'pyobject' is internal only" in str(exc_info.value)
     
@@ -152,7 +152,7 @@ class TestMultiVariableDeclarations:
         source = "invalid_type x, int y"
         
         with pytest.raises(ParseError) as exc_info:
-            parse(source)
+            parse(source, interactive=True)
         
         assert "Unknown type 'invalid_type'" in str(exc_info.value)
     
@@ -161,7 +161,7 @@ class TestMultiVariableDeclarations:
         source = "var x = 5, int y"
         
         with pytest.raises(ParseError) as exc_info:
-            parse(source)
+            parse(source, interactive=True)
         
         # Should fail because multi-declaration doesn't support assignment
         assert "Expected" in str(exc_info.value)
@@ -179,7 +179,7 @@ class TestMultiVariableDeclarations:
         """
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # Call the function
@@ -200,7 +200,7 @@ class TestMultiVariableDeclarations:
         """
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # Check that the class is defined correctly
@@ -224,7 +224,7 @@ class TestMultiVariableDeclarations:
         """
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # The second declaration should overwrite the first
@@ -236,7 +236,7 @@ class TestMultiVariableDeclarations:
         source = "var x"
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # Should work fine with single variable
@@ -248,7 +248,7 @@ class TestMultiVariableDeclarations:
         source = "var x , int y , str z"
         
         interpreter = Interpreter()
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter.evaluate(ast)
         
         # Should parse successfully
@@ -266,7 +266,7 @@ class TestMultiVariableDeclarations:
         """Test that line and column information is preserved."""
         source = "var x, int y, str z"
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         multi_decl = ast.statements[0]
         
         # Should have line and column information

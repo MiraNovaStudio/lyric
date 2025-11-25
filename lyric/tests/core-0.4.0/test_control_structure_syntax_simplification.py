@@ -32,7 +32,7 @@ print("positive")
 end
 }'''
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -60,7 +60,7 @@ print("non-positive")
 end
 }'''
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -90,7 +90,7 @@ print("negative")
 end
 }'''
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -115,7 +115,7 @@ print("iteration")
 done
 }'''
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -142,7 +142,7 @@ x = x - 1
 done
 }'''
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -173,7 +173,7 @@ x = x + 1
 done
 }'''
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -201,7 +201,7 @@ end
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -227,7 +227,7 @@ done
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -256,7 +256,7 @@ end
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -287,7 +287,7 @@ end
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -311,7 +311,7 @@ print("hello")
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -335,7 +335,7 @@ print("hello")
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -364,7 +364,7 @@ fade
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -394,7 +394,7 @@ fade
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -426,7 +426,7 @@ print("class created")
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -457,7 +457,7 @@ print("class created")
 }'''
         
         # Should work without any warnings
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -490,7 +490,7 @@ x = x + 1
 done
 }'''
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output
@@ -531,7 +531,7 @@ var myobj = TestClass()
 print("class value: " + str(myobj.value))
 }'''
         
-        ast = parse(source)
+        ast = parse(source, interactive=True)
         interpreter = Interpreter()
         
         # Capture print output

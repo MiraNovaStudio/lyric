@@ -1056,8 +1056,16 @@ class Parser:
         return ImportPyNode(module_token.value, importpy_token.line, importpy_token.col)
 
 
-def parse(source: str) -> ProgramNode:
-    """Parse source code and return a ProgramNode."""
+def parse(source: str, interactive: bool = False) -> ProgramNode:
+    """Parse source code and return a ProgramNode.
+    
+    Args:
+        source: Source code to parse
+        interactive: If True, disables top-level restrictions (for REPL/tests)
+    """
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()

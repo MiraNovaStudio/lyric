@@ -29,7 +29,7 @@ def main() {
     return instance.greet()
 }"""
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == "Hello from test"
 
@@ -44,7 +44,7 @@ def test_class_with_colon_syntax_works():
 +++"""
     
     # Should parse successfully without any warnings
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     
     # Should be a class with the correct name
     assert isinstance(ast.statements[0], ClassNode)
@@ -61,19 +61,21 @@ def test_function() {
     return "function works"
 }
 
-if True:
-    print("if works")
-end
-
-given True:
-    print("given works")
-done"""
+def main() {
+    if True:
+        print("if works")
+    end
+    
+    given True:
+        print("given works")
+    done
+}"""
     
     # Should parse without errors
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     
-    # Should have 4 statements: class, function, if, given
-    assert len(ast.statements) == 4
+    # Should have 3 statements: class, function, main
+    assert len(ast.statements) == 3
     
     # First should be a class
     assert isinstance(ast.statements[0], ClassNode)
@@ -86,7 +88,7 @@ def test_empty_class():
 +++"""
     
     # Should parse successfully
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     
     # Should be empty class
     assert len(ast.statements[0].members_statements) == 0
@@ -104,7 +106,7 @@ def test_class_with_methods():
 +++"""
     
     # Should parse successfully
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     
     # Should have 2 methods
     assert len(ast.statements[0].members_statements) == 2
@@ -124,7 +126,7 @@ def main() {
     return instance.get_name()
 }"""
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == "test"
 
@@ -143,7 +145,7 @@ def main() {
 }"""
     
     # Should work
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == "Alice"
 
@@ -164,6 +166,6 @@ def main() {
     return person.name + " " + student.grade
 }"""
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == "Default A"
