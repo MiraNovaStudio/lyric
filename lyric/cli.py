@@ -23,7 +23,7 @@ def main():
     command = sys.argv[1]
     
     if command == "--version":
-        print("Lyric 0.7.0")
+        print("Lyric 0.7.4")
     elif command == "--help":
         print("Lyric Language Interpreter")
         print("")
