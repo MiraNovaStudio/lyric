@@ -2,7 +2,7 @@
 
 Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. This project is being developed from scratch to test our development processes and create a clean, educational programming language implementation.
 
-**Status**: Active Development - Version 0.5.0 (Pre-Alpha)
+**Status**: Active Development - Version 0.7.0 (Pre-Alpha)
 
 ## Project Goals
 
@@ -414,6 +414,8 @@ This keeps branches clean, tags meaningful, and the evolution from development t
 ## License and Credits
 
 The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
+
+Licensed under the GNU General Public License v3 or later.
 
 ## Contributing
 

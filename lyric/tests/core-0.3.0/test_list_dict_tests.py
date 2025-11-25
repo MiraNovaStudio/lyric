@@ -50,10 +50,12 @@ class TestListDictTests:
         # Should execute without errors
         interpreter.evaluate(ast)
         
-        # Check values
-        assert interpreter.global_scope['numbers'] == [1, 2, 3, 4, 5]
-        assert interpreter.global_scope['words'] == ["hello", "world", "lyric"]
-        assert interpreter.global_scope['mixed'] == [1, "hello", 3.14, True]
+        # Check values - now they are ArrObjects
+        from lyric.interpreter import ArrObject
+        assert isinstance(interpreter.global_scope['numbers'], ArrObject)
+        assert interpreter.global_scope['numbers'].elements == [1, 2, 3, 4, 5]
+        assert interpreter.global_scope['words'].elements == ["hello", "world", "lyric"]
+        assert interpreter.global_scope['mixed'].elements == [1, "hello", 3.14, True]
     
     def test_dictionary_literals_and_basic_operations(self):
         """Test dictionary literals and basic operations."""
@@ -71,10 +73,12 @@ class TestListDictTests:
         # Should execute without errors
         interpreter.evaluate(ast)
         
-        # Check values
-        assert interpreter.global_scope['person'] == {"name": "Alice", "age": 30, "city": "New York"}
-        assert interpreter.global_scope['scores'] == {"math": 95, "science": 87, "english": 92}
-        assert interpreter.global_scope['config'] == {"debug": True, "version": "0.3.0", "port": 8080}
+        # Check values - now they are MapObjects
+        from lyric.interpreter import MapObject
+        assert isinstance(interpreter.global_scope['person'], MapObject)
+        assert interpreter.global_scope['person'].elements == {"name": "Alice", "age": 30, "city": "New York"}
+        assert interpreter.global_scope['scores'].elements == {"math": 95, "science": 87, "english": 92}
+        assert interpreter.global_scope['config'].elements == {"debug": True, "version": "0.3.0", "port": 8080}
     
     def test_list_indexing(self):
         """Test list indexing operations."""
@@ -123,12 +127,12 @@ class TestListDictTests:
         assert interpreter.global_scope['math_score'] == 95
     
     def test_list_length_and_builtin_functions(self):
-        """Test list length and built-in functions."""
+        """Test list length method."""
         source = """
         var numbers = [1, 2, 3, 4, 5]
         var words = ["hello", "world", "lyric"]
-        var numbers_length = len(numbers)
-        var words_length = len(words)
+        var numbers_length = numbers.len()
+        var words_length = words.len()
         """
         
         tokens = tokenize(source)
@@ -144,13 +148,13 @@ class TestListDictTests:
         assert interpreter.global_scope['words_length'] == 3
     
     def test_dictionary_length_and_builtin_functions(self):
-        """Test dictionary length and built-in functions."""
+        """Test dictionary methods."""
         source = """
         var person = {"name": "Alice", "age": 30, "city": "New York"}
         var scores = {"math": 95, "science": 87, "english": 92}
-        var person_keys = keys(person)
-        var person_values = values(person)
-        var scores_keys = keys(scores)
+        var person_keys = person.keys()
+        var person_values = person.values()
+        var scores_keys = scores.keys()
         """
         
         tokens = tokenize(source)
@@ -161,18 +165,20 @@ class TestListDictTests:
         # Should execute without errors
         interpreter.evaluate(ast)
         
-        # Check values
-        assert set(interpreter.global_scope['person_keys']) == {"name", "age", "city"}
-        assert set(interpreter.global_scope['person_values']) == {"Alice", 30, "New York"}
-        assert set(interpreter.global_scope['scores_keys']) == {"math", "science", "english"}
+        # Check values - keys() and values() return ArrObjects now
+        from lyric.interpreter import ArrObject
+        assert isinstance(interpreter.global_scope['person_keys'], ArrObject)
+        assert set(interpreter.global_scope['person_keys'].elements) == {"name", "age", "city"}
+        assert set(interpreter.global_scope['person_values'].elements) == {"Alice", 30, "New York"}
+        assert set(interpreter.global_scope['scores_keys'].elements) == {"math", "science", "english"}
     
     def test_list_modification_append(self):
         """Test list modification with append."""
         source = """
         var numbers = [1, 2, 3, 4, 5]
         var words = ["hello", "world", "lyric"]
-        append(numbers, 6)
-        append(words, "test")
+        numbers.append(6)
+        words.append("test")
         """
         
         tokens = tokenize(source)
@@ -183,9 +189,11 @@ class TestListDictTests:
         # Should execute without errors
         interpreter.evaluate(ast)
         
-        # Check values
-        assert interpreter.global_scope['numbers'] == [1, 2, 3, 4, 5, 6]
-        assert interpreter.global_scope['words'] == ["hello", "world", "lyric", "test"]
+        # Check values - now they are ArrObjects
+        from lyric.interpreter import ArrObject
+        assert isinstance(interpreter.global_scope['numbers'], ArrObject)
+        assert interpreter.global_scope['numbers'].elements == [1, 2, 3, 4, 5, 6]
+        assert interpreter.global_scope['words'].elements == ["hello", "world", "lyric", "test"]
     
     def test_dictionary_modification(self):
         """Test dictionary modification."""
@@ -204,9 +212,11 @@ class TestListDictTests:
         # Should execute without errors
         interpreter.evaluate(ast)
         
-        # Check values
-        assert interpreter.global_scope['person']['email'] == "alice@example.com"
-        assert interpreter.global_scope['scores']['history'] == 88
+        # Check values - access elements from MapObjects
+        from lyric.interpreter import MapObject
+        assert isinstance(interpreter.global_scope['person'], MapObject)
+        assert interpreter.global_scope['person'].elements['email'] == "alice@example.com"
+        assert interpreter.global_scope['scores'].elements['history'] == 88
     
     def test_nested_structures(self):
         """Test nested list and dictionary structures."""
@@ -231,13 +241,19 @@ class TestListDictTests:
         # Should execute without errors
         interpreter.evaluate(ast)
         
-        # Check structure
+        # Check structure - access through elements
+        from lyric.interpreter import MapObject, ArrObject
         nested = interpreter.global_scope['nested']
-        assert len(nested['users']) == 2
-        assert nested['users'][0]['name'] == "Alice"
-        assert nested['users'][0]['age'] == 30
-        assert nested['settings']['theme'] == "dark"
-        assert nested['settings']['language'] == "en"
+        assert isinstance(nested, MapObject)
+        users = nested.elements['users']
+        assert isinstance(users, ArrObject)
+        assert users.len() == 2
+        assert users.elements[0].elements['name'] == "Alice"
+        assert users.elements[0].elements['age'] == 30
+        settings = nested.elements['settings']
+        assert isinstance(settings, MapObject)
+        assert settings.elements['theme'] == "dark"
+        assert settings.elements['language'] == "en"
     
     def test_complex_indexing(self):
         """Test complex indexing operations."""
@@ -265,8 +281,11 @@ class TestListDictTests:
         # Should execute without errors
         interpreter.evaluate(ast)
         
-        # Check values
-        assert interpreter.global_scope['first_user']['name'] == "Alice"
+        # Check values - access through elements
+        from lyric.interpreter import MapObject
+        first_user = interpreter.global_scope['first_user']
+        assert isinstance(first_user, MapObject)
+        assert first_user.elements['name'] == "Alice"
         assert interpreter.global_scope['first_user_name'] == "Alice"
         assert interpreter.global_scope['theme'] == "dark"
     
@@ -287,6 +306,11 @@ class TestListDictTests:
         # Should execute without errors
         interpreter.evaluate(ast)
         
-        # Check values
-        assert interpreter.global_scope['numbers'][0] == 10
-        assert interpreter.global_scope['person']['age'] == 31
+        # Check values - access through elements
+        from lyric.interpreter import ArrObject, MapObject
+        numbers = interpreter.global_scope['numbers']
+        person = interpreter.global_scope['person']
+        assert isinstance(numbers, ArrObject)
+        assert isinstance(person, MapObject)
+        assert numbers.elements[0] == 10
+        assert person.elements['age'] == 31

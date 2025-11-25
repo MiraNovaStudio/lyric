@@ -11,7 +11,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -82,8 +82,13 @@ class Parser:
         if self._is_at_end():
             return None
         
-        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
+        # Check for typed function declaration: TYPE funcname(
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'LPAREN':
             return self._parse_func_def()
+        # Check for old-style typed function: TYPE def funcname(
+        elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
+            return self._parse_func_def()
+        # Check for untyped function: def funcname(
         elif self._check('DEF'):
             return self._parse_func_def()
         elif self._check('CLASS'):
@@ -100,6 +105,8 @@ class Parser:
             return self._parse_continue_stmt()
         elif self._check('TRY'):
             return self._parse_try_block()
+        elif self._check('IMPORT'):
+            return self._parse_import_stmt()
         elif self._check('IMPORTPY'):
             return self._parse_importpy_stmt()
         elif self._check('RAISE'):
@@ -123,18 +130,28 @@ class Parser:
             return self._parse_assignment_or_expr_stmt()
     
     def _parse_func_def(self) -> FunctionNode:
-        """Parse function definition: [TYPE] def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
+        """Parse function definition: TYPE IDENT "(" param_list? ")" [":"] "{" statement* "}" 
+           or: def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
         return_type = None
         
-        # Check for optional return type before 'def'
-        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
+        # Check for new-style typed function: TYPE funcname(
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'LPAREN':
             type_token = self._advance()
             return_type = type_token.value.lower()
-        
-        def_token = self._consume('DEF', "Expected 'def'")
-        
-        name_token = self._consume('IDENT', "Expected function name")
-        name = name_token.value
+            name_token = self._advance()
+            name = name_token.value
+        # Check for old-style typed function: TYPE def funcname(
+        elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
+            type_token = self._advance()
+            return_type = type_token.value.lower()
+            def_token = self._consume('DEF', "Expected 'def'")
+            name_token = self._consume('IDENT', "Expected function name")
+            name = name_token.value
+        # Untyped function: def funcname(
+        else:
+            def_token = self._consume('DEF', "Expected 'def'")
+            name_token = self._consume('IDENT', "Expected function name")
+            name = name_token.value
         
         self._consume('LPAREN', "Expected '(' after function name")
         
@@ -165,7 +182,11 @@ class Parser:
         
         self._consume('RBRACE', "Expected '}' after function body")
         
-        return FunctionNode(name, params, param_types, return_type, body_statements, def_token.line, def_token.col)
+        # Use the line/col from whichever token started the function
+        line = type_token.line if 'type_token' in locals() else (def_token.line if 'def_token' in locals() else name_token.line)
+        col = type_token.col if 'type_token' in locals() else (def_token.col if 'def_token' in locals() else name_token.col)
+        
+        return FunctionNode(name, params, param_types, return_type, body_statements, line, col)
     
     def _parse_param_list(self) -> tuple[List[str], List[str]]:
         """Parse parameter list: (TYPE IDENT | IDENT) ("," (TYPE IDENT | IDENT))*"""
@@ -524,10 +545,10 @@ class Parser:
         return expr
     
     def _parse_comparison(self):
-        """Parse comparison expressions (<, <=, >, >=)."""
+        """Parse comparison expressions (<, <=, >, >=, in)."""
         expr = self._parse_term()
         
-        while self._match('LT', '<=', 'GT', '>='):
+        while self._match('LT', '<=', 'GT', '>=', 'IN'):
             operator = self._previous().value
             right = self._parse_term()
             line, col = self._get_position_from_token(self._previous())
@@ -905,7 +926,7 @@ class Parser:
             raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
         
         # Validate that the type is a known type
-        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin'}
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj'}
         if type_name not in valid_types:
             raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
         
@@ -938,7 +959,7 @@ class Parser:
                 raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
             
             # Validate that the type is a known type
-            valid_types = {'int', 'str', 'flt', 'var', 'god', 'bin'}
+            valid_types = {'int', 'str', 'flt', 'var', 'god', 'bin', 'arr', 'map', 'obj'}
             if type_name not in valid_types:
                 raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
             
@@ -954,6 +975,44 @@ class Parser:
                 break
         
         return MultiDeclarationNode(declarations, line, column)
+    
+    def _parse_import_stmt(self) -> ImportNode:
+        """Parse import statement: import IDENT or import IDENT; symbol1, symbol2 as alias"""
+        import_token = self._consume('IMPORT', "Expected 'import'")
+        module_token = self._consume('IDENT', "Expected module name after 'import'")
+        
+        symbols = None
+        
+        # Check for selective import syntax: import module; symbol1, symbol2
+        if self._check('SEMICOLON'):
+            self._consume('SEMICOLON', "Expected ';'")
+            symbols = []
+            
+            # Parse first symbol
+            symbol_name = self._consume('IDENT', "Expected symbol name after ';'").value
+            alias = None
+            
+            # Check for 'as' keyword
+            if self._check('AS'):
+                self._consume('AS', "Expected 'as'")
+                alias = self._consume('IDENT', "Expected alias name after 'as'").value
+            
+            symbols.append((symbol_name, alias))
+            
+            # Parse additional symbols separated by commas
+            while self._check('COMMA'):
+                self._consume('COMMA', "Expected ','")
+                symbol_name = self._consume('IDENT', "Expected symbol name after ','").value
+                alias = None
+                
+                # Check for 'as' keyword
+                if self._check('AS'):
+                    self._consume('AS', "Expected 'as'")
+                    alias = self._consume('IDENT', "Expected alias name after 'as'").value
+                
+                symbols.append((symbol_name, alias))
+        
+        return ImportNode(module_token.value, symbols, import_token.line, import_token.col)
     
     def _parse_importpy_stmt(self) -> ImportPyNode:
         """Parse importpy statement: importpy IDENT"""

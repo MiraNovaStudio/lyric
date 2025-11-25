@@ -281,7 +281,48 @@ Run the full test suite to ensure no regressions.
 
 ✅ No other language behavior or grammar is affected.
 
+### Task 8 – Validate Handling of Single Quotes in Regex String Literals
 
+### Summary:
+We need to ensure Lyric correctly parses and tokenizes regex patterns that contain both single and double quotes inside the expression. The following case currently fails at column 45 and must be fixed:
+
+```
+rex link_pattern = regex("<a[^>]+href=[\"']([^\"']+)[\"'][^>]*>([^<]+)<\/a>/")
+```
+
+The lexer or parser is likely terminating the string early due to mixed quoting. Lyric must treat inner quote characters as literal content when properly escaped or nested within the same string.
+
+#### Implementation Tasks:
+
+Review how the lexer identifies the start and end of quoted strings in regex(...) expressions.
+
+Ensure that both ' and " characters inside the regex pattern are recognized as literal when enclosed within an outer pair of quotes.
+
+Fix any logic that prematurely terminates a string token when encountering an inner quote.
+
+Add detection to ensure balanced outer quotes while preserving all inner characters.
+
+Extend unit tests under lyric/tests to include mixed-quote regexes such as:
+
+regex("<a[^>]+href=[\"']([^\"']+)[\"'][^>]*>([^<]+)<\/a>/")
+
+regex('<a[^>]+href=["\']([^"\']+)["\'][^>]*>([^<]+)<\/a>/')
+
+Other variations combining single/double quotes and escaped slashes.
+
+Validate that these patterns compile and execute successfully using Python’s re module via importpy.
+
+#### Acceptance Criteria:
+
+✅ Mixed quote characters within regex strings are parsed correctly.
+
+✅ No premature string termination occurs.
+
+✅ All new regex string tests pass successfully.
+
+✅ Existing regex-related tests remain green.
+
+✅ Regex behavior is identical to equivalent Python code.
 
 ## Definition of Done
 

@@ -44,11 +44,17 @@ class TestBuiltinsIntegration:
         # If we get here without error, str is working
         assert True
     
-    def test_len_builtin_available(self):
-        """Test that len built-in is available in interpreter."""
-        ast = parse('def main() { x = len("hello") }')
+    def test_len_method_available(self):
+        """Test that len() is now a method on arr and map objects."""
+        # len() is no longer a standalone function - it's a method on arr and map objects
+        code = '''
+        def main() {
+            x = [1, 2, 3]
+            y = x.len()
+        }'''
+        ast = parse(code)
         interpreter = evaluate(ast)
-        # If we get here without error, len is working
+        # If we get here without error, len() method is working
         assert True
     
     def test_range_builtin_available(self):
@@ -63,22 +69,32 @@ class TestBuiltinsIntegration:
         from lyric.interpreter import Interpreter
         interpreter = Interpreter()
         
-        # Check that all built-ins are in global scope
+        # Check that current built-ins are in global scope
+        # Note: len, append, keys, values are now methods, not standalone functions
         assert 'print' in interpreter.global_scope
         assert 'input' in interpreter.global_scope
         assert 'int' in interpreter.global_scope
         assert 'float' in interpreter.global_scope
         assert 'str' in interpreter.global_scope
+        assert 'arr' in interpreter.global_scope
+        assert 'map' in interpreter.global_scope
         assert 'range' in interpreter.global_scope
-        assert 'len' in interpreter.global_scope
         assert 'open' in interpreter.global_scope
+        assert 'isinstance' in interpreter.global_scope
+        assert 'type' in interpreter.global_scope
+        assert 'regex' in interpreter.global_scope
         
-        # Check that they are callable
+        # Check that deprecated functions are NOT registered
+        assert 'len' not in interpreter.global_scope
+        assert 'append' not in interpreter.global_scope
+        assert 'keys' not in interpreter.global_scope
+        assert 'values' not in interpreter.global_scope
+        
+        # Check that registered functions are callable
         assert callable(interpreter.global_scope['print'])
         assert callable(interpreter.global_scope['input'])
         assert callable(interpreter.global_scope['int'])
         assert callable(interpreter.global_scope['float'])
         assert callable(interpreter.global_scope['str'])
         assert callable(interpreter.global_scope['range'])
-        assert callable(interpreter.global_scope['len'])
         assert callable(interpreter.global_scope['open'])

@@ -111,13 +111,13 @@ class TestClassInitTests:
             
             def deposit(flt amount) {
                 self.balance = self.balance + amount
-                append(self.transactions, "Deposit: " + str(amount))
+                self.transactions.append("Deposit: " + str(amount))
             }
             
             def withdraw(flt amount) {
                 if self.balance >= amount:
                     self.balance = self.balance - amount
-                    append(self.transactions, "Withdrawal: " + str(amount))
+                    self.transactions.append("Withdrawal: " + str(amount))
                 else:
                     print("Insufficient funds")
                 end
@@ -142,7 +142,10 @@ class TestClassInitTests:
         account = interpreter.global_scope['account']
         assert account['owner'] == "Alice"
         assert account['balance'] == 1300.0  # 1000 + 500 - 200
-        assert len(account['transactions']) == 2
+        # transactions is now ArrObject
+        from lyric.interpreter import ArrObject
+        assert isinstance(account['transactions'], ArrObject)
+        assert len(account['transactions'].elements) == 2
         assert interpreter.global_scope['current_balance'] == 1300.0
     
     def test_class_with_typed_parameters(self):
@@ -156,13 +159,13 @@ class TestClassInitTests:
             
             def add(int a, int b) {
                 var result = a + b
-                append(self.history, str(a) + " + " + str(b) + " = " + str(result))
+                self.history.append(str(a) + " + " + str(b) + " = " + str(result))
                 return result
             }
             
             def multiply(int a, int b) {
                 var result = a * b
-                append(self.history, str(a) + " * " + str(b) + " = " + str(result))
+                self.history.append(str(a) + " * " + str(b) + " = " + str(result))
                 return result
             }
         +++
@@ -170,7 +173,7 @@ class TestClassInitTests:
         var calc = Calculator("MyCalculator")
         var sum_result = calc.add(5, 10)
         var product_result = calc.multiply(3, 7)
-        var history_length = len(calc.history)
+        var history_length = calc.history.len()
         """
         
         tokens = tokenize(source)
@@ -187,7 +190,10 @@ class TestClassInitTests:
         assert interpreter.global_scope['sum_result'] == 15
         assert interpreter.global_scope['product_result'] == 21
         assert interpreter.global_scope['history_length'] == 2
-        assert len(calc['history']) == 2
+        # history is now ArrObject
+        from lyric.interpreter import ArrObject
+        assert isinstance(calc['history'], ArrObject)
+        assert len(calc['history'].elements) == 2
     
     def test_class_with_complex_init(self):
         """Test class with complex init() method."""
@@ -202,9 +208,9 @@ class TestClassInitTests:
             }
             
             def calculate_average() {
-                if len(self.grades) > 0:
+                if self.grades.len() > 0:
                     var total = 0
-                    var count = len(self.grades)
+                    var count = self.grades.len()
                     self.average = 85.0
                 end
             }
@@ -233,7 +239,10 @@ class TestClassInitTests:
         student = interpreter.global_scope['student']
         assert student['name'] == "Charlie"
         assert student['id'] == 12345
-        assert student['grades'] == [85, 92, 78, 96]
+        # grades is now ArrObject
+        from lyric.interpreter import ArrObject
+        assert isinstance(student['grades'], ArrObject)
+        assert student['grades'].elements == [85, 92, 78, 96]
         assert student['average'] == 85.0
     
     def test_class_inheritance_simulation(self):

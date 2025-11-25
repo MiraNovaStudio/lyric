@@ -28,17 +28,130 @@ def input_builtin(prompt: str = "") -> str:
 
 def int_builtin(value: Any) -> int:
     """Built-in int conversion function."""
+    # Import ArrObject and MapObject here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
+    
+    # Handle arr type (ArrObject) - return length
+    if isinstance(value, ArrObject):
+        return len(value.elements)
+    # Handle arr type (list) - return length
+    elif isinstance(value, list):
+        return len(value)
+    # Handle map type (MapObject) - return number of keys
+    elif isinstance(value, MapObject):
+        return len(value.elements)
+    # Handle map type (dict) - return number of keys
+    elif isinstance(value, dict) and not ('__instance_class__' in value):
+        return len(value)
+    # Default behavior for other types
     return int(value)
 
 
 def float_builtin(value: Any) -> float:
     """Built-in float conversion function."""
+    # Import ArrObject and MapObject here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
+    
+    # Handle arr type (ArrObject) - return length as float
+    if isinstance(value, ArrObject):
+        return float(len(value.elements))
+    # Handle arr type (list) - return length as float
+    elif isinstance(value, list):
+        return float(len(value))
+    # Handle map type (MapObject) - return number of keys as float
+    elif isinstance(value, MapObject):
+        return float(len(value.elements))
+    # Handle map type (dict) - return number of keys as float
+    elif isinstance(value, dict) and not ('__instance_class__' in value):
+        return float(len(value))
+    # Default behavior for other types
     return float(value)
 
 
 def str_builtin(value: Any) -> str:
     """Built-in str conversion function."""
+    # Note: str(arr) and str(map) return string representations
+    # Getting the variable name would require tracking at the interpreter level
     return str(value)
+
+
+def bin_builtin(value: Any) -> bool:
+    """Built-in bin (boolean) conversion function.
+    
+    Converts various types to boolean using Python's truthiness rules:
+    - 0, 0.0, empty string, empty collections -> False
+    - Non-zero numbers, non-empty strings/collections -> True
+    """
+    return bool(value)
+
+
+def god_builtin(value: Any) -> bool:
+    """Built-in god (boolean) conversion function.
+    
+    Alias for bin(). Converts various types to boolean using Python's truthiness rules:
+    - 0, 0.0, empty string, empty collections -> False
+    - Non-zero numbers, non-empty strings/collections -> True
+    """
+    return bool(value)
+
+
+def arr_builtin(value: Any) -> Any:
+    """Built-in arr conversion function to create lists."""
+    # Import ArrObject and MapObject here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
+    
+    # Handle string - convert to list of characters
+    if isinstance(value, str):
+        return ArrObject(list(value))
+    # Handle MapObject - convert to list of values
+    elif isinstance(value, MapObject):
+        return ArrObject(list(value.elements.values()))
+    # Handle dict (map) - convert to list of values
+    elif isinstance(value, dict) and not ('__instance_class__' in value):
+        return ArrObject(list(value.values()))
+    # Handle already an ArrObject
+    elif isinstance(value, ArrObject):
+        return value
+    # Handle plain Python list - wrap it
+    elif isinstance(value, list):
+        return ArrObject(value)
+    # Try to convert iterable types
+    else:
+        try:
+            return ArrObject(list(value))
+        except TypeError:
+            raise RuntimeErrorLyric(f"Cannot convert {type(value).__name__} to arr")
+
+
+def map_builtin(value: Any) -> Any:
+    """Built-in map conversion function to create dictionaries."""
+    # Import ArrObject and MapObject here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
+    
+    # Handle ArrObject - convert to dict with string keys "1", "2", "3", etc.
+    if isinstance(value, ArrObject):
+        result = {str(i + 1): val for i, val in enumerate(value.elements)}
+        return MapObject(result)
+    # Handle list (arr) - convert to dict with string keys "1", "2", "3", etc.
+    elif isinstance(value, list):
+        result = {str(i + 1): val for i, val in enumerate(value)}
+        return MapObject(result)
+    # Handle MapObject - return as is
+    elif isinstance(value, MapObject):
+        return value
+    # Handle string - not directly supported, raise error
+    elif isinstance(value, str):
+        raise RuntimeErrorLyric("Cannot directly convert str to map. Consider using dict comprehension or manual construction.")
+    # Handle already a dict - wrap in MapObject
+    elif isinstance(value, dict):
+        return MapObject(value)
+    # Try to convert other dict-like types
+    else:
+        try:
+            result = dict(value)
+            return MapObject(result)
+        except (TypeError, ValueError) as e:
+            raise RuntimeErrorLyric(f"Cannot convert {type(value).__name__} to map: {e}")
 
 
 def range_builtin(n: int) -> Iterator[int]:
@@ -211,12 +324,19 @@ def register_builtins(env: dict) -> None:
     env['int'] = int_builtin
     env['float'] = float_builtin
     env['str'] = str_builtin
+    env['bin'] = bin_builtin
+    env['god'] = god_builtin
+    env['arr'] = arr_builtin
+    env['map'] = map_builtin
     env['range'] = range_builtin
-    env['len'] = len_builtin
     env['open'] = open_builtin
     env['isinstance'] = isinstance_builtin
     env['type'] = type_builtin
     env['regex'] = regex_builtin
-    env['append'] = append_builtin
-    env['keys'] = keys_builtin
-    env['values'] = values_builtin
+    # Note: len(), append(), keys(), values() have been removed as built-ins
+    # These are now methods on arr and map objects:
+    #   len(myarray) -> myarray.len()
+    #   append(myarray, item) -> myarray.append(item)
+    #   keys(mydict) -> mydict.keys()
+    #   values(mydict) -> mydict.values()
+

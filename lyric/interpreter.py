@@ -11,7 +11,7 @@ import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
@@ -79,6 +79,272 @@ class RexObject:
         return f"RexObject(pattern='{self.pattern.pattern}')"
 
 
+class ArrObject:
+    """Represents an arr (list) object with methods."""
+    
+    def __init__(self, elements: list = None):
+        """Initialize ArrObject with a list of elements."""
+        self.elements = elements if elements is not None else []
+    
+    def append(self, element: Any) -> None:
+        """Add a single element to the end of the list."""
+        self.elements.append(element)
+    
+    def clear(self) -> None:
+        """Remove all elements, making the list empty."""
+        self.elements.clear()
+    
+    def copy(self) -> 'ArrObject':
+        """Return a shallow copy of the list."""
+        return ArrObject(self.elements.copy())
+    
+    def count(self, value: Any) -> int:
+        """Return number of occurrences of value."""
+        return self.elements.count(value)
+    
+    def index(self, value: Any, start: int = 0, end: int = None) -> int:
+        """Return index of first occurrence; raise ValueError if not found."""
+        try:
+            if end is None:
+                return self.elements.index(value, start)
+            else:
+                return self.elements.index(value, start, end)
+        except ValueError:
+            raise ValueErrorLyric(f"'{value}' is not in arr")
+    
+    def insert(self, index: int, element: Any) -> None:
+        """Insert element at index, shifting items right."""
+        if not isinstance(index, int):
+            raise TypeErrorLyric(f"insert() expects an integer index, but got {type(index).__name__}")
+        self.elements.insert(index, element)
+    
+    def pop(self, index: int = -1) -> Any:
+        """Remove and return item at index; default to last item; raise IndexError if invalid."""
+        if not isinstance(index, int):
+            raise TypeErrorLyric(f"pop() expects an integer index, but got {type(index).__name__}")
+        if not self.elements:
+            raise IndexErrorLyric("pop from empty arr")
+        try:
+            return self.elements.pop(index)
+        except IndexError:
+            raise IndexErrorLyric(f"pop index out of range")
+    
+    def remove(self, value: Any) -> None:
+        """Remove first occurrence of value; raise ValueError if missing."""
+        try:
+            self.elements.remove(value)
+        except ValueError:
+            raise ValueErrorLyric(f"arr.remove(x): x not in arr")
+    
+    def reverse(self) -> None:
+        """Reverse list in place."""
+        self.elements.reverse()
+    
+    def sort(self, key=None, reverse=None) -> None:
+        """Sort list in place; support optional key and reverse parameters."""
+        try:
+            # Handle reverse parameter - defaults to False
+            reverse_val = False if reverse is None else reverse
+            
+            if key is None or key is False:
+                # No key function, just sort normally
+                self.elements.sort(reverse=reverse_val)
+            else:
+                # key would be a callable if provided
+                if callable(key):
+                    self.elements.sort(key=key, reverse=reverse_val)
+                else:
+                    raise TypeErrorLyric(f"sort() key parameter must be callable, got {type(key).__name__}")
+        except TypeError as e:
+            raise TypeErrorLyric(f"sort() error: {e}")
+    
+    def len(self) -> int:
+        """Return number of elements in the list."""
+        return len(self.elements)
+    
+    def max(self) -> Any:
+        """Return largest element; error if list is empty."""
+        if not self.elements:
+            raise ValueErrorLyric("max() arg is an empty arr")
+        try:
+            return max(self.elements)
+        except TypeError as e:
+            raise TypeErrorLyric(f"max() error: {e}")
+    
+    def min(self) -> Any:
+        """Return smallest element; error if list is empty."""
+        if not self.elements:
+            raise ValueErrorLyric("min() arg is an empty arr")
+        try:
+            return min(self.elements)
+        except TypeError as e:
+            raise TypeErrorLyric(f"min() error: {e}")
+    
+    def sum(self) -> Any:
+        """Return sum of numeric elements; raise TypeError on non-numeric values."""
+        if not self.elements:
+            return 0
+        try:
+            return sum(self.elements)
+        except TypeError:
+            # Check which element is non-numeric
+            for i, elem in enumerate(self.elements):
+                if not isinstance(elem, (int, float)):
+                    raise TypeErrorLyric(f"sum() does not support non-numeric types: element at index {i} is {type(elem).__name__}")
+            # If we get here, re-raise the original error
+            raise TypeErrorLyric(f"sum() error with arr elements")
+    
+    def __repr__(self):
+        return str(self.elements)
+    
+    def __str__(self):
+        return str(self.elements)
+    
+    def __len__(self):
+        return len(self.elements)
+    
+    def __getitem__(self, key):
+        """Support indexing and slicing."""
+        if isinstance(key, slice):
+            # Return a new ArrObject with the sliced elements
+            return ArrObject(self.elements[key])
+        else:
+            # Return the element directly (not wrapped in ArrObject)
+            return self.elements[key]
+    
+    def __setitem__(self, key, value):
+        """Support item assignment."""
+        self.elements[key] = value
+    
+    def __iter__(self):
+        """Support iteration."""
+        return iter(self.elements)
+    
+    def __add__(self, other):
+        """Support concatenation of ArrObjects with + operator."""
+        if isinstance(other, ArrObject):
+            return ArrObject(self.elements + other.elements)
+        elif isinstance(other, list):
+            return ArrObject(self.elements + other)
+        else:
+            raise TypeErrorLyric(f"unsupported operand type(s) for +: 'arr' and '{type(other).__name__}'")
+
+
+class MapObject:
+    """Represents a map (dictionary) object with methods."""
+    
+    def __init__(self, elements: dict = None):
+        """Initialize MapObject with a dictionary."""
+        self.elements = elements if elements is not None else {}
+    
+    def clear(self) -> None:
+        """Remove all items from the dictionary."""
+        self.elements.clear()
+    
+    def copy(self) -> 'MapObject':
+        """Return a shallow copy of the dictionary."""
+        return MapObject(self.elements.copy())
+    
+    @staticmethod
+    def fromkeys(seq, value=None) -> 'MapObject':
+        """Create a new dictionary from a sequence of keys with optional default value."""
+        if isinstance(seq, ArrObject):
+            seq = seq.elements
+        new_dict = dict.fromkeys(seq, value)
+        return MapObject(new_dict)
+    
+    def get(self, key: Any, default=None) -> Any:
+        """Return value for key; return default if key not found."""
+        return self.elements.get(key, default)
+    
+    def items(self) -> 'ArrObject':
+        """Return an ArrObject of (key, value) pairs."""
+        return ArrObject(list(self.elements.items()))
+    
+    def keys(self) -> 'ArrObject':
+        """Return an ArrObject of all keys."""
+        return ArrObject(list(self.elements.keys()))
+    
+    def pop(self, key: Any, *args) -> Any:
+        """Remove and return value for key; raise KeyError if missing and no default."""
+        if len(args) > 1:
+            raise TypeErrorLyric("pop() accepts at most 2 arguments (key and default)")
+        try:
+            if len(args) == 0:
+                # No default provided
+                return self.elements.pop(key)
+            else:
+                # Default provided
+                return self.elements.pop(key, args[0])
+        except KeyError:
+            raise KeyErrorLyric(f"Key '{key}' not found in map")
+    
+    def popitem(self) -> 'ArrObject':
+        """Remove and return the last inserted (key, value) pair as an ArrObject."""
+        if not self.elements:
+            raise KeyErrorLyric("popitem(): map is empty")
+        try:
+            key, value = self.elements.popitem()
+            return ArrObject([key, value])
+        except KeyError:
+            raise KeyErrorLyric("popitem(): map is empty")
+    
+    def setdefault(self, key: Any, default=None) -> Any:
+        """Return value for key; if missing, insert key with default and return default."""
+        return self.elements.setdefault(key, default)
+    
+    def update(self, other) -> None:
+        """Update dictionary with key-value pairs from another dict."""
+        if isinstance(other, MapObject):
+            self.elements.update(other.elements)
+        elif isinstance(other, dict):
+            self.elements.update(other)
+        else:
+            raise TypeErrorLyric(f"update() expects a map or dict, got {type(other).__name__}")
+    
+    def values(self) -> 'ArrObject':
+        """Return an ArrObject of all values."""
+        return ArrObject(list(self.elements.values()))
+    
+    def len(self) -> int:
+        """Return number of items in the dictionary."""
+        return len(self.elements)
+    
+    def sorted(self, reverse=False) -> 'ArrObject':
+        """Return an ArrObject of sorted keys."""
+        try:
+            return ArrObject(sorted(self.elements.keys(), reverse=reverse))
+        except TypeError as e:
+            raise TypeErrorLyric(f"sorted() error: {e}")
+    
+    def __repr__(self):
+        return str(self.elements)
+    
+    def __str__(self):
+        return str(self.elements)
+    
+    def __len__(self):
+        return len(self.elements)
+    
+    def __getitem__(self, key):
+        """Support indexing."""
+        if key not in self.elements:
+            raise KeyErrorLyric(f"Key '{key}' not found in map")
+        return self.elements[key]
+    
+    def __setitem__(self, key, value):
+        """Support item assignment."""
+        self.elements[key] = value
+    
+    def __contains__(self, key):
+        """Support 'in' operator for membership check."""
+        return key in self.elements
+    
+    def __iter__(self):
+        """Support iteration (yields keys in insertion order)."""
+        return iter(self.elements)
+
+
 class ReturnValue:
     """Wrapper for return values to distinguish them from normal expression values."""
     def __init__(self, value):
@@ -88,7 +354,7 @@ class ReturnValue:
 class Interpreter:
     """Interpreter for executing Lyric AST nodes."""
     
-    def __init__(self):
+    def __init__(self, source_file=None):
         self.global_scope = {
             'true': True,
             'false': False,
@@ -101,6 +367,8 @@ class Interpreter:
         register_builtins(self.global_scope)
         self.functions = {}
         self.classes = {}
+        # Track the source file path for relative imports
+        self.source_file = source_file
     
     def _push_scope(self):
         """Push a new scope onto the stack."""
@@ -309,6 +577,10 @@ class Interpreter:
                 return False
         elif expected_type == 'pyobject':
             return True  # pyobject can hold any Python object
+        elif expected_type == 'arr':
+            return isinstance(value, list)  # arr maps to Python list
+        elif expected_type == 'map':
+            return isinstance(value, dict)  # map maps to Python dict
         
         return False
     
@@ -350,6 +622,7 @@ class Interpreter:
             param_types = func_def.get('param_types', [])
             return_type = func_def.get('return_type', 'var')
             body = func_def['body']
+            module_scope = func_def.get('module_scope', None)  # Get module scope if available
             
             # Create local scope
             local_scope = {}
@@ -375,7 +648,11 @@ class Interpreter:
             # Save current scope
             old_scope = self.global_scope.copy()
             
-            # Set local scope
+            # If function has a module scope, use it as the base scope
+            if module_scope is not None:
+                self.global_scope = module_scope.copy()
+            
+            # Set local scope (parameters override module scope)
             self.global_scope.update(local_scope)
             
             # Push function scope for variable types
@@ -490,6 +767,8 @@ class Interpreter:
             return self._evaluate_try_statement(statement)
         elif isinstance(statement, RaiseNode):
             return self._evaluate_raise_statement(statement)
+        elif isinstance(statement, ImportNode):
+            return self._evaluate_import_statement(statement)
         elif isinstance(statement, ImportPyNode):
             return self._evaluate_importpy_statement(statement)
         else:
@@ -524,15 +803,16 @@ class Interpreter:
             
             if obj_name in self.global_scope:
                 obj = self.global_scope[obj_name]
-                if isinstance(obj, dict):
-                    # For dictionaries, the index is a key
+                if isinstance(obj, (dict, MapObject)):
+                    # For dictionaries and MapObject, the index is a key
                     obj[index_str] = value
-                elif isinstance(obj, list):
-                    # For lists, the index should be an integer
+                elif isinstance(obj, (list, ArrObject)):
+                    # For lists and ArrObject, the index should be an integer
                     try:
                         index = int(index_str)
-                        if index < 0 or index >= len(obj):
-                            raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}", node.line, node.column)
+                        obj_len = len(obj.elements) if isinstance(obj, ArrObject) else len(obj)
+                        if index < 0 or index >= obj_len:
+                            raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
                         obj[index] = value
                     except ValueError:
                         raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
@@ -637,6 +917,13 @@ class Interpreter:
             return isinstance(value, bool)
         elif expected_type == 'bin':
             return isinstance(value, bool)  # bin is an alias for god
+        elif expected_type == 'arr':
+            return isinstance(value, (list, ArrObject))  # arr maps to ArrObject or Python list
+        elif expected_type == 'map':
+            return isinstance(value, (dict, MapObject))  # map maps to MapObject or Python dict
+        elif expected_type == 'obj':
+            # obj is for class instances - check if it's a dict with __instance_class__ marker
+            return isinstance(value, dict) and '__instance_class__' in value
         else:
             return False
     
@@ -646,38 +933,49 @@ class Interpreter:
             return ReturnValue(self._evaluate_expression(node.value))
         return ReturnValue(None)
     
-    def _evaluate_list_literal(self, node: ListLiteralNode) -> List[Any]:
+    def _evaluate_list_literal(self, node: ListLiteralNode) -> 'ArrObject':
         """Evaluate a list literal."""
-        return [self._evaluate_expression(elem) for elem in node.elements]
+        elements = [self._evaluate_expression(elem) for elem in node.elements]
+        return ArrObject(elements)
     
-    def _evaluate_dict_literal(self, node: DictLiteralNode) -> dict:
+    def _evaluate_dict_literal(self, node: DictLiteralNode) -> 'MapObject':
         """Evaluate a dictionary literal."""
         result = {}
         for key_expr, value_expr in node.pairs:
             key = self._evaluate_expression(key_expr)
             value = self._evaluate_expression(value_expr)
             result[key] = value
-        return result
+        return MapObject(result)
     
     def _evaluate_index(self, node: IndexNode) -> Any:
         """Evaluate an indexing operation."""
         obj = self._evaluate_expression(node.obj)
         index = self._evaluate_expression(node.index)
         
-        if isinstance(obj, (list, tuple)):
+        if isinstance(obj, (list, tuple, ArrObject)):
             if not isinstance(index, int):
                 raise TypeErrorLyric(f"Invalid list index: expected integer, but got {type(index).__name__}. List indices must be integers (0, 1, 2, ...)")
-            if index < 0 or index >= len(obj):
-                raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
-            return obj[index]
-        elif isinstance(obj, dict):
-            if index not in obj:
-                available_keys = list(obj.keys())[:5]  # Show first 5 keys
-                keys_preview = ", ".join(repr(k) for k in available_keys)
-                if len(obj) > 5:
-                    keys_preview += f" (and {len(obj)-5} more)"
-                raise KeyErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
-            return obj[index]
+            if isinstance(obj, ArrObject):
+                if index < 0 or index >= len(obj.elements):
+                    raise IndexErrorLyric(f"Index out of range: tried to access index {index} in arr of length {len(obj.elements)}. Valid indices are 0 to {len(obj.elements)-1}")
+                return obj[index]
+            else:
+                if index < 0 or index >= len(obj):
+                    raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
+                return obj[index]
+        elif isinstance(obj, (dict, MapObject)):
+            if isinstance(obj, MapObject):
+                # MapObject handles KeyError in its __getitem__
+                return obj[index]
+            else:
+                # Plain dict
+                if index not in obj:
+                    available_keys = list(obj.keys())[:5]  # Show first 5 keys
+                    keys_preview = ", ".join(repr(k) for k in available_keys)
+                    if len(obj) > 5:
+                        keys_preview += f" (and {len(obj)-5} more)"
+                    raise KeyErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
+                return obj[index]
         else:
             raise TypeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
     
@@ -693,6 +991,12 @@ class Interpreter:
         # Handle different object types
         if isinstance(obj, (str, list, tuple)):
             try:
+                return obj[start:end:step]
+            except Exception as e:
+                raise RuntimeErrorLyric(f"Slice operation failed: {str(e)}", node.line, node.column)
+        elif isinstance(obj, ArrObject):
+            try:
+                # ArrObject.__getitem__ handles slicing and returns a new ArrObject
                 return obj[start:end:step]
             except Exception as e:
                 raise RuntimeErrorLyric(f"Slice operation failed: {str(e)}", node.line, node.column)
@@ -852,9 +1156,25 @@ class Interpreter:
                         continue  # Skip to next iteration
         else:
             # Generic iterator (simplified)
+            iterator_var = node.iterator_var or 'item'
             iterable = self._evaluate_expression(node.condition_or_iter)
-            if isinstance(iterable, (list, tuple)):
+            if isinstance(iterable, (list, tuple, ArrObject)):
                 for item in iterable:
+                    # Assign loop variable to scope
+                    self.global_scope[iterator_var] = item
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
+            elif isinstance(iterable, (dict, MapObject)):
+                # Iterate over keys in insertion order
+                keys = iterable.keys() if isinstance(iterable, MapObject) else list(iterable.keys())
+                for key in keys:
+                    # Assign loop variable to scope
+                    self.global_scope[iterator_var] = key
                     try:
                         for statement in node.body:
                             self._evaluate_statement(statement)
@@ -962,6 +1282,28 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: RexObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, ArrObject):
+                    # Handle ArrObject methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: ArrObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, MapObject):
+                    # Handle MapObject methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: MapObject has no attribute '{method_name}'")
                 elif callable(current_obj):
                     # Handle classes and callable objects
                     try:
@@ -990,14 +1332,14 @@ class Interpreter:
             print(*args)
             return None
         elif node.func_name == "range":
-            # Built-in range function
+            # Built-in range function - returns ArrObject for consistency with Lyric's arr type
             args = [self._evaluate_expression(arg) for arg in node.args]
             if len(args) == 1:
-                return list(range(args[0]))
+                return ArrObject(list(range(args[0])))
             elif len(args) == 2:
-                return list(range(args[0], args[1]))
+                return ArrObject(list(range(args[0], args[1])))
             elif len(args) == 3:
-                return list(range(args[0], args[1], args[2]))
+                return ArrObject(list(range(args[0], args[1], args[2])))
             else:
                 raise RuntimeErrorLyric(f"Invalid range() arguments: range() takes 1-3 arguments (start, stop, step), but got {len(args)}. Usage: range(stop) or range(start, stop) or range(start, stop, step)")
         elif node.func_name in self.classes:
@@ -1167,6 +1509,14 @@ class Interpreter:
                 return self._is_truthy(left) and self._is_truthy(right)
             elif node.op == 'or':
                 return self._is_truthy(left) or self._is_truthy(right)
+            elif node.op == 'in':
+                # Membership check: key in dict, item in list, char in string
+                if isinstance(right, MapObject):
+                    return left in right  # MapObject implements __contains__
+                elif isinstance(right, (dict, list, str, tuple, ArrObject)):
+                    return left in right
+                else:
+                    raise TypeErrorLyric(f"'in' requires a container (map, arr, str), got {type(right).__name__}")
             else:
                 raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}", node.line, node.column)
         except TypeError as e:
@@ -1303,6 +1653,150 @@ class Interpreter:
             available_exceptions = list(exception_map.keys())
             raise RuntimeErrorLyric(f"Unknown exception: '{exception_name}' is not a valid exception type. Available exceptions: {', '.join(available_exceptions[:5])} (and more)")
     
+    def _evaluate_import_statement(self, node: ImportNode) -> None:
+        """Evaluate an import statement for Lyric modules."""
+        import os
+        from lyric.lexer import tokenize
+        from lyric.parser import Parser
+        
+        module_name = node.module_name
+        
+        # Search for the module in the following order:
+        # 1. Current working directory
+        # 2. Directory of the script being executed (if known)
+        # 3. LYRIC_PATH environment variable
+        
+        search_paths = [
+            os.getcwd(),  # Current working directory
+        ]
+        
+        # Add the directory of the source file if known
+        if self.source_file:
+            source_dir = os.path.dirname(os.path.abspath(self.source_file))
+            if source_dir not in search_paths:
+                search_paths.append(source_dir)
+        
+        # Add LYRIC_PATH if set
+        lyric_path = os.environ.get('LYRIC_PATH', '')
+        if lyric_path:
+            search_paths.extend(lyric_path.split(os.pathsep))
+        
+        # Try to find the module file
+        module_file = None
+        for search_path in search_paths:
+            # Try .ly extension
+            candidate = os.path.join(search_path, f"{module_name}.ly")
+            if os.path.isfile(candidate):
+                module_file = candidate
+                break
+            
+            # Try as a directory with __init__.ly
+            candidate_init = os.path.join(search_path, module_name, "__init__.ly")
+            if os.path.isfile(candidate_init):
+                module_file = candidate_init
+                break
+        
+        if module_file is None:
+            raise RuntimeErrorLyric(
+                f"ModuleNotFoundError: No module named '{module_name}'. "
+                f"Searched in: {', '.join(search_paths)}",
+                node.line,
+                node.column
+            )
+        
+        # Read and parse the module
+        try:
+            with open(module_file, 'r', encoding='utf-8') as f:
+                source_code = f.read()
+        except Exception as e:
+            raise RuntimeErrorLyric(
+                f"Error reading module '{module_name}' from '{module_file}': {e}",
+                node.line,
+                node.column
+            )
+        
+        # Parse the module
+        try:
+            tokens = tokenize(source_code)
+            parser = Parser(tokens)
+            module_ast = parser.parse()
+        except Exception as e:
+            raise RuntimeErrorLyric(
+                f"Error parsing module '{module_name}': {e}",
+                node.line,
+                node.column
+            )
+        
+        # Create a new interpreter for the module with its own scope
+        module_interpreter = Interpreter()
+        
+        # Evaluate the module
+        try:
+            module_interpreter.evaluate(module_ast)
+        except Exception as e:
+            raise RuntimeErrorLyric(
+                f"Error executing module '{module_name}': {e}",
+                node.line,
+                node.column
+            )
+        
+        # Import ONLY functions and classes from the module
+        # Variables (including arrays, maps, etc.) are NOT imported
+        # However, functions need to retain access to their module's global scope
+        
+        if node.symbols:
+            # Selective import: import module; symbol1, symbol2
+            for symbol_name, alias in node.symbols:
+                # Check if it's a function
+                if symbol_name in module_interpreter.functions:
+                    func = module_interpreter.functions[symbol_name]
+                    func_with_scope = func.copy()
+                    func_with_scope['module_scope'] = module_interpreter.global_scope
+                    
+                    # Use alias if provided, otherwise use original name
+                    target_name = alias if alias else symbol_name
+                    self.functions[target_name] = func_with_scope
+                
+                # Check if it's a class
+                elif symbol_name in module_interpreter.classes:
+                    cls = module_interpreter.classes[symbol_name]
+                    
+                    # Classes are imported into the classes dict
+                    # Aliases are not supported for classes - user should use var alias = ClassName()
+                    if alias:
+                        raise RuntimeErrorLyric(
+                            f"ImportError: 'as' keyword is not supported for class imports. "
+                            f"To create an alias for '{symbol_name}', use: var {alias} = {symbol_name}() after importing.",
+                            node.line,
+                            node.column
+                        )
+                    
+                    self.classes[symbol_name] = cls
+                
+                # Symbol not found
+                else:
+                    raise RuntimeErrorLyric(
+                        f"ImportError: cannot import name '{symbol_name}' from module '{module_name}'. "
+                        f"'{symbol_name}' is not a function or class in the module.",
+                        node.line,
+                        node.column
+                    )
+        else:
+            # Import all functions and classes from the module
+            
+            # Import functions with their module scope
+            for name, func in module_interpreter.functions.items():
+                # Attach module scope to function so it can access module variables
+                func_with_scope = func.copy()
+                func_with_scope['module_scope'] = module_interpreter.global_scope
+                self.functions[name] = func_with_scope
+            
+            # Import classes
+            for name, cls in module_interpreter.classes.items():
+                self.classes[name] = cls
+        
+        return None
+    
     def _evaluate_importpy_statement(self, node: ImportPyNode) -> None:
         """Evaluate an importpy statement."""
         from lyric.pyproxy import PyModuleProxy
@@ -1347,7 +1841,7 @@ class Interpreter:
             return True
 
 
-def evaluate(ast: ProgramNode) -> Any:
+def evaluate(ast: ProgramNode, source_file=None) -> Any:
     """Evaluate an AST and return the result."""
-    interpreter = Interpreter()
+    interpreter = Interpreter(source_file=source_file)
     return interpreter.evaluate(ast)

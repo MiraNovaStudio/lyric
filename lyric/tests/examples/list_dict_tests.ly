@@ -1,5 +1,13 @@
 # List and Dictionary Tests for Sprint 3
-# Tests list/dictionary literals, indexing, and built-in functions
+# Tests list/dictionary literals, indexing, and built-in methods
+#
+# NOTE: As of Sprint 8, len(), append(), keys(), and values() are now methods
+# on arr and map objects, not standalone functions.
+# Examples:
+#   len(mylist) -> mylist.len()
+#   append(mylist, item) -> mylist.append(item)
+#   keys(mydict) -> mydict.keys()
+#   values(mydict) -> mydict.values()
 
 # Test 1: List literals and basic operations
 var numbers = [1, 2, 3, 4, 5]
@@ -21,18 +29,18 @@ var person_name = person["name"]
 var person_age = person["age"]
 var math_score = scores["math"]
 
-# Test 5: List length and built-in functions
-var numbers_length = len(numbers)
-var words_length = len(words)
+# Test 5: List length using method
+var numbers_length = numbers.len()
+var words_length = words.len()
 
-# Test 6: Dictionary length and built-in functions
-var person_keys = keys(person)
-var person_values = values(person)
-var scores_keys = keys(scores)
+# Test 6: Dictionary methods
+var person_keys = person.keys()
+var person_values = person.values()
+var scores_keys = scores.keys()
 
-# Test 7: List modification (append)
-append(numbers, 6)
-append(words, "test")
+# Test 7: List modification (append method)
+numbers.append(6)
+words.append("test")
 
 # Test 8: Dictionary modification
 person["email"] = "alice@example.com"

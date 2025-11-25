@@ -6,7 +6,7 @@ def fetch(str url): {
     print "Content length: " + str(len(r.text))
 
     # Also show first 200 characters of content
-    print "First 200 chars: " + r.text[:200] + "..."
+    # print "First 200 chars: " + r.text[:200] + "..."
     
     rex title_pattern = r"<title>(.*?)<.title>"
 

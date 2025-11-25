@@ -13,7 +13,7 @@ import tempfile
 import os
 from lyric.runtime import (
     print_builtin, input_builtin, int_builtin, float_builtin, str_builtin,
-    range_builtin, len_builtin, open_builtin, register_builtins
+    range_builtin, open_builtin, register_builtins
 )
 
 
@@ -77,13 +77,18 @@ class TestRuntimeBuiltins:
         result = list(range_builtin(1))
         assert result == [0]
     
-    def test_len_builtin(self):
-        """Test len built-in function."""
-        assert len_builtin("hello") == 5
-        assert len_builtin([1, 2, 3]) == 3
-        assert len_builtin((1, 2, 3, 4)) == 4
-        assert len_builtin("") == 0
-        assert len_builtin([]) == 0
+    def test_len_method_on_objects(self):
+        """Test that len() is now a method on arr and map objects, not a standalone function."""
+        # This test documents that len() has been migrated to a method-based API
+        # len([1,2,3]) -> [1,2,3].len()
+        # len({"a": 1}) -> {"a": 1}.len()
+        from lyric.interpreter import ArrObject, MapObject
+        
+        arr = ArrObject([1, 2, 3])
+        assert arr.len() == 3
+        
+        map_obj = MapObject({"a": 1, "b": 2})
+        assert map_obj.len() == 2
     
     def test_open_builtin(self):
         """Test open built-in function."""
@@ -116,24 +121,34 @@ class TestRuntimeBuiltins:
         env = {}
         register_builtins(env)
         
-        # Check that all built-ins are registered
+        # Check that all current built-ins are registered
+        # Note: len, append, keys, values are now methods on objects, not standalone functions
         assert 'print' in env
         assert 'input' in env
         assert 'int' in env
         assert 'float' in env
         assert 'str' in env
+        assert 'arr' in env
+        assert 'map' in env
         assert 'range' in env
-        assert 'len' in env
         assert 'open' in env
+        assert 'isinstance' in env
+        assert 'type' in env
+        assert 'regex' in env
         
-        # Check that they are callable
+        # Check that deprecated functions are NOT registered
+        assert 'len' not in env
+        assert 'append' not in env
+        assert 'keys' not in env
+        assert 'values' not in env
+        
+        # Check that registered functions are callable
         assert callable(env['print'])
         assert callable(env['input'])
         assert callable(env['int'])
         assert callable(env['float'])
         assert callable(env['str'])
         assert callable(env['range'])
-        assert callable(env['len'])
         assert callable(env['open'])
     
     def test_builtins_integration(self, capsys):
@@ -146,9 +161,10 @@ class TestRuntimeBuiltins:
         captured = capsys.readouterr()
         assert captured.out == "Number: 42 Float: 3.14\n"
         
-        # Test range and len
-        numbers = list(env['range'](5))
-        env['print']("Length:", env['len'](numbers))
+        # Test range and arr (list) creation
+        from lyric.interpreter import ArrObject
+        numbers = env['arr'](list(env['range'](5)))
+        env['print']("Length:", numbers.len())
         captured = capsys.readouterr()
         assert captured.out == "Length: 5\n"
         

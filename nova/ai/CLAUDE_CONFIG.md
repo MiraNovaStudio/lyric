@@ -8,7 +8,7 @@ This applies to ALL filesystem modifications - code, config, docs, renames, dele
 **ALWAYS COMPLETE ONE TASK AT A TIME AND STOP!**
 - **MANDATORY**: After completing any task, ALWAYS create:
   1. Changelog entry (nova/changelog/YYYYMMDD/HHMM-CHANGELOG.md)
-  2. Sprint task summary (nova/arcs/trajectory-0.9.1/yield-0.x.x/SPRINTX_TASKX_SUMMARY.md)
+  2. Sprint task summary (nova/aeon/trajectory-0.9.1/yield-0.x.x/SPRINTX_TASKX_SUMMARY.md)
   3. Commit changes
 - **STOP EXECUTION** after task completion - do NOT proceed to next task
 - **WAIT** for user instruction before starting next task

@@ -661,7 +661,7 @@ def test_evaluate_method_call_errors():
 def test_evaluate_class_instantiation_errors():
     """Test error handling for undefined class instantiation."""
     source = """def main() {
-    obj = NonExistentClass()
+    result = NonExistentClass()
 }"""
     
     ast = parse(source)
