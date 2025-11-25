@@ -11,7 +11,7 @@ import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
@@ -494,6 +494,8 @@ class Interpreter:
             return self._evaluate_try_statement(statement)
         elif isinstance(statement, RaiseNode):
             return self._evaluate_raise_statement(statement)
+        elif isinstance(statement, ImportNode):
+            return self._evaluate_import_statement(statement)
         elif isinstance(statement, ImportPyNode):
             return self._evaluate_importpy_statement(statement)
         else:
@@ -1313,6 +1315,104 @@ class Interpreter:
             # Default to RuntimeErrorLyric for unknown exceptions
             available_exceptions = list(exception_map.keys())
             raise RuntimeErrorLyric(f"Unknown exception: '{exception_name}' is not a valid exception type. Available exceptions: {', '.join(available_exceptions[:5])} (and more)")
+    
+    def _evaluate_import_statement(self, node: ImportNode) -> None:
+        """Evaluate an import statement for Lyric modules."""
+        import os
+        from lyric.lexer import tokenize
+        from lyric.parser import Parser
+        
+        module_name = node.module_name
+        
+        # Search for the module in the following order:
+        # 1. Current directory
+        # 2. LYRIC_PATH environment variable
+        # 3. Standard library location (if it exists)
+        
+        search_paths = [
+            os.getcwd(),  # Current directory
+        ]
+        
+        # Add LYRIC_PATH if set
+        lyric_path = os.environ.get('LYRIC_PATH', '')
+        if lyric_path:
+            search_paths.extend(lyric_path.split(os.pathsep))
+        
+        # Try to find the module file
+        module_file = None
+        for search_path in search_paths:
+            # Try .ly extension
+            candidate = os.path.join(search_path, f"{module_name}.ly")
+            if os.path.isfile(candidate):
+                module_file = candidate
+                break
+            
+            # Try as a directory with __init__.ly
+            candidate_init = os.path.join(search_path, module_name, "__init__.ly")
+            if os.path.isfile(candidate_init):
+                module_file = candidate_init
+                break
+        
+        if module_file is None:
+            raise RuntimeErrorLyric(
+                f"ModuleNotFoundError: No module named '{module_name}'. "
+                f"Searched in: {', '.join(search_paths)}",
+                node.line,
+                node.column
+            )
+        
+        # Read and parse the module
+        try:
+            with open(module_file, 'r', encoding='utf-8') as f:
+                source_code = f.read()
+        except Exception as e:
+            raise RuntimeErrorLyric(
+                f"Error reading module '{module_name}' from '{module_file}': {e}",
+                node.line,
+                node.column
+            )
+        
+        # Parse the module
+        try:
+            tokens = tokenize(source_code)
+            parser = Parser(tokens)
+            module_ast = parser.parse()
+        except Exception as e:
+            raise RuntimeErrorLyric(
+                f"Error parsing module '{module_name}': {e}",
+                node.line,
+                node.column
+            )
+        
+        # Create a new interpreter for the module with its own scope
+        module_interpreter = Interpreter()
+        
+        # Evaluate the module
+        try:
+            module_interpreter.evaluate(module_ast)
+        except Exception as e:
+            raise RuntimeErrorLyric(
+                f"Error executing module '{module_name}': {e}",
+                node.line,
+                node.column
+            )
+        
+        # Import all top-level symbols from the module into the current scope
+        # This includes functions, classes, and global variables
+        for name, value in module_interpreter.global_scope.items():
+            # Skip built-in values
+            if name not in ('true', 'false', 'None'):
+                self.global_scope[name] = value
+        
+        # Import functions
+        for name, func in module_interpreter.functions.items():
+            self.functions[name] = func
+        
+        # Import classes
+        for name, cls in module_interpreter.classes.items():
+            self.classes[name] = cls
+        
+        return None
     
     def _evaluate_importpy_statement(self, node: ImportPyNode) -> None:
         """Evaluate an importpy statement."""

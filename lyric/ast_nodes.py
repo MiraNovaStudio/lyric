@@ -487,6 +487,23 @@ class ImportPyNode(ASTNode):
 
 
 @dataclass
+class ImportNode(ASTNode):
+    """Represents an import statement for Lyric modules."""
+    module_name: str
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"ImportNode(module='{self.module_name}')"
+    
+    def to_dict(self):
+        return {
+            'type': 'ImportNode',
+            'module_name': self.module_name
+        }
+
+
+@dataclass
 class RexNode(ASTNode):
     """Represents a regex literal."""
     pattern: str

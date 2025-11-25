@@ -11,7 +11,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportPyNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -100,6 +100,8 @@ class Parser:
             return self._parse_continue_stmt()
         elif self._check('TRY'):
             return self._parse_try_block()
+        elif self._check('IMPORT'):
+            return self._parse_import_stmt()
         elif self._check('IMPORTPY'):
             return self._parse_importpy_stmt()
         elif self._check('RAISE'):
@@ -954,6 +956,13 @@ class Parser:
                 break
         
         return MultiDeclarationNode(declarations, line, column)
+    
+    def _parse_import_stmt(self) -> ImportNode:
+        """Parse import statement: import IDENT"""
+        import_token = self._consume('IMPORT', "Expected 'import'")
+        module_token = self._consume('IDENT', "Expected module name after 'import'")
+        
+        return ImportNode(module_token.value, import_token.line, import_token.col)
     
     def _parse_importpy_stmt(self) -> ImportPyNode:
         """Parse importpy statement: importpy IDENT"""

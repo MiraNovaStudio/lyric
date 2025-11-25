@@ -27,7 +27,7 @@ class Lexer:
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'elif', 'case', 'given', 'for', 'done', 'end', 
         'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'as', 'return',
-        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'True', 'False', 'true', 'false', 'None', 'raise', 'importpy',
+        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'True', 'False', 'true', 'false', 'None', 'raise', 'import', 'importpy',
         'break', 'continue'
     }
     
