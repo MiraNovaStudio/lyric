@@ -28,8 +28,14 @@ def input_builtin(prompt: str = "") -> str:
 
 def int_builtin(value: Any) -> int:
     """Built-in int conversion function."""
+    # Import ArrObject here to avoid circular imports
+    from lyric.interpreter import ArrObject
+    
+    # Handle arr type (ArrObject) - return length
+    if isinstance(value, ArrObject):
+        return len(value.elements)
     # Handle arr type (list) - return length
-    if isinstance(value, list):
+    elif isinstance(value, list):
         return len(value)
     # Handle map type (dict) - return number of keys
     elif isinstance(value, dict) and not ('__instance_class__' in value):
@@ -40,8 +46,14 @@ def int_builtin(value: Any) -> int:
 
 def float_builtin(value: Any) -> float:
     """Built-in float conversion function."""
+    # Import ArrObject here to avoid circular imports
+    from lyric.interpreter import ArrObject
+    
+    # Handle arr type (ArrObject) - return length as float
+    if isinstance(value, ArrObject):
+        return float(len(value.elements))
     # Handle arr type (list) - return length as float
-    if isinstance(value, list):
+    elif isinstance(value, list):
         return float(len(value))
     # Handle map type (dict) - return number of keys as float
     elif isinstance(value, dict) and not ('__instance_class__' in value):
@@ -57,29 +69,41 @@ def str_builtin(value: Any) -> str:
     return str(value)
 
 
-def arr_builtin(value: Any) -> list:
+def arr_builtin(value: Any) -> Any:
     """Built-in arr conversion function to create lists."""
+    # Import ArrObject here to avoid circular imports
+    from lyric.interpreter import ArrObject
+    
     # Handle string - convert to list of characters
     if isinstance(value, str):
-        return list(value)
+        return ArrObject(list(value))
     # Handle dict (map) - convert to list of values
     elif isinstance(value, dict) and not ('__instance_class__' in value):
-        return list(value.values())
-    # Handle already a list
-    elif isinstance(value, list):
+        return ArrObject(list(value.values()))
+    # Handle already an ArrObject
+    elif isinstance(value, ArrObject):
         return value
+    # Handle plain Python list - wrap it
+    elif isinstance(value, list):
+        return ArrObject(value)
     # Try to convert iterable types
     else:
         try:
-            return list(value)
+            return ArrObject(list(value))
         except TypeError:
             raise RuntimeErrorLyric(f"Cannot convert {type(value).__name__} to arr")
 
 
 def map_builtin(value: Any) -> dict:
     """Built-in map conversion function to create dictionaries."""
+    # Import ArrObject here to avoid circular imports
+    from lyric.interpreter import ArrObject
+    
+    # Handle ArrObject - convert to dict with string keys "1", "2", "3", etc.
+    if isinstance(value, ArrObject):
+        return {str(i + 1): val for i, val in enumerate(value.elements)}
     # Handle list (arr) - convert to dict with string keys "1", "2", "3", etc.
-    if isinstance(value, list):
+    elif isinstance(value, list):
         return {str(i + 1): val for i, val in enumerate(value)}
     # Handle string - not directly supported, raise error
     elif isinstance(value, str):

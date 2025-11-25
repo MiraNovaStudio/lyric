@@ -79,6 +79,148 @@ class RexObject:
         return f"RexObject(pattern='{self.pattern.pattern}')"
 
 
+class ArrObject:
+    """Represents an arr (list) object with methods."""
+    
+    def __init__(self, elements: list = None):
+        """Initialize ArrObject with a list of elements."""
+        self.elements = elements if elements is not None else []
+    
+    def append(self, element: Any) -> None:
+        """Add a single element to the end of the list."""
+        self.elements.append(element)
+    
+    def clear(self) -> None:
+        """Remove all elements, making the list empty."""
+        self.elements.clear()
+    
+    def copy(self) -> 'ArrObject':
+        """Return a shallow copy of the list."""
+        return ArrObject(self.elements.copy())
+    
+    def count(self, value: Any) -> int:
+        """Return number of occurrences of value."""
+        return self.elements.count(value)
+    
+    def index(self, value: Any, start: int = 0, end: int = None) -> int:
+        """Return index of first occurrence; raise ValueError if not found."""
+        try:
+            if end is None:
+                return self.elements.index(value, start)
+            else:
+                return self.elements.index(value, start, end)
+        except ValueError:
+            raise ValueErrorLyric(f"'{value}' is not in arr")
+    
+    def insert(self, index: int, element: Any) -> None:
+        """Insert element at index, shifting items right."""
+        if not isinstance(index, int):
+            raise TypeErrorLyric(f"insert() expects an integer index, but got {type(index).__name__}")
+        self.elements.insert(index, element)
+    
+    def pop(self, index: int = -1) -> Any:
+        """Remove and return item at index; default to last item; raise IndexError if invalid."""
+        if not isinstance(index, int):
+            raise TypeErrorLyric(f"pop() expects an integer index, but got {type(index).__name__}")
+        if not self.elements:
+            raise IndexErrorLyric("pop from empty arr")
+        try:
+            return self.elements.pop(index)
+        except IndexError:
+            raise IndexErrorLyric(f"pop index out of range")
+    
+    def remove(self, value: Any) -> None:
+        """Remove first occurrence of value; raise ValueError if missing."""
+        try:
+            self.elements.remove(value)
+        except ValueError:
+            raise ValueErrorLyric(f"arr.remove(x): x not in arr")
+    
+    def reverse(self) -> None:
+        """Reverse list in place."""
+        self.elements.reverse()
+    
+    def sort(self, key=None, reverse=None) -> None:
+        """Sort list in place; support optional key and reverse parameters."""
+        try:
+            # Handle reverse parameter - defaults to False
+            reverse_val = False if reverse is None else reverse
+            
+            if key is None or key is False:
+                # No key function, just sort normally
+                self.elements.sort(reverse=reverse_val)
+            else:
+                # key would be a callable if provided
+                if callable(key):
+                    self.elements.sort(key=key, reverse=reverse_val)
+                else:
+                    raise TypeErrorLyric(f"sort() key parameter must be callable, got {type(key).__name__}")
+        except TypeError as e:
+            raise TypeErrorLyric(f"sort() error: {e}")
+    
+    def len(self) -> int:
+        """Return number of elements in the list."""
+        return len(self.elements)
+    
+    def max(self) -> Any:
+        """Return largest element; error if list is empty."""
+        if not self.elements:
+            raise ValueErrorLyric("max() arg is an empty arr")
+        try:
+            return max(self.elements)
+        except TypeError as e:
+            raise TypeErrorLyric(f"max() error: {e}")
+    
+    def min(self) -> Any:
+        """Return smallest element; error if list is empty."""
+        if not self.elements:
+            raise ValueErrorLyric("min() arg is an empty arr")
+        try:
+            return min(self.elements)
+        except TypeError as e:
+            raise TypeErrorLyric(f"min() error: {e}")
+    
+    def sum(self) -> Any:
+        """Return sum of numeric elements; raise TypeError on non-numeric values."""
+        if not self.elements:
+            return 0
+        try:
+            return sum(self.elements)
+        except TypeError:
+            # Check which element is non-numeric
+            for i, elem in enumerate(self.elements):
+                if not isinstance(elem, (int, float)):
+                    raise TypeErrorLyric(f"sum() does not support non-numeric types: element at index {i} is {type(elem).__name__}")
+            # If we get here, re-raise the original error
+            raise TypeErrorLyric(f"sum() error with arr elements")
+    
+    def __repr__(self):
+        return str(self.elements)
+    
+    def __str__(self):
+        return str(self.elements)
+    
+    def __len__(self):
+        return len(self.elements)
+    
+    def __getitem__(self, key):
+        """Support indexing and slicing."""
+        if isinstance(key, slice):
+            # Return a new ArrObject with the sliced elements
+            return ArrObject(self.elements[key])
+        else:
+            # Return the element directly (not wrapped in ArrObject)
+            return self.elements[key]
+    
+    def __setitem__(self, key, value):
+        """Support item assignment."""
+        self.elements[key] = value
+    
+    def __iter__(self):
+        """Support iteration."""
+        return iter(self.elements)
+
+
 class ReturnValue:
     """Wrapper for return values to distinguish them from normal expression values."""
     def __init__(self, value):
@@ -540,12 +682,13 @@ class Interpreter:
                 if isinstance(obj, dict):
                     # For dictionaries, the index is a key
                     obj[index_str] = value
-                elif isinstance(obj, list):
-                    # For lists, the index should be an integer
+                elif isinstance(obj, (list, ArrObject)):
+                    # For lists and ArrObject, the index should be an integer
                     try:
                         index = int(index_str)
-                        if index < 0 or index >= len(obj):
-                            raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}", node.line, node.column)
+                        obj_len = len(obj.elements) if isinstance(obj, ArrObject) else len(obj)
+                        if index < 0 or index >= obj_len:
+                            raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
                         obj[index] = value
                     except ValueError:
                         raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
@@ -651,7 +794,7 @@ class Interpreter:
         elif expected_type == 'bin':
             return isinstance(value, bool)  # bin is an alias for god
         elif expected_type == 'arr':
-            return isinstance(value, list)  # arr maps to Python list
+            return isinstance(value, (list, ArrObject))  # arr maps to ArrObject or Python list
         elif expected_type == 'map':
             return isinstance(value, dict)  # map maps to Python dict
         else:
@@ -663,9 +806,10 @@ class Interpreter:
             return ReturnValue(self._evaluate_expression(node.value))
         return ReturnValue(None)
     
-    def _evaluate_list_literal(self, node: ListLiteralNode) -> List[Any]:
+    def _evaluate_list_literal(self, node: ListLiteralNode) -> 'ArrObject':
         """Evaluate a list literal."""
-        return [self._evaluate_expression(elem) for elem in node.elements]
+        elements = [self._evaluate_expression(elem) for elem in node.elements]
+        return ArrObject(elements)
     
     def _evaluate_dict_literal(self, node: DictLiteralNode) -> dict:
         """Evaluate a dictionary literal."""
@@ -681,12 +825,17 @@ class Interpreter:
         obj = self._evaluate_expression(node.obj)
         index = self._evaluate_expression(node.index)
         
-        if isinstance(obj, (list, tuple)):
+        if isinstance(obj, (list, tuple, ArrObject)):
             if not isinstance(index, int):
                 raise TypeErrorLyric(f"Invalid list index: expected integer, but got {type(index).__name__}. List indices must be integers (0, 1, 2, ...)")
-            if index < 0 or index >= len(obj):
-                raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
-            return obj[index]
+            if isinstance(obj, ArrObject):
+                if index < 0 or index >= len(obj.elements):
+                    raise IndexErrorLyric(f"Index out of range: tried to access index {index} in arr of length {len(obj.elements)}. Valid indices are 0 to {len(obj.elements)-1}")
+                return obj[index]
+            else:
+                if index < 0 or index >= len(obj):
+                    raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
+                return obj[index]
         elif isinstance(obj, dict):
             if index not in obj:
                 available_keys = list(obj.keys())[:5]  # Show first 5 keys
@@ -710,6 +859,12 @@ class Interpreter:
         # Handle different object types
         if isinstance(obj, (str, list, tuple)):
             try:
+                return obj[start:end:step]
+            except Exception as e:
+                raise RuntimeErrorLyric(f"Slice operation failed: {str(e)}", node.line, node.column)
+        elif isinstance(obj, ArrObject):
+            try:
+                # ArrObject.__getitem__ handles slicing and returns a new ArrObject
                 return obj[start:end:step]
             except Exception as e:
                 raise RuntimeErrorLyric(f"Slice operation failed: {str(e)}", node.line, node.column)
@@ -871,7 +1026,7 @@ class Interpreter:
             # Generic iterator (simplified)
             iterator_var = node.iterator_var or 'item'
             iterable = self._evaluate_expression(node.condition_or_iter)
-            if isinstance(iterable, (list, tuple)):
+            if isinstance(iterable, (list, tuple, ArrObject)):
                 for item in iterable:
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = item
@@ -982,6 +1137,17 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: RexObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, ArrObject):
+                    # Handle ArrObject methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: ArrObject has no attribute '{method_name}'")
                 elif callable(current_obj):
                     # Handle classes and callable objects
                     try:
