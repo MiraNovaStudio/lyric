@@ -2,7 +2,7 @@
 # Copyright (c) 2025 MiraNova Studios
 # Designed and Architected by Michael (Aeonath) and ChatGPT
 # Implemented by Claude
-# Licensed under the MIT License with Source Attribution
+# Licensed under the GNU General Public License v3.0
 
 """Comprehensive tests for break and continue keywords (Sprint 6 Pivot 6.5.1)."""
 
