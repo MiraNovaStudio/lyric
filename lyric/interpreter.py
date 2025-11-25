@@ -354,6 +354,7 @@ class Interpreter:
             param_types = func_def.get('param_types', [])
             return_type = func_def.get('return_type', 'var')
             body = func_def['body']
+            module_scope = func_def.get('module_scope', None)  # Get module scope if available
             
             # Create local scope
             local_scope = {}
@@ -379,7 +380,11 @@ class Interpreter:
             # Save current scope
             old_scope = self.global_scope.copy()
             
-            # Set local scope
+            # If function has a module scope, use it as the base scope
+            if module_scope is not None:
+                self.global_scope = module_scope.copy()
+            
+            # Set local scope (parameters override module scope)
             self.global_scope.update(local_scope)
             
             # Push function scope for variable types
@@ -1397,16 +1402,16 @@ class Interpreter:
                 node.column
             )
         
-        # Import all top-level symbols from the module into the current scope
-        # This includes functions, classes, and global variables
-        for name, value in module_interpreter.global_scope.items():
-            # Skip built-in values
-            if name not in ('true', 'false', 'None'):
-                self.global_scope[name] = value
+        # Import ONLY functions and classes from the module
+        # Variables (including arrays, maps, etc.) are NOT imported
+        # However, functions need to retain access to their module's global scope
         
-        # Import functions
+        # Import functions with their module scope
         for name, func in module_interpreter.functions.items():
-            self.functions[name] = func
+            # Attach module scope to function so it can access module variables
+            func_with_scope = func.copy()
+            func_with_scope['module_scope'] = module_interpreter.global_scope
+            self.functions[name] = func_with_scope
         
         # Import classes
         for name, cls in module_interpreter.classes.items():
