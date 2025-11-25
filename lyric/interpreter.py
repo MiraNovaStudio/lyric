@@ -88,7 +88,7 @@ class ReturnValue:
 class Interpreter:
     """Interpreter for executing Lyric AST nodes."""
     
-    def __init__(self):
+    def __init__(self, source_file=None):
         self.global_scope = {
             'true': True,
             'false': False,
@@ -101,6 +101,8 @@ class Interpreter:
         register_builtins(self.global_scope)
         self.functions = {}
         self.classes = {}
+        # Track the source file path for relative imports
+        self.source_file = source_file
     
     def _push_scope(self):
         """Push a new scope onto the stack."""
@@ -1330,13 +1332,19 @@ class Interpreter:
         module_name = node.module_name
         
         # Search for the module in the following order:
-        # 1. Current directory
-        # 2. LYRIC_PATH environment variable
-        # 3. Standard library location (if it exists)
+        # 1. Current working directory
+        # 2. Directory of the script being executed (if known)
+        # 3. LYRIC_PATH environment variable
         
         search_paths = [
-            os.getcwd(),  # Current directory
+            os.getcwd(),  # Current working directory
         ]
+        
+        # Add the directory of the source file if known
+        if self.source_file:
+            source_dir = os.path.dirname(os.path.abspath(self.source_file))
+            if source_dir not in search_paths:
+                search_paths.append(source_dir)
         
         # Add LYRIC_PATH if set
         lyric_path = os.environ.get('LYRIC_PATH', '')
@@ -1463,7 +1471,7 @@ class Interpreter:
             return True
 
 
-def evaluate(ast: ProgramNode) -> Any:
+def evaluate(ast: ProgramNode, source_file=None) -> Any:
     """Evaluate an AST and return the result."""
-    interpreter = Interpreter()
+    interpreter = Interpreter(source_file=source_file)
     return interpreter.evaluate(ast)

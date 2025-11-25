@@ -88,8 +88,8 @@ def _execute_file(file_path: str):
         # Parse the source code
         ast = parse(source)
         
-        # Execute the program
-        evaluate(ast)
+        # Execute the program, passing the source file path for relative imports
+        evaluate(ast, source_file=file_path)
         
     except (LexError, ParseError, SyntaxErrorLyric) as e:
         # Syntax/lexical errors

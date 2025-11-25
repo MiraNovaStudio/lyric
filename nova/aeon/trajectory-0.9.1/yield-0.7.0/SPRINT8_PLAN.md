@@ -56,16 +56,24 @@ Implement foundational module import capability to allow structured program orga
 
 ### Task 4 – Add method import syntax
 **Summary:**  
-Expand import behavior to allow selective symbol imports using the form `import module; func1, func2`, giving developers finer control over namespace exposure.
+Expand import behavior to allow selective symbol imports using the form `import module; func1, func2`, giving developers finer control over namespace exposure.  You should
+also be allowed to import only specific classes using this method as well. You should also
+allow the as keyword which will bind the class to a variable with that name, such as 
+import myutils; Calculator as calc.  Then you should be able to call calc.get_sum(1,2) 
+without having to explicity create a variable in the program.  Do not allow the as 
+keyword for functions only classes.  If you use as it will be a global variable in 
+the program.
 
 **Implementation Items:**  
 - Extend grammar to handle multiple symbol imports.  
 - Inject imported functions or variables into current scope.
+- Make sure the as keyword functions properly for classes
 
 **Acceptance Criteria:**  
 - Multiple imports resolve and bind successfully.  
 - Duplicate imports or undefined symbols handled gracefully.  
 - Add and update related unit tests in `lyric/tests/core-0.7.0`.
+- Make sure the as keyword functions properly
 
 ---
 
