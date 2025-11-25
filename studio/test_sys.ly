@@ -12,7 +12,7 @@ def main () {
     #print "Module search paths:"
 
     int i = 0
-    given i < len(sys.path):
+    given i < int(sys.path):
         print sys.path[i]
         i = i + 1
     done
