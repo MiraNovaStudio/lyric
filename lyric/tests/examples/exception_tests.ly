@@ -1,11 +1,6 @@
-
-    var result1 = 10 / 0
-
 var cleanup_done = False
-    var result2 = 10 / 2
-
 var x = 10
-    var y = x / 0
+var counter = 0
 
 def risky_function(int divisor) {
     if divisor == 0:
@@ -13,6 +8,7 @@ def risky_function(int divisor) {
     end
     return 10 / divisor
 }
+
 def safe_divide(int a, int b) {
     try:
         return a / b
@@ -23,8 +19,6 @@ def safe_divide(int a, int b) {
         print("Division attempt completed")
     fade
 }
-var counter = 0
-    var result3 = 10 / 0
 
 class Calculator
     def divide(int a, int b) {
@@ -37,23 +31,19 @@ class Calculator
     }
 +++
 
-var calc = Calculator()
-var result4 = calc.divide(10, 0)
-
-    var append_result = append("not_a_list", 5)
-
-    var numbers = [1, 2, 3]
-    var index_result = numbers[10]
-
 def main() {
     # Exception Handling Tests for Sprint 3
     # Tests try/catch/finally blocks and raise statements
+    
     # Test 1: Basic try/catch
     try:
+        var result1 = 10 / 0
     catch:
         print("Caught division by zero error")
     fade
+    
     # Test 2: Try/catch with finally
+    var result2 = 10 / 2
     try:
         print("Division successful:", result2)
     catch:
@@ -62,25 +52,19 @@ def main() {
         cleanup_done = True
         print("Cleanup completed")
     fade
+    
     # Test 3: Try/catch with variable access
     try:
+        var y = x / 0
     catch:
         x = 20  # Modify variable in catch block
     finally:
         print("Final x value:", x)
     fade
-    # Test 4: Raise different exception types
-    # raise RuntimeErrorLyric
-    # raise IndexErrorLyric
-    # raise TypeErrorLyric
-    # raise ValueErrorLyric
-    # raise KeyErrorLyric
-    # raise AttributeErrorLyric
-    # raise ZeroDivisionErrorLyric
-    # Test 5: Exception in function
-    # Test 6: Exception handling in function
+    
     # Test 7: Multiple statements in try block
     try:
+        var result3 = 10 / 0
         counter = counter + 1
         counter = counter + 1
     catch:
@@ -88,14 +72,15 @@ def main() {
     finally:
         counter = counter + 100
     fade
+    
     # Test 8: Exception with method calls
-    # Test 9: Exception with built-in functions
-    try:
-    catch:
-        print("Caught append error")
-    fade
+    var calc = Calculator()
+    var result4 = calc.divide(10, 0)
+    
     # Test 10: Exception with indexing
     try:
+        var numbers = [1, 2, 3]
+        var index_result = numbers[10]
     catch:
         print("Caught index error")
     fade
