@@ -47,6 +47,8 @@ class TestErrorLineNumberFormatting:
         
         tokens = tokenize(code)
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         
         with pytest.raises(ParseError) as exc_info:
             parser.parse()
@@ -95,6 +97,8 @@ class TestErrorLineNumberFormatting:
         # Test parse error
         tokens = tokenize("if true\nprint \"hello\"")
         parser = Parser(tokens)
+        parser._interactive_mode = True
+        parser.is_top_level = False
         with pytest.raises(ParseError) as parse_exc:
             parser.parse()
         
@@ -130,10 +134,14 @@ class TestErrorLineNumberFormatting:
                 elif error_type == "syntax":
                     tokens = tokenize(code)
                     parser = Parser(tokens)
+                    parser._interactive_mode = True
+                    parser.is_top_level = False
                     parser.parse()
                 elif error_type == "runtime":
                     tokens = tokenize(code)
                     parser = Parser(tokens)
+                    parser._interactive_mode = True
+                    parser.is_top_level = False
                     ast = parser.parse()
                     interpreter = Interpreter()
                     interpreter.evaluate(ast)
