@@ -545,10 +545,10 @@ class Parser:
         return expr
     
     def _parse_comparison(self):
-        """Parse comparison expressions (<, <=, >, >=)."""
+        """Parse comparison expressions (<, <=, >, >=, in)."""
         expr = self._parse_term()
         
-        while self._match('LT', '<=', 'GT', '>='):
+        while self._match('LT', '<=', 'GT', '>=', 'IN'):
             operator = self._previous().value
             right = self._parse_term()
             line, col = self._get_position_from_token(self._previous())

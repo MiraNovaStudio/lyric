@@ -28,8 +28,8 @@ def input_builtin(prompt: str = "") -> str:
 
 def int_builtin(value: Any) -> int:
     """Built-in int conversion function."""
-    # Import ArrObject here to avoid circular imports
-    from lyric.interpreter import ArrObject
+    # Import ArrObject and MapObject here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
     
     # Handle arr type (ArrObject) - return length
     if isinstance(value, ArrObject):
@@ -37,6 +37,9 @@ def int_builtin(value: Any) -> int:
     # Handle arr type (list) - return length
     elif isinstance(value, list):
         return len(value)
+    # Handle map type (MapObject) - return number of keys
+    elif isinstance(value, MapObject):
+        return len(value.elements)
     # Handle map type (dict) - return number of keys
     elif isinstance(value, dict) and not ('__instance_class__' in value):
         return len(value)
@@ -46,8 +49,8 @@ def int_builtin(value: Any) -> int:
 
 def float_builtin(value: Any) -> float:
     """Built-in float conversion function."""
-    # Import ArrObject here to avoid circular imports
-    from lyric.interpreter import ArrObject
+    # Import ArrObject and MapObject here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
     
     # Handle arr type (ArrObject) - return length as float
     if isinstance(value, ArrObject):
@@ -55,6 +58,9 @@ def float_builtin(value: Any) -> float:
     # Handle arr type (list) - return length as float
     elif isinstance(value, list):
         return float(len(value))
+    # Handle map type (MapObject) - return number of keys as float
+    elif isinstance(value, MapObject):
+        return float(len(value.elements))
     # Handle map type (dict) - return number of keys as float
     elif isinstance(value, dict) and not ('__instance_class__' in value):
         return float(len(value))
@@ -71,12 +77,15 @@ def str_builtin(value: Any) -> str:
 
 def arr_builtin(value: Any) -> Any:
     """Built-in arr conversion function to create lists."""
-    # Import ArrObject here to avoid circular imports
-    from lyric.interpreter import ArrObject
+    # Import ArrObject and MapObject here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
     
     # Handle string - convert to list of characters
     if isinstance(value, str):
         return ArrObject(list(value))
+    # Handle MapObject - convert to list of values
+    elif isinstance(value, MapObject):
+        return ArrObject(list(value.elements.values()))
     # Handle dict (map) - convert to list of values
     elif isinstance(value, dict) and not ('__instance_class__' in value):
         return ArrObject(list(value.values()))
@@ -94,27 +103,33 @@ def arr_builtin(value: Any) -> Any:
             raise RuntimeErrorLyric(f"Cannot convert {type(value).__name__} to arr")
 
 
-def map_builtin(value: Any) -> dict:
+def map_builtin(value: Any) -> Any:
     """Built-in map conversion function to create dictionaries."""
-    # Import ArrObject here to avoid circular imports
-    from lyric.interpreter import ArrObject
+    # Import ArrObject and MapObject here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
     
     # Handle ArrObject - convert to dict with string keys "1", "2", "3", etc.
     if isinstance(value, ArrObject):
-        return {str(i + 1): val for i, val in enumerate(value.elements)}
+        result = {str(i + 1): val for i, val in enumerate(value.elements)}
+        return MapObject(result)
     # Handle list (arr) - convert to dict with string keys "1", "2", "3", etc.
     elif isinstance(value, list):
-        return {str(i + 1): val for i, val in enumerate(value)}
+        result = {str(i + 1): val for i, val in enumerate(value)}
+        return MapObject(result)
+    # Handle MapObject - return as is
+    elif isinstance(value, MapObject):
+        return value
     # Handle string - not directly supported, raise error
     elif isinstance(value, str):
         raise RuntimeErrorLyric("Cannot directly convert str to map. Consider using dict comprehension or manual construction.")
-    # Handle already a dict
+    # Handle already a dict - wrap in MapObject
     elif isinstance(value, dict):
-        return value
+        return MapObject(value)
     # Try to convert other dict-like types
     else:
         try:
-            return dict(value)
+            result = dict(value)
+            return MapObject(result)
         except (TypeError, ValueError) as e:
             raise RuntimeErrorLyric(f"Cannot convert {type(value).__name__} to map: {e}")
 

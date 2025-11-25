@@ -221,6 +221,121 @@ class ArrObject:
         return iter(self.elements)
 
 
+class MapObject:
+    """Represents a map (dictionary) object with methods."""
+    
+    def __init__(self, elements: dict = None):
+        """Initialize MapObject with a dictionary."""
+        self.elements = elements if elements is not None else {}
+    
+    def clear(self) -> None:
+        """Remove all items from the dictionary."""
+        self.elements.clear()
+    
+    def copy(self) -> 'MapObject':
+        """Return a shallow copy of the dictionary."""
+        return MapObject(self.elements.copy())
+    
+    @staticmethod
+    def fromkeys(seq, value=None) -> 'MapObject':
+        """Create a new dictionary from a sequence of keys with optional default value."""
+        if isinstance(seq, ArrObject):
+            seq = seq.elements
+        new_dict = dict.fromkeys(seq, value)
+        return MapObject(new_dict)
+    
+    def get(self, key: Any, default=None) -> Any:
+        """Return value for key; return default if key not found."""
+        return self.elements.get(key, default)
+    
+    def items(self) -> 'ArrObject':
+        """Return an ArrObject of (key, value) pairs."""
+        return ArrObject(list(self.elements.items()))
+    
+    def keys(self) -> 'ArrObject':
+        """Return an ArrObject of all keys."""
+        return ArrObject(list(self.elements.keys()))
+    
+    def pop(self, key: Any, *args) -> Any:
+        """Remove and return value for key; raise KeyError if missing and no default."""
+        if len(args) > 1:
+            raise TypeErrorLyric("pop() accepts at most 2 arguments (key and default)")
+        try:
+            if len(args) == 0:
+                # No default provided
+                return self.elements.pop(key)
+            else:
+                # Default provided
+                return self.elements.pop(key, args[0])
+        except KeyError:
+            raise KeyErrorLyric(f"Key '{key}' not found in map")
+    
+    def popitem(self) -> 'ArrObject':
+        """Remove and return the last inserted (key, value) pair as an ArrObject."""
+        if not self.elements:
+            raise KeyErrorLyric("popitem(): map is empty")
+        try:
+            key, value = self.elements.popitem()
+            return ArrObject([key, value])
+        except KeyError:
+            raise KeyErrorLyric("popitem(): map is empty")
+    
+    def setdefault(self, key: Any, default=None) -> Any:
+        """Return value for key; if missing, insert key with default and return default."""
+        return self.elements.setdefault(key, default)
+    
+    def update(self, other) -> None:
+        """Update dictionary with key-value pairs from another dict."""
+        if isinstance(other, MapObject):
+            self.elements.update(other.elements)
+        elif isinstance(other, dict):
+            self.elements.update(other)
+        else:
+            raise TypeErrorLyric(f"update() expects a map or dict, got {type(other).__name__}")
+    
+    def values(self) -> 'ArrObject':
+        """Return an ArrObject of all values."""
+        return ArrObject(list(self.elements.values()))
+    
+    def len(self) -> int:
+        """Return number of items in the dictionary."""
+        return len(self.elements)
+    
+    def sorted(self, reverse=False) -> 'ArrObject':
+        """Return an ArrObject of sorted keys."""
+        try:
+            return ArrObject(sorted(self.elements.keys(), reverse=reverse))
+        except TypeError as e:
+            raise TypeErrorLyric(f"sorted() error: {e}")
+    
+    def __repr__(self):
+        return str(self.elements)
+    
+    def __str__(self):
+        return str(self.elements)
+    
+    def __len__(self):
+        return len(self.elements)
+    
+    def __getitem__(self, key):
+        """Support indexing."""
+        if key not in self.elements:
+            raise KeyErrorLyric(f"Key '{key}' not found in map")
+        return self.elements[key]
+    
+    def __setitem__(self, key, value):
+        """Support item assignment."""
+        self.elements[key] = value
+    
+    def __contains__(self, key):
+        """Support 'in' operator for membership check."""
+        return key in self.elements
+    
+    def __iter__(self):
+        """Support iteration (yields keys in insertion order)."""
+        return iter(self.elements)
+
+
 class ReturnValue:
     """Wrapper for return values to distinguish them from normal expression values."""
     def __init__(self, value):
@@ -679,8 +794,8 @@ class Interpreter:
             
             if obj_name in self.global_scope:
                 obj = self.global_scope[obj_name]
-                if isinstance(obj, dict):
-                    # For dictionaries, the index is a key
+                if isinstance(obj, (dict, MapObject)):
+                    # For dictionaries and MapObject, the index is a key
                     obj[index_str] = value
                 elif isinstance(obj, (list, ArrObject)):
                     # For lists and ArrObject, the index should be an integer
@@ -796,7 +911,7 @@ class Interpreter:
         elif expected_type == 'arr':
             return isinstance(value, (list, ArrObject))  # arr maps to ArrObject or Python list
         elif expected_type == 'map':
-            return isinstance(value, dict)  # map maps to Python dict
+            return isinstance(value, (dict, MapObject))  # map maps to MapObject or Python dict
         else:
             return False
     
@@ -811,14 +926,14 @@ class Interpreter:
         elements = [self._evaluate_expression(elem) for elem in node.elements]
         return ArrObject(elements)
     
-    def _evaluate_dict_literal(self, node: DictLiteralNode) -> dict:
+    def _evaluate_dict_literal(self, node: DictLiteralNode) -> 'MapObject':
         """Evaluate a dictionary literal."""
         result = {}
         for key_expr, value_expr in node.pairs:
             key = self._evaluate_expression(key_expr)
             value = self._evaluate_expression(value_expr)
             result[key] = value
-        return result
+        return MapObject(result)
     
     def _evaluate_index(self, node: IndexNode) -> Any:
         """Evaluate an indexing operation."""
@@ -836,14 +951,19 @@ class Interpreter:
                 if index < 0 or index >= len(obj):
                     raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {len(obj)}. Valid indices are 0 to {len(obj)-1}")
                 return obj[index]
-        elif isinstance(obj, dict):
-            if index not in obj:
-                available_keys = list(obj.keys())[:5]  # Show first 5 keys
-                keys_preview = ", ".join(repr(k) for k in available_keys)
-                if len(obj) > 5:
-                    keys_preview += f" (and {len(obj)-5} more)"
-                raise KeyErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
-            return obj[index]
+        elif isinstance(obj, (dict, MapObject)):
+            if isinstance(obj, MapObject):
+                # MapObject handles KeyError in its __getitem__
+                return obj[index]
+            else:
+                # Plain dict
+                if index not in obj:
+                    available_keys = list(obj.keys())[:5]  # Show first 5 keys
+                    keys_preview = ", ".join(repr(k) for k in available_keys)
+                    if len(obj) > 5:
+                        keys_preview += f" (and {len(obj)-5} more)"
+                    raise KeyErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
+                return obj[index]
         else:
             raise TypeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
     
@@ -1037,6 +1157,19 @@ class Interpreter:
                         break  # Exit loop
                     except ContinueSignal:
                         continue  # Skip to next iteration
+            elif isinstance(iterable, (dict, MapObject)):
+                # Iterate over keys in insertion order
+                keys = iterable.keys() if isinstance(iterable, MapObject) else list(iterable.keys())
+                for key in keys:
+                    # Assign loop variable to scope
+                    self.global_scope[iterator_var] = key
+                    try:
+                        for statement in node.body:
+                            self._evaluate_statement(statement)
+                    except BreakSignal:
+                        break  # Exit loop
+                    except ContinueSignal:
+                        continue  # Skip to next iteration
         
         return None
     
@@ -1148,6 +1281,17 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: ArrObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, MapObject):
+                    # Handle MapObject methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: MapObject has no attribute '{method_name}'")
                 elif callable(current_obj):
                     # Handle classes and callable objects
                     try:
@@ -1353,6 +1497,14 @@ class Interpreter:
                 return self._is_truthy(left) and self._is_truthy(right)
             elif node.op == 'or':
                 return self._is_truthy(left) or self._is_truthy(right)
+            elif node.op == 'in':
+                # Membership check: key in dict, item in list, char in string
+                if isinstance(right, MapObject):
+                    return left in right  # MapObject implements __contains__
+                elif isinstance(right, (dict, list, str, tuple, ArrObject)):
+                    return left in right
+                else:
+                    raise TypeErrorLyric(f"'in' requires a container (map, arr, str), got {type(right).__name__}")
             else:
                 raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}", node.line, node.column)
         except TypeError as e:
