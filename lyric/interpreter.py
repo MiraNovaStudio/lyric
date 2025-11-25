@@ -311,6 +311,8 @@ class Interpreter:
             return True  # pyobject can hold any Python object
         elif expected_type == 'arr':
             return isinstance(value, list)  # arr maps to Python list
+        elif expected_type == 'map':
+            return isinstance(value, dict)  # map maps to Python dict
         
         return False
     
@@ -641,6 +643,8 @@ class Interpreter:
             return isinstance(value, bool)  # bin is an alias for god
         elif expected_type == 'arr':
             return isinstance(value, list)  # arr maps to Python list
+        elif expected_type == 'map':
+            return isinstance(value, dict)  # map maps to Python dict
         else:
             return False
     
