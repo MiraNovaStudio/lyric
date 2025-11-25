@@ -114,3 +114,75 @@ Simplify function declaration syntax by removing redundant keyword combinations 
 - New syntax compiles and executes correctly.  
 - Functions infer return type automatically or default to `None`.  
 - Add and update related unit tests in `lyric/tests/core-0.7.0`.
+
+### Task 8 – Implement and Test `arr` Methods (List API)
+
+**Summary:**  
+Expand Lyric’s `arr` type to support core list-style operations. These methods must behave consistently with Python list semantics where applicable, except that iterable-based operations are excluded. All built-in list functions are converted into instance methods (e.g., `mylist.len()`).
+
+**Methods to Add (Unit Tests Required for Each):**
+
+1. **append(element)** – Add a single element to the end of the list.  
+2. **clear()** – Remove all elements, making the list empty.  
+3. **copy()** – Return a shallow copy of the list.  
+4. **count(value)** – Return number of occurrences of `value`.  
+5. **index(value, start, end)** – Return index of first occurrence; raise `ValueError` if not found.  
+6. **insert(index, element)** – Insert `element` at index, shifting items right.  
+7. **pop(index)** – Remove and return item at index; default to last item; raise `IndexError` if invalid.  
+8. **remove(value)** – Remove first occurrence of `value`; raise `ValueError` if missing.  
+9. **reverse()** – Reverse list in place.  
+10. **sort(key=None, reverse=False)** – Sort list in place; support optional key and reverse parameters.
+
+**Built-In Functions Converted to Methods:**
+
+11. **len()** – Return number of elements in the list.  
+12. **max()** – Return largest element; error if list is empty.  
+13. **min()** – Return smallest element; error if list is empty.  
+14. **sum()** – Return sum of numeric elements; raise `TypeError` on non-numeric values.
+
+**Acceptance Criteria:**  
+- All above methods are implemented on the `arr` type.  
+- Each method includes at least one unit test in `lyric/tests/core-0.7.0`.  
+- Error conditions (`ValueError`, `IndexError`, `TypeError`) are fully tested.  
+- Methods operate on the instance (`mylist.method()`), not as global built-ins.  
+- All new tests pass in the Lyric test runner.
+
+
+### Task 9 – Implement and Test `dict` Methods (Dictionary API)
+
+**Summary:**  
+Expand Lyric’s `dict` type to support core dictionary operations. Methods should follow Python-style semantics where applicable. Iterable-based updates (such as iterable of pairs) are excluded unless the source is another Lyric `dict`. Built-in functions like `len()` and `sorted()` are implemented as instance methods (`mydict.len()`, `mydict.sorted()`).  
+Also add support for `key in dict` membership checks during iteration, and iteration over keys in `for` loops.
+
+**Methods to Add (Unit Tests Required for Each):**
+
+1. **clear()** – Remove all items from the dictionary.  
+2. **copy()** – Return a shallow copy of the dictionary.  
+3. **fromkeys(seq, value=None)** – Class method: create a new dictionary from a sequence of keys with an optional default value.  
+4. **get(key, default=None)** – Return value for key; return default (or `None`) instead of raising a `KeyError`.  
+5. **items()** – Return a view/list of `(key, value)` pairs.  
+6. **keys()** – Return a view/list of all keys.  
+7. **pop(key, default)** – Remove and return value for key; raise `KeyError` if missing and no default provided.  
+8. **popitem()** – Remove and return the last inserted `(key, value)` pair.  
+9. **setdefault(key, default=None)** – Return value for key; if missing, insert key with default value and return default.  
+10. **update(other_dict)** – Update dictionary with key-value pairs from another dict.  
+11. **values()** – Return a view/list of all values.
+
+**Built-In Functions Converted to Methods:**
+
+12. **len()** – Return number of items in the dictionary.  
+13. **sorted()** – Return a sorted list of keys (ascending by default).
+
+**Language Features to Add:**
+
+14. **`key in dict` Membership Check** – Return `true` if the key exists, `false` otherwise.  
+15. **Dictionary Iteration** – Iterating a dict in a `for` loop should yield keys in insertion order.
+
+**Acceptance Criteria:**  
+- All dictionary methods above are implemented on the `dict` type.  
+- Each method includes at least one unit test in `lyric/tests/core-0.7.0`.  
+- Error conditions (`KeyError`, type errors, missing defaults) are fully tested.  
+- Built-in behaviors (`len()`, `sorted()`, membership checks, iteration) function correctly.  
+- Iterating a dict produces keys in insertion order.  
+- All new tests pass in the Lyric test runner.
+

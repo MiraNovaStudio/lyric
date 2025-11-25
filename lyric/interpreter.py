@@ -309,6 +309,8 @@ class Interpreter:
                 return False
         elif expected_type == 'pyobject':
             return True  # pyobject can hold any Python object
+        elif expected_type == 'arr':
+            return isinstance(value, list)  # arr maps to Python list
         
         return False
     
@@ -637,6 +639,8 @@ class Interpreter:
             return isinstance(value, bool)
         elif expected_type == 'bin':
             return isinstance(value, bool)  # bin is an alias for god
+        elif expected_type == 'arr':
+            return isinstance(value, list)  # arr maps to Python list
         else:
             return False
     
@@ -852,9 +856,12 @@ class Interpreter:
                         continue  # Skip to next iteration
         else:
             # Generic iterator (simplified)
+            iterator_var = node.iterator_var or 'item'
             iterable = self._evaluate_expression(node.condition_or_iter)
             if isinstance(iterable, (list, tuple)):
                 for item in iterable:
+                    # Assign loop variable to scope
+                    self.global_scope[iterator_var] = item
                     try:
                         for statement in node.body:
                             self._evaluate_statement(statement)
