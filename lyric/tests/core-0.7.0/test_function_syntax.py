@@ -15,10 +15,13 @@ from lyric.interpreter import Interpreter
 from lyric.errors import RuntimeErrorLyric
 
 
-def parse(source: str):
+def parse(source: str, interactive: bool = False):
     """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
@@ -41,7 +44,7 @@ int get_sum(int a, int b) {
 int result = get_sum(5, 3)
 print result
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 8
 
@@ -55,7 +58,7 @@ str greet(str name) {
 str message = greet("Alice")
 print message
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print "Hello, Alice"
 
@@ -69,7 +72,7 @@ flt calculate_average(int a, int b) {
 flt avg = calculate_average(10, 20)
 print avg
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 15.0
 
@@ -82,7 +85,7 @@ def say_hello(name) {
 
 say_hello("Bob")
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print "Hello, Bob"
 
@@ -96,7 +99,7 @@ map create_dict(str key, int value) {
 map data = create_dict("count", 42)
 print data["count"]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 42
 
@@ -116,7 +119,7 @@ var result2 = get_value(false)
 print result1
 print result2
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 100, none
 
@@ -130,7 +133,7 @@ int get_constant() {
 int value = get_constant()
 print value
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 42
 
@@ -144,7 +147,7 @@ def multiply(int a, int b) {
 int product = multiply(6, 7)
 print product
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 42
 
@@ -157,7 +160,7 @@ def print_message(str msg) {
 
 print_message("Testing")
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print "Testing"
 
@@ -175,7 +178,7 @@ int multiply(int a, int b) {
 int result = multiply(add(2, 3), add(4, 6))
 print result
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 50 (5 * 10)
 
@@ -189,7 +192,7 @@ str format_message(str name, age) {
 str message = format_message("Alice", 30)
 print message
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print "Alice is 30"
 
@@ -207,7 +210,7 @@ int factorial(int n) {
 int result = factorial(5)
 print result
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 120
 
@@ -221,7 +224,7 @@ int def add_old_style(int a, int b) {
 int result = add_old_style(10, 20)
 print result
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 30
 
@@ -235,7 +238,7 @@ rex get_pattern(str pattern_str) {
 rex pattern = get_pattern("[0-9]+")
 print pattern.match("123")
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print True
 
@@ -249,7 +252,7 @@ bin is_positive(int n) {
 print is_positive(5)
 print is_positive(-3)
 \n}"""
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print True, False
 
@@ -269,7 +272,7 @@ var nothing = get_nothing()
 print num
 print nothing
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 42, void function, None
 

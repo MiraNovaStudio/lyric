@@ -14,10 +14,13 @@ from lyric.interpreter import Interpreter
 from lyric.errors import RuntimeErrorLyric, IndexErrorLyric, ValueErrorLyric, TypeErrorLyric
 
 
-def parse(source: str):
+def parse(source: str, interactive: bool = False):
     """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
@@ -37,7 +40,7 @@ arr numbers = [1, 2, 3]
 numbers.append(4)
 print numbers[3]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 4
 
@@ -50,7 +53,7 @@ items.append(2)
 items.append(3)
 print items.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
 
@@ -61,7 +64,7 @@ arr numbers = [1, 2, 3, 4, 5]
 numbers.clear()
 print numbers.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
 
@@ -72,7 +75,7 @@ arr numbers = []
 numbers.clear()
 print numbers.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
 
@@ -83,7 +86,7 @@ arr numbers = [2, 3, 4]
 numbers.insert(0, 1)
 print numbers[0]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 1
 
@@ -94,7 +97,7 @@ arr numbers = [1, 3, 4]
 numbers.insert(1, 2)
 print numbers[1]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2
 
@@ -105,7 +108,7 @@ arr numbers = [1, 2, 3]
 numbers.insert(3, 4)
 print numbers[3]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 4
 
@@ -117,7 +120,7 @@ var last = numbers.pop()
 print last
 print numbers.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 4, 3
 
@@ -129,7 +132,7 @@ var second = numbers.pop(1)
 print second
 print numbers[1]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2, 3
 
@@ -139,7 +142,7 @@ print numbers[1]
 arr numbers = []
 numbers.pop()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         with pytest.raises(IndexErrorLyric):
             evaluate(ast)
 
@@ -151,7 +154,7 @@ numbers.remove(2)
 print numbers[1]
 print numbers.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3, 4
 
@@ -161,7 +164,7 @@ print numbers.len()
 arr numbers = [1, 2, 3]
 numbers.remove(5)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         with pytest.raises(ValueErrorLyric):
             evaluate(ast)
 
@@ -173,7 +176,7 @@ numbers.reverse()
 print numbers[0]
 print numbers[4]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 5, 1
 
@@ -184,7 +187,7 @@ arr numbers = []
 numbers.reverse()
 print numbers.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
 
@@ -196,7 +199,7 @@ numbers.sort()
 print numbers[0]
 print numbers[7]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 1, 9
 
@@ -208,7 +211,7 @@ numbers.sort(false, true)
 print numbers[0]
 print numbers[7]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 9, 1
 
@@ -220,7 +223,7 @@ words.sort()
 print words[0]
 print words[3]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print "ant", "zebra"
 
@@ -235,7 +238,7 @@ arr numbers = [1, 2, 3, 4, 5]
 var cnt = numbers.count(3)
 print cnt
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 1
 
@@ -246,7 +249,7 @@ arr numbers = [1, 2, 2, 3, 2, 4]
 var cnt = numbers.count(2)
 print cnt
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
 
@@ -257,7 +260,7 @@ arr numbers = [1, 2, 3]
 var cnt = numbers.count(5)
 print cnt
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
 
@@ -268,7 +271,7 @@ arr numbers = [1, 2, 3, 2, 4]
 var idx = numbers.index(2)
 print idx
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 1
 
@@ -279,7 +282,7 @@ arr numbers = [1, 2, 3, 2, 4]
 var idx = numbers.index(2, 2, 5)
 print idx
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
 
@@ -289,7 +292,7 @@ print idx
 arr numbers = [1, 2, 3]
 numbers.index(5)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         with pytest.raises(ValueErrorLyric):
             evaluate(ast)
 
@@ -302,7 +305,7 @@ copied.append(4)
 print original.len()
 print copied.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3, 4
 
@@ -316,7 +319,7 @@ class TestArrBuiltinMethods:
 arr numbers = [1, 2, 3, 4, 5]
 print numbers.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 5
 
@@ -326,7 +329,7 @@ print numbers.len()
 arr numbers = []
 print numbers.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
 
@@ -336,7 +339,7 @@ print numbers.len()
 arr numbers = [3, 1, 4, 1, 5, 9, 2, 6]
 print numbers.max()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 9
 
@@ -346,7 +349,7 @@ print numbers.max()
 arr numbers = []
 numbers.max()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         with pytest.raises(ValueErrorLyric):
             evaluate(ast)
 
@@ -356,7 +359,7 @@ numbers.max()
 arr numbers = [3, 1, 4, 1, 5, 9, 2, 6]
 print numbers.min()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 1
 
@@ -366,7 +369,7 @@ print numbers.min()
 arr numbers = []
 numbers.min()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         with pytest.raises(ValueErrorLyric):
             evaluate(ast)
 
@@ -376,7 +379,7 @@ numbers.min()
 arr numbers = [1, 2, 3, 4, 5]
 print numbers.sum()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 15
 
@@ -386,7 +389,7 @@ print numbers.sum()
 arr numbers = []
 print numbers.sum()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
 
@@ -396,7 +399,7 @@ print numbers.sum()
 arr numbers = [1.5, 2.5, 3.0]
 print numbers.sum()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 7.0
 
@@ -406,7 +409,7 @@ print numbers.sum()
 arr mixed = [1, 2, "three"]
 mixed.sum()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         with pytest.raises(TypeErrorLyric):
             evaluate(ast)
 
@@ -423,7 +426,7 @@ numbers.sort()
 print numbers[0]
 print numbers[5]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 1, 5
 
@@ -434,7 +437,7 @@ arr mixed = [1, "two", 3.0, true]
 print mixed.len()
 print mixed[1]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 4, "two"
 
@@ -445,7 +448,7 @@ arr matrix = [[1, 2], [3, 4]]
 print matrix.len()
 print matrix[0][1]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2, 2
 
@@ -457,7 +460,7 @@ given item in numbers:
     print item
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 1, 2, 3
 
@@ -469,7 +472,7 @@ arr subset = numbers[1:4]
 print subset.len()
 print subset[0]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3, 2
 

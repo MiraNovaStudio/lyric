@@ -26,7 +26,7 @@ given i in range(5, 0, -1):
     count = count + 1
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(5, 0, -1) should produce [5, 4, 3, 2, 1] = 5 iterations
@@ -40,7 +40,7 @@ given i in range(-1, -6, -1):
     items = items + [i]
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         from lyric.interpreter import ArrObject
@@ -57,7 +57,7 @@ given i in range(10, 0, -2):
     items = items + [i]
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         from lyric.interpreter import ArrObject
@@ -78,7 +78,7 @@ given i in range(0, 5, 0):
     items = items + [i]
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         
         # Python's range(0, 5, 0) raises ValueError: range() arg 3 must not be zero
@@ -97,7 +97,7 @@ given i in range(-5, 5):
     items = items + [i]
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         from lyric.interpreter import ArrObject
@@ -114,7 +114,7 @@ given i in range(-3, 2):
     items = items + [i]
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         from lyric.interpreter import ArrObject
@@ -131,7 +131,7 @@ given i in range(-10, -5):
     items = items + [i]
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         from lyric.interpreter import ArrObject
@@ -148,7 +148,7 @@ given i in range(-10, 0, 2):
     items = items + [i]
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         from lyric.interpreter import ArrObject
@@ -169,7 +169,7 @@ given i in range(5, 5):
     count = count + 1
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(5, 5) should be empty
@@ -183,7 +183,7 @@ given i in range(10, 5, 1):
     count = count + 1
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(10, 5, 1) should be empty (can't count up from 10 to 5)
@@ -197,7 +197,7 @@ given i in range(5, 10, -1):
     count = count + 1
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(5, 10, -1) should be empty (can't count down from 5 to 10)
@@ -211,7 +211,7 @@ given i in range(0):
     count = count + 1
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(0) should be empty
@@ -225,7 +225,7 @@ given i in range(-5):
     count = count + 1
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(-5) should be empty
@@ -243,7 +243,7 @@ given i in range(5.5):
     items = items + [i]
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         
         # Python's range() requires integers
@@ -258,7 +258,7 @@ given i in range("5"):
     items = items + [i]
 done
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         
         # Python's range() requires integers
@@ -270,7 +270,7 @@ done
         code = """
 var items = range()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         
         with pytest.raises(RuntimeErrorLyric) as exc_info:
@@ -284,7 +284,7 @@ var items = range()
         code = """
 var items = range(1, 2, 3, 4)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         
         with pytest.raises(RuntimeErrorLyric) as exc_info:
@@ -304,7 +304,7 @@ class TestRangeLargeValues:
 var items = range(10000)
 var count = items.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(10000) should produce 10000 items
@@ -316,7 +316,7 @@ var count = items.len()
 var items = range(0, 5000, 10)
 var count = items.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(0, 5000, 10) should produce 500 items
@@ -328,7 +328,7 @@ var count = items.len()
 var items = range(1000, 0, -10)
 var count = items.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(1000, 0, -10) should produce 100 items
@@ -345,7 +345,7 @@ var items = range(10, 20)
 var first = items[0]
 var last = items[9]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(10, 20) produces [10, 11, ..., 19]
@@ -359,7 +359,7 @@ var prefix = [0, 1]
 var combined = prefix + range(2, 5)
 var length = combined.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # [0, 1] + [2, 3, 4] = 5 items
@@ -373,7 +373,7 @@ var max_val = items.max()
 var min_val = items.min()
 var total = items.sum()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         # range(5, 10) = [5, 6, 7, 8, 9]

@@ -22,10 +22,13 @@ from lyric.interpreter import Interpreter
 from lyric.errors import RuntimeErrorLyric
 
 
-def parse(source: str):
-    """def main() {\n    Helper to parse source code.\n}"""
+def parse(source: str, interactive: bool = False):
+    """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
@@ -61,7 +64,7 @@ class TestImportStatement:
         sys.stdout = io.StringIO()
         
         try:
-            ast = parse(code)
+            ast = parse(code, interactive=True)
             result = evaluate(ast)
             output = sys.stdout.getvalue()
             return result, output

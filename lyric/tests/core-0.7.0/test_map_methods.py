@@ -10,10 +10,13 @@ from lyric.interpreter import Interpreter
 from lyric.errors import RuntimeErrorLyric, KeyErrorLyric
 
 
-def parse(code: str):
-    """Helper to parse Lyric code."""
+def parse(code: str, interactive: bool = False):
+    """Helper to parse source code."""
     tokens = tokenize(code)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
@@ -35,7 +38,7 @@ map data = {"a": 1, "b": 2, "c": 3}
 data.clear()
 print data.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
     
@@ -48,7 +51,7 @@ data.update(other)
 print data.len()
 print data["c"]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 4, 3
     
@@ -60,7 +63,7 @@ int val = data.pop("b")
 print val
 print data.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2, 2
     
@@ -71,7 +74,7 @@ map data = {"a": 1}
 int val = data.pop("missing", 99)
 print val
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 99
     
@@ -81,7 +84,7 @@ print val
 map data = {"a": 1}
 data.pop("missing")
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         with pytest.raises(KeyErrorLyric, match="not found"):
             evaluate(ast)
     
@@ -93,7 +96,7 @@ arr item = data.popitem()
 print item.len()
 print data.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2, 1
     
@@ -103,7 +106,7 @@ print data.len()
 map data = {}
 data.popitem()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         with pytest.raises(KeyErrorLyric, match="empty"):
             evaluate(ast)
     
@@ -115,7 +118,7 @@ int val = data.setdefault("a", 99)
 print val
 print data["a"]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 1, 1
     
@@ -127,7 +130,7 @@ int val = data.setdefault("b", 2)
 print val
 print data["b"]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2, 2
     
@@ -140,7 +143,7 @@ map data = {"name": "Alice", "age": 30}
 str name = data.get("name")
 print name
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print Alice
     
@@ -151,7 +154,7 @@ map data = {"a": 1}
 int val = data.get("missing", 99)
 print val
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 99
     
@@ -162,7 +165,7 @@ map data = {"a": 1, "b": 2, "c": 3}
 arr keys = data.keys()
 print keys.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
     
@@ -173,7 +176,7 @@ map data = {"a": 1, "b": 2, "c": 3}
 arr values = data.values()
 print values.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
     
@@ -184,7 +187,7 @@ map data = {"a": 1, "b": 2}
 arr items = data.items()
 print items.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2
     
@@ -197,7 +200,7 @@ copied["c"] = 3
 print original.len()
 print copied.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2, 3
     
@@ -210,7 +213,7 @@ map data = {"a": 1, "b": 2, "c": 3}
 int size = data.len()
 print size
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
     
@@ -221,7 +224,7 @@ map data = {"c": 3, "a": 1, "b": 2}
 arr sorted_keys = data.sorted()
 print sorted_keys.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
     
@@ -232,7 +235,7 @@ map data = {"a": 1, "b": 2, "c": 3}
 arr sorted_keys = data.sorted(True)
 print sorted_keys.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
     
@@ -245,7 +248,7 @@ map data = {"name": "Alice", "age": 30}
 bin exists = "name" in data
 print exists
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print god
     
@@ -256,7 +259,7 @@ map data = {"name": "Alice"}
 bin exists = "age" in data
 print exists
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print bin
     
@@ -269,7 +272,7 @@ if result:
     print "found"
 end
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print found
     
@@ -285,7 +288,7 @@ given key in data:
 done
 print count
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
     
@@ -298,7 +301,7 @@ map data = {"name": "Bob", "age": 25}
 str name = data["name"]
 print name
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print Bob
     
@@ -309,7 +312,7 @@ map data = {}
 data["key"] = 42
 print data["key"]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 42
     
@@ -319,7 +322,7 @@ print data["key"]
 map data = {"a": 1}
 data["missing"]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         with pytest.raises(KeyErrorLyric, match="not found"):
             evaluate(ast)
 

@@ -30,7 +30,7 @@ class Person
 obj person = Person("Alice")
 var name_value = person.name
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -59,7 +59,7 @@ class Calculator
 obj calc = Calculator(10)
 var result = calc.add(5)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -85,7 +85,7 @@ counter1.increment()
 counter1.increment()
 counter2.increment()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -108,7 +108,7 @@ obj box = Box(10)
 box = Box(20)
 var final_size = box.size
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -129,7 +129,7 @@ obj animal2 = Animal("Cat")
 var name1 = animal1.name
 var name2 = animal2.name
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -141,7 +141,7 @@ var name2 = animal2.name
         code = """
 obj my_obj = 42
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         
         with pytest.raises(RuntimeErrorLyric) as exc_info:
@@ -155,7 +155,7 @@ obj my_obj = 42
         code = """
 obj my_obj = "Hello"
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         
         with pytest.raises(RuntimeErrorLyric) as exc_info:
@@ -169,7 +169,7 @@ obj my_obj = "Hello"
         code = """
 obj my_obj = [1, 2, 3]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         
         with pytest.raises(RuntimeErrorLyric) as exc_info:
@@ -195,7 +195,7 @@ def get_x(obj point) {
 obj p = Point(10, 20)
 var x_value = get_x(p)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -217,7 +217,7 @@ obj create_item(str item_name) {
 obj my_item = create_item("Sword")
 var item_name = my_item.name
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -240,7 +240,7 @@ var first_book = books[0]
 var first_title = first_book.title
 var count = books.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         

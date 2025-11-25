@@ -17,10 +17,13 @@ from lyric.interpreter import Interpreter
 from lyric.errors import RuntimeErrorLyric
 
 
-def parse(source: str):
+def parse(source: str, interactive: bool = False):
     """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
@@ -40,7 +43,7 @@ arr numbers = [10, 20, 30, 40, 50]
 int length = int(numbers)
 print length
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 5
 
@@ -51,7 +54,7 @@ arr items = [1, 2, 3]
 flt length = float(items)
 print length
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3.0
 
@@ -62,7 +65,7 @@ arr colors = ["red", "green", "blue"]
 str representation = str(colors)
 print representation
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print string representation of list
 
@@ -75,7 +78,7 @@ print result["1"]
 print result["2"]
 print result["3"]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 100, 200, 300
 
@@ -90,7 +93,7 @@ print chars[2]
 print chars[3]
 print chars[4]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print h, e, l, l, o
 
@@ -101,7 +104,7 @@ map person = {"name": "Alice", "age": 30, "city": "Seattle"}
 arr values = arr(person)
 print values.len()
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
 
@@ -112,7 +115,7 @@ arr empty = []
 int count = int(empty)
 print count
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
 
@@ -123,7 +126,7 @@ arr empty = []
 flt count = float(empty)
 print count
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0.0
 
@@ -134,7 +137,7 @@ str empty = ""
 arr chars = arr(empty)
 print int(chars)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
 
@@ -145,7 +148,7 @@ arr empty = []
 map result = map(empty)
 print int(result)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 0
 
@@ -156,7 +159,7 @@ arr original = [1, 2, 3]
 arr copy = arr(original)
 print int(copy)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3
 
@@ -167,7 +170,7 @@ map original = {"a": 1, "b": 2}
 map copy = map(original)
 print int(copy)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2
 
@@ -178,7 +181,7 @@ str phrase = "hi there"
 arr chars = arr(phrase)
 print chars[2]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print space character
 
@@ -190,7 +193,7 @@ map result = map(mixed)
 print result["1"]
 print result["2"]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 42, text
 
@@ -202,7 +205,7 @@ map as_map = map(original)
 arr back_to_arr = arr(as_map)
 print int(back_to_arr)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 3 (three values)
 
@@ -213,7 +216,7 @@ arr items = [1, 2, 3, 4, 5]
 int double_length = int(items) * 2
 print double_length
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 10
 
@@ -224,7 +227,7 @@ arr data = [1, 2, 3, 4]
 flt average = 10 / float(data)
 print average
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2.5
 
@@ -235,7 +238,7 @@ arr nested = [[1, 2], [3, 4]]
 int length = int(nested)
 print length
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 2
 
@@ -246,7 +249,7 @@ arr single = [999]
 map result = map(single)
 print result["1"]
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         evaluate(ast)
         # Should print 999
 

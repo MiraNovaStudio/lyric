@@ -18,10 +18,13 @@ from lyric.interpreter import Interpreter
 from lyric.errors import TypeErrorLyric, IndexErrorLyric, RuntimeErrorLyric
 
 
-def parse(source: str):
+def parse(source: str, interactive: bool = False):
     """Helper to parse source code."""
     tokens = tokenize(source)
     parser = Parser(tokens)
+    if interactive:
+        parser._interactive_mode = True
+        parser.is_top_level = False
     return parser.parse()
 
 
@@ -36,7 +39,7 @@ class TestArrType:
 
     def _run_code(self, code: str):
         """def main() {\n    Helper function to tokenize, parse, and run code.\n}"""
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         return evaluate(ast)
 
     def test_arr_declaration_empty_list(self):

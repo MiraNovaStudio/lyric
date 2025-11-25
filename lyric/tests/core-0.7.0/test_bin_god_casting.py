@@ -23,7 +23,7 @@ class TestBinCasting:
 int x = 5
 god result = bin(x)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -35,7 +35,7 @@ god result = bin(x)
 int y = 0
 god result = bin(y)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -47,7 +47,7 @@ god result = bin(y)
 int z = -10
 god result = bin(z)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -59,7 +59,7 @@ god result = bin(z)
 flt x = 3.14
 god result = bin(x)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -71,7 +71,7 @@ god result = bin(x)
 flt y = 0.0
 god result = bin(y)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -83,7 +83,7 @@ god result = bin(y)
 str s = "hello"
 god result = bin(s)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -95,7 +95,7 @@ god result = bin(s)
 str s = ""
 god result = bin(s)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -107,7 +107,7 @@ god result = bin(s)
 arr items = [1, 2, 3]
 god result = bin(items)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -119,7 +119,7 @@ god result = bin(items)
 arr items = []
 god result = bin(items)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -131,7 +131,7 @@ god result = bin(items)
 map data = {"key": "value"}
 god result = bin(data)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -143,7 +143,7 @@ god result = bin(data)
 map data = {}
 god result = bin(data)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -155,7 +155,7 @@ god result = bin(data)
 god x = True
 god result = bin(x)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -167,7 +167,7 @@ god result = bin(x)
 god x = False
 god result = bin(x)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -183,7 +183,7 @@ class TestGodCasting:
 int x = 5
 god result = god(x)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -195,7 +195,7 @@ god result = god(x)
 int y = 0
 god result = god(y)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -207,7 +207,7 @@ god result = god(y)
 int z = -10
 god result = god(z)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -219,7 +219,7 @@ god result = god(z)
 flt x = 3.14
 god result = god(x)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -231,7 +231,7 @@ god result = god(x)
 flt y = 0.0
 god result = god(y)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -243,7 +243,7 @@ god result = god(y)
 str s = "hello"
 god result = god(s)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -255,7 +255,7 @@ god result = god(s)
 str s = ""
 god result = god(s)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -267,7 +267,7 @@ god result = god(s)
 arr items = [1, 2, 3]
 god result = god(items)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -279,7 +279,7 @@ god result = god(items)
 arr items = []
 god result = god(items)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -291,7 +291,7 @@ god result = god(items)
 map data = {"key": "value"}
 god result = god(data)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -303,7 +303,7 @@ god result = god(data)
 map data = {}
 god result = god(data)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -315,7 +315,7 @@ god result = god(data)
 god x = True
 god result = god(x)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
@@ -327,7 +327,7 @@ god result = god(x)
 god x = False
 god result = god(x)
 """
-        ast = parse(code)
+        ast = parse(code, interactive=True)
         interpreter = Interpreter()
         interpreter.evaluate(ast)
         
