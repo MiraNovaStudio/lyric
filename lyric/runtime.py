@@ -75,6 +75,26 @@ def str_builtin(value: Any) -> str:
     return str(value)
 
 
+def bin_builtin(value: Any) -> bool:
+    """Built-in bin (boolean) conversion function.
+    
+    Converts various types to boolean using Python's truthiness rules:
+    - 0, 0.0, empty string, empty collections -> False
+    - Non-zero numbers, non-empty strings/collections -> True
+    """
+    return bool(value)
+
+
+def god_builtin(value: Any) -> bool:
+    """Built-in god (boolean) conversion function.
+    
+    Alias for bin(). Converts various types to boolean using Python's truthiness rules:
+    - 0, 0.0, empty string, empty collections -> False
+    - Non-zero numbers, non-empty strings/collections -> True
+    """
+    return bool(value)
+
+
 def arr_builtin(value: Any) -> Any:
     """Built-in arr conversion function to create lists."""
     # Import ArrObject and MapObject here to avoid circular imports
@@ -304,6 +324,8 @@ def register_builtins(env: dict) -> None:
     env['int'] = int_builtin
     env['float'] = float_builtin
     env['str'] = str_builtin
+    env['bin'] = bin_builtin
+    env['god'] = god_builtin
     env['arr'] = arr_builtin
     env['map'] = map_builtin
     env['range'] = range_builtin
