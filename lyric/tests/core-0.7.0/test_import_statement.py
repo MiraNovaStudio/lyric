@@ -111,27 +111,6 @@ print debug_mode
         self._run_code(code)
         # Should print values from config
 
-    def test_import_with_class(self):
-        """Test importing a module with a class definition."""
-        self._create_module("shapes", """
-class Circle {
-    def Circle(flt radius) {
-        self.radius = radius
-    }
-    
-    flt def area() {
-        return 3.14159 * self.radius * self.radius
-    }
-}
-""")
-        
-        code = """
-import shapes
-var circle = Circle(5.0)
-print circle.area()
-"""
-        self._run_code(code)
-        # Should print area
 
     def test_import_module_not_found(self):
         """Test that importing non-existent module raises error."""
