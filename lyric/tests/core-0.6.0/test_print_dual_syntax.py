@@ -123,10 +123,14 @@ class TestPrintDualSyntax:
         
         tokens1 = tokenize(code1)
         parser1 = Parser(tokens1)
+        parser1._interactive_mode = True
+        parser1.is_top_level = False
         ast1 = parser1.parse()
         
         tokens2 = tokenize(code2)
         parser2 = Parser(tokens2)
+        parser2._interactive_mode = True
+        parser2.is_top_level = False
         ast2 = parser2.parse()
         
         # Both should produce identical CallNode structures
@@ -148,10 +152,14 @@ class TestPrintDualSyntax:
         
         tokens1 = tokenize(code1)
         parser1 = Parser(tokens1)
+        parser1._interactive_mode = True
+        parser1.is_top_level = False
         ast1 = parser1.parse()
         
         tokens2 = tokenize(code2)
         parser2 = Parser(tokens2)
+        parser2._interactive_mode = True
+        parser2.is_top_level = False
         ast2 = parser2.parse()
         
         # Both should produce identical CallNode structures

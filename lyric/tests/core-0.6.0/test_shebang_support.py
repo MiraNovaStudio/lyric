@@ -79,7 +79,7 @@ class TestShebangExecution:
     def test_execute_file_with_shebang(self):
         """Test executing a file with shebang."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
-            f.write('#!/usr/bin/lyric\nprint("Hello from shebang!")')
+            f.write('#!/usr/bin/lyric\ndef main() {\n    print("Hello from shebang!")\n}')
             temp_file = f.name
         
         try:
@@ -94,7 +94,7 @@ class TestShebangExecution:
     def test_execute_file_without_shebang(self):
         """Test executing a file without shebang."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
-            f.write('print("Hello without shebang!")')
+            f.write('def main() {\n    print("Hello without shebang!")\n}')
             temp_file = f.name
         
         try:
@@ -108,7 +108,7 @@ class TestShebangExecution:
     def test_execute_file_with_comment_not_shebang(self):
         """Test executing a file with comment (not shebang)."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
-            f.write('# This is a comment\nprint("Hello with comment!")')
+            f.write('# This is a comment\ndef main() {\n    print("Hello with comment!")\n}')
             temp_file = f.name
         
         try:
@@ -122,7 +122,7 @@ class TestShebangExecution:
     def test_execute_file_with_env_shebang(self):
         """Test executing a file with env shebang."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
-            f.write('#!/usr/bin/env lyric\nprint("Hello with env shebang!")')
+            f.write('#!/usr/bin/env lyric\ndef main() {\n    print("Hello with env shebang!")\n}')
             temp_file = f.name
         
         try:
@@ -136,7 +136,7 @@ class TestShebangExecution:
     def test_execute_file_with_custom_shebang_path(self):
         """Test executing a file with custom shebang path."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
-            f.write('#!/usr/local/bin/lyric\nprint("Hello with custom path!")')
+            f.write('#!/usr/local/bin/lyric\ndef main() {\n    print("Hello with custom path!")\n}')
             temp_file = f.name
         
         try:
@@ -157,8 +157,8 @@ class TestShebangParsing:
         source_cleaned = _remove_shebang(source_with_shebang)
         
         # Both should parse to the same AST
-        ast_with_shebang = parse(source_cleaned)
-        ast_without_shebang = parse('print("Hello")')
+        ast_with_shebang = parse(source_cleaned, interactive=True)
+        ast_without_shebang = parse('print("Hello")', interactive=True)
         
         # The ASTs should be equivalent
         assert str(ast_with_shebang) == str(ast_without_shebang)
@@ -169,8 +169,8 @@ class TestShebangParsing:
         source_cleaned = _remove_shebang(source_with_shebang)
         
         # Both should execute identically
-        ast_with_shebang = parse(source_cleaned)
-        ast_without_shebang = parse('print("Hello")')
+        ast_with_shebang = parse(source_cleaned, interactive=True)
+        ast_without_shebang = parse('print("Hello")', interactive=True)
         
         # Both should produce the same output
         assert str(ast_with_shebang) == str(ast_without_shebang)
@@ -196,7 +196,7 @@ class TestShebangErrorHandling:
     def test_runtime_error_with_shebang(self):
         """Test that runtime errors work correctly with shebang."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
-            f.write('#!/usr/bin/lyric\nprint(undefined_variable)')
+            f.write('#!/usr/bin/lyric\ndef main() {\n    print(undefined_variable)\n}')
             temp_file = f.name
         
         try:

@@ -29,7 +29,7 @@ def test_catch_with_type_specific():
         return 0
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == 1  # IndexError clause should match
 
@@ -46,7 +46,7 @@ def test_catch_with_type_binding():
         fade
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert "Index out of range" in result
 
@@ -66,7 +66,7 @@ def test_catch_bare_fallback():
         return 0
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == 2  # Should fall through to bare catch
 
@@ -87,7 +87,7 @@ def test_catch_multiple_typed_clauses():
         fade
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == "index"
 
@@ -104,7 +104,7 @@ def test_catch_with_string_concatenation():
         fade
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert "Caught:" in result
     assert "Index out of range" in result
@@ -128,7 +128,7 @@ def test_catch_nested_try():
         return result
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # The inner try should not catch IndexError, so it propagates to outer
     assert result == "outer-index"
@@ -147,7 +147,7 @@ def test_catch_type_only_no_binding():
         return "no-catch"
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == "caught-index"
 
@@ -165,7 +165,7 @@ def test_catch_binding_only_no_type():
         return "no-catch"
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == "caught"
 
@@ -184,7 +184,7 @@ def test_exception_type_hierarchy():
         fade
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # Should match the more specific IndexError first
     assert result == "index-specific"
@@ -204,7 +204,7 @@ def test_key_error_matching():
         fade
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == "key-error"
 
@@ -225,7 +225,7 @@ def test_type_error_matching():
         fade
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert result == "type-error"
 
@@ -242,7 +242,7 @@ def test_exception_propagation_with_typing():
         fade
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     with pytest.raises(IndexErrorLyric):
         evaluate(ast)
 
@@ -261,7 +261,7 @@ def test_multiple_catch_clauses_order():
         fade
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # First catch (bare) should match, second should not be checked
     assert result == "first"
@@ -280,7 +280,7 @@ def test_exception_binding_scope():
         fade
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     assert "Index out of range" in result
 
@@ -301,7 +301,7 @@ def test_catch_with_finally():
         return result
     }'''
     
-    ast = parse(source)
+    ast = parse(source, interactive=True)
     result = evaluate(ast)
     # Finally should execute after catch
     assert result == "finally"
