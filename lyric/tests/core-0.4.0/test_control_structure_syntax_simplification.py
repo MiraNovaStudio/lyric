@@ -421,7 +421,7 @@ self.value = 42
 +++
 
 def main() {
-var obj = TestClass()
+var myobj = TestClass()
 print("class created")
 }'''
         
@@ -452,7 +452,7 @@ self.value = 42
 +++
 
 def main() {
-var obj = TestClass()
+var myobj = TestClass()
 print("class created")
 }'''
         
@@ -527,8 +527,8 @@ self.value = 42
 helper()
 
 # Create class instance
-var obj = TestClass()
-print("class value: " + str(obj.value))
+var myobj = TestClass()
+print("class value: " + str(myobj.value))
 }'''
         
         ast = parse(source)

@@ -114,8 +114,8 @@ class TestRuntimeSafety:
     def test_enhanced_method_not_found_messages(self):
         """Test enhanced error messages for undefined methods."""
         source = """
-        var obj = {"name": "test"}
-        var result = obj.unknown_method()
+        var myobj = {"name": "test"}
+        var result = myobj.unknown_method()
         """
         tokens = tokenize(source)
         parser = Parser(tokens)
@@ -254,8 +254,8 @@ class TestRuntimeSafety:
     def test_enhanced_indexing_error_messages(self):
         """Test enhanced error messages for invalid indexing."""
         source = """
-        var obj = 5
-        var result = obj[0]
+        var myobj = 5
+        var result = myobj[0]
         """
         tokens = tokenize(source)
         parser = Parser(tokens)
@@ -274,8 +274,8 @@ class TestRuntimeSafety:
     def test_enhanced_callable_error_messages(self):
         """Test enhanced error messages for non-callable objects."""
         source = """
-        var obj = {"name": "test"}
-        var result = obj.name()
+        var myobj = {"name": "test"}
+        var result = myobj.name()
         """
         tokens = tokenize(source)
         parser = Parser(tokens)
@@ -310,8 +310,8 @@ class TestRuntimeSafety:
     def test_enhanced_member_access_error_messages(self):
         """Test enhanced error messages for member access errors."""
         source = """
-        var obj = {"name": "test"}
-        var result = obj.unknown_member
+        var myobj = {"name": "test"}
+        var result = myobj.unknown_member
         """
         tokens = tokenize(source)
         parser = Parser(tokens)
@@ -352,8 +352,8 @@ class TestRuntimeSafety:
         """Test that method and member error messages follow consistent patterns."""
         # Test method not found
         source = """
-        var obj = {"name": "test"}
-        var x = obj.unknown_method()
+        var myobj = {"name": "test"}
+        var x = myobj.unknown_method()
         """
         tokens = tokenize(source)
         parser = Parser(tokens)
@@ -370,8 +370,8 @@ class TestRuntimeSafety:
         """Test that member access error messages follow consistent patterns."""
         # Test member not found
         source = """
-        var obj = {"name": "test"}
-        var x = obj.unknown_member
+        var myobj = {"name": "test"}
+        var x = myobj.unknown_member
         """
         tokens = tokenize(source)
         parser = Parser(tokens)
