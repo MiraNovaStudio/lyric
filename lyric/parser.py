@@ -273,6 +273,10 @@ class Parser:
         # Make colon optional after class name
         self._match('COLON')  # Optional colon
         
+        # Save top-level state and set to False inside class body
+        was_top_level = self.is_top_level
+        self.is_top_level = False
+        
         members_statements = []
         constructor_method = None
         
@@ -301,6 +305,9 @@ class Parser:
                     members_statements.append(stmt)
         
         self._consume('CLASS_END', "Expected '+++' after class body")
+        
+        # Restore top-level state
+        self.is_top_level = was_top_level
         
         return ClassNode(name, members_statements, constructor_method, class_token.line, class_token.col)
     
