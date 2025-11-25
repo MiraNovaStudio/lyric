@@ -219,6 +219,15 @@ class ArrObject:
     def __iter__(self):
         """Support iteration."""
         return iter(self.elements)
+    
+    def __add__(self, other):
+        """Support concatenation of ArrObjects with + operator."""
+        if isinstance(other, ArrObject):
+            return ArrObject(self.elements + other.elements)
+        elif isinstance(other, list):
+            return ArrObject(self.elements + other)
+        else:
+            raise TypeErrorLyric(f"unsupported operand type(s) for +: 'arr' and '{type(other).__name__}'")
 
 
 class MapObject:
@@ -912,6 +921,9 @@ class Interpreter:
             return isinstance(value, (list, ArrObject))  # arr maps to ArrObject or Python list
         elif expected_type == 'map':
             return isinstance(value, (dict, MapObject))  # map maps to MapObject or Python dict
+        elif expected_type == 'obj':
+            # obj is for class instances - check if it's a dict with __instance_class__ marker
+            return isinstance(value, dict) and '__instance_class__' in value
         else:
             return False
     
@@ -1320,14 +1332,14 @@ class Interpreter:
             print(*args)
             return None
         elif node.func_name == "range":
-            # Built-in range function
+            # Built-in range function - returns ArrObject for consistency with Lyric's arr type
             args = [self._evaluate_expression(arg) for arg in node.args]
             if len(args) == 1:
-                return list(range(args[0]))
+                return ArrObject(list(range(args[0])))
             elif len(args) == 2:
-                return list(range(args[0], args[1]))
+                return ArrObject(list(range(args[0], args[1])))
             elif len(args) == 3:
-                return list(range(args[0], args[1], args[2]))
+                return ArrObject(list(range(args[0], args[1], args[2])))
             else:
                 raise RuntimeErrorLyric(f"Invalid range() arguments: range() takes 1-3 arguments (start, stop, step), but got {len(args)}. Usage: range(stop) or range(start, stop) or range(start, stop, step)")
         elif node.func_name in self.classes:

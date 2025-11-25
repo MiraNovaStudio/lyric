@@ -215,10 +215,10 @@ print "done"
         # Should only print "done"
 
     def test_arr_length_builtin(self):
-        """Test using len() built-in with arr."""
+        """Test using len() method with arr."""
         code = """
 arr items = [1, 2, 3, 4, 5]
-print len(items)
+print items.len()
 """
         result = self._run_code(code)
         # Should print 5

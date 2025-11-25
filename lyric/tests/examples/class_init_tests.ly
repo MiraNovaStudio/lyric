@@ -1,5 +1,8 @@
 # Class and Constructor Tests for Sprint 3
 # Tests class definitions, init() methods, and instance creation
+#
+# NOTE: As of Sprint 8, len(), append(), keys(), and values() are now methods
+# on arr and map objects, not standalone functions.
 
 # Test 1: Basic class with init() method
 class Person
@@ -29,13 +32,13 @@ class BankAccount
     
     def deposit(flt amount) {
         self.balance = self.balance + amount
-        append(self.transactions, "Deposit: " + str(amount))
+        self.transactions.append("Deposit: " + str(amount))
     }
     
     def withdraw(flt amount) {
         if self.balance >= amount
             self.balance = self.balance - amount
-            append(self.transactions, "Withdrawal: " + str(amount))
+            self.transactions.append("Withdrawal: " + str(amount))
         else
             print("Insufficient funds")
         end
@@ -57,13 +60,13 @@ class Calculator
     
     def add(int a, int b) {
         var result = a + b
-        append(self.history, str(a) + " + " + str(b) + " = " + str(result))
+        self.history.append(str(a) + " + " + str(b) + " = " + str(result))
         return result
     }
     
     def multiply(int a, int b) {
         var result = a * b
-        append(self.history, str(a) + " * " + str(b) + " = " + str(result))
+        self.history.append(str(a) + " * " + str(b) + " = " + str(result))
         return result
     }
 +++
@@ -72,7 +75,7 @@ class Calculator
 var calc = Calculator("MyCalculator")
 var sum_result = calc.add(5, 10)
 var product_result = calc.multiply(3, 7)
-var history_length = len(calc.history)
+var history_length = calc.history.len()
 
 # Test 8: Class with complex init()
 class Student
@@ -85,9 +88,9 @@ class Student
     }
     
     def calculate_average() {
-        if len(self.grades) > 0
+        if self.grades.len() > 0
             var total = 0
-            var count = len(self.grades)
+            var count = self.grades.len()
             # Note: This would need a loop to sum grades, simplified for now
             self.average = 85.0  # Placeholder
         end

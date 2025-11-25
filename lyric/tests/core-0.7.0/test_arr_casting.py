@@ -99,7 +99,7 @@ print chars[4]
         code = """
 map person = {"name": "Alice", "age": 30, "city": "Seattle"}
 arr values = arr(person)
-print len(values)
+print values.len()
 """
         ast = parse(code)
         evaluate(ast)

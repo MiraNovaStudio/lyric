@@ -224,10 +224,10 @@ print result["status"]
         # Should print ok
 
     def test_map_len_builtin(self):
-        """Test using len() built-in with map."""
+        """Test using len() method with map."""
         code = """
 map data = {"a": 1, "b": 2, "c": 3}
-print len(data)
+print data.len()
 """
         result = self._run_code(code)
         # Should print 3

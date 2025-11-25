@@ -307,11 +307,14 @@ def register_builtins(env: dict) -> None:
     env['arr'] = arr_builtin
     env['map'] = map_builtin
     env['range'] = range_builtin
-    env['len'] = len_builtin
     env['open'] = open_builtin
     env['isinstance'] = isinstance_builtin
     env['type'] = type_builtin
     env['regex'] = regex_builtin
-    env['append'] = append_builtin
-    env['keys'] = keys_builtin
-    env['values'] = values_builtin
+    # Note: len(), append(), keys(), values() have been removed as built-ins
+    # These are now methods on arr and map objects:
+    #   len(myarray) -> myarray.len()
+    #   append(myarray, item) -> myarray.append(item)
+    #   keys(mydict) -> mydict.keys()
+    #   values(mydict) -> mydict.values()
+

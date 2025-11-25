@@ -54,7 +54,7 @@ class TestConstructorRecognition:
             
             def add(int a, int b) {
                 var result = a + b
-                append(self.history, str(a) + " + " + str(b) + " = " + str(result))
+                self.history.append(str(a) + " + " + str(b) + " = " + str(result))
                 return result
             }
         +++
@@ -114,7 +114,7 @@ class TestConstructorRecognition:
             }
             
             def get_average() {
-                if len(self.grades) > 0:
+                if self.grades.len() > 0:
                     return 85.0
                 else:
                     return 0.0
@@ -174,13 +174,13 @@ class TestConstructorRecognition:
             
             def deposit(flt amount) {
                 self.balance = self.balance + amount
-                append(self.transactions, "Deposit: " + str(amount))
+                self.transactions.append("Deposit: " + str(amount))
             }
             
             def withdraw(flt amount) {
                 if self.balance >= amount:
                     self.balance = self.balance - amount
-                    append(self.transactions, "Withdrawal: " + str(amount))
+                    self.transactions.append("Withdrawal: " + str(amount))
                 else:
                     print("Insufficient funds")
                 end
@@ -192,7 +192,7 @@ class TestConstructorRecognition:
             account.deposit(500.0)
             account.withdraw(200.0)
             print("Final balance:", account.balance)
-            print("Transactions:", len(account.transactions))
+            print("Transactions:", account.transactions.len())
         }
         """
         
@@ -315,12 +315,12 @@ class TestConstructorRecognition:
             
             def add_book(str title, str author) {
                 var book = {"title": title, "author": author}
-                append(self.books, book)
+                self.books.append(book)
                 self.total_books = self.total_books + 1
             }
             
             def get_stats() {
-                return {"books": self.total_books, "members": len(self.members)}
+                return {"books": self.total_books, "members": self.members.len()}
             }
         +++
         
@@ -471,7 +471,7 @@ class TestConstructorIntegration:
             def safe_divide(int a, int b) {
                 try:
                     var result = a / b
-                    append(self.history, str(a) + " / " + str(b) + " = " + str(result))
+                    self.history.append(str(a) + " / " + str(b) + " = " + str(result))
                     return result
                 catch:
                     print("Division by zero error")
@@ -538,12 +538,12 @@ class TestConstructorIntegration:
             
             def log(str message) {
                 var log_entry = "[" + self.log_level + "] " + message
-                append(self.messages, log_entry)
+                self.messages.append(log_entry)
                 print(log_entry)
             }
             
             def get_message_count() {
-                return len(self.messages)
+                return self.messages.len()
             }
         +++
         
