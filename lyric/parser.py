@@ -23,10 +23,12 @@ class Parser:
         self.tokens = tokens
         self.current = 0
         self.loop_depth = 0  # Track nesting level for break/continue validation
+        self.is_top_level = True  # Track if we're at module/top level
     
     def parse(self) -> ProgramNode:
         """Parse tokens into a ProgramNode."""
         statements = []
+        self.is_top_level = True  # Start at top level
         
         while not self._is_at_end():
             stmt = self._parse_statement()
@@ -94,16 +96,28 @@ class Parser:
         elif self._check('CLASS'):
             return self._parse_class_def()
         elif self._check('IF'):
+            if self.is_top_level:
+                token = self._peek()
+                raise SyntaxErrorLyric(f"Control structures not allowed at module level. Only variable declarations, functions, and classes are allowed at the top level.", token.line, token.col)
             return self._parse_if_block()
         elif self._check('GIVEN'):
+            if self.is_top_level:
+                token = self._peek()
+                raise SyntaxErrorLyric(f"Control structures not allowed at module level. Only variable declarations, functions, and classes are allowed at the top level.", token.line, token.col)
             return self._parse_loop_block()
         elif self._check('RETURN'):
+            if self.is_top_level:
+                token = self._peek()
+                raise SyntaxErrorLyric(f"'return' statement not allowed at module level. Execution starts in main().", token.line, token.col)
             return self._parse_return_stmt()
         elif self._check('BREAK'):
             return self._parse_break_stmt()
         elif self._check('CONTINUE'):
             return self._parse_continue_stmt()
         elif self._check('TRY'):
+            if self.is_top_level:
+                token = self._peek()
+                raise SyntaxErrorLyric(f"Control structures not allowed at module level. Only variable declarations, functions, and classes are allowed at the top level.", token.line, token.col)
             return self._parse_try_block()
         elif self._check('IMPORT'):
             return self._parse_import_stmt()
@@ -127,6 +141,9 @@ class Parser:
             self._advance()  # consume '='
             raise ParseError(f"Expected variable name after type '{type_token.value}' at line {type_token.line}, column {type_token.col}")
         else:
+            if self.is_top_level:
+                token = self._peek()
+                raise SyntaxErrorLyric(f"Only variable declarations, functions, and classes are allowed at module level. Execution starts in main().", token.line, token.col)
             return self._parse_assignment_or_expr_stmt()
     
     def _parse_func_def(self) -> FunctionNode:
@@ -167,6 +184,10 @@ class Parser:
         
         self._consume('LBRACE', "Expected '{' after function signature")
         
+        # Save top-level state and set to False inside function body
+        was_top_level = self.is_top_level
+        self.is_top_level = False
+        
         body_statements = []
         while not self._check('RBRACE') and not self._is_at_end():
             # Skip NEWLINE tokens
@@ -175,12 +196,15 @@ class Parser:
             
             if self._check('RBRACE'):
                 break
-                
+            
             stmt = self._parse_statement()
             if stmt:
                 body_statements.append(stmt)
         
         self._consume('RBRACE', "Expected '}' after function body")
+        
+        # Restore top-level state
+        self.is_top_level = was_top_level
         
         # Use the line/col from whichever token started the function
         line = type_token.line if 'type_token' in locals() else (def_token.line if 'def_token' in locals() else name_token.line)

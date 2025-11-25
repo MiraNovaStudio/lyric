@@ -188,3 +188,97 @@ greet()
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
 
+
+    def test_import_module_level_variables(self):
+        """Test that module-level variables can be imported."""
+        # Create a module with variables
+        self._create_module("vars_module", """
+int MODULE_CONSTANT = 42
+str MODULE_NAME = "TestModule"
+arr MODULE_LIST = [1, 2, 3]
+
+def get_constant() {
+    return MODULE_CONSTANT
+}
+""")
+        
+        # Import and use the variables
+        code = """
+import vars_module
+
+def main() {
+    print(MODULE_CONSTANT)
+    print(MODULE_NAME)
+    print(MODULE_LIST[0])
+    print(get_constant())
+}
+"""
+        result, output = self._run_code(code)
+        assert "42" in output
+        assert "TestModule" in output
+        assert "1" in output
+
+    def test_selective_import_with_variables(self):
+        """Test selective import of variables."""
+        # Create a module
+        self._create_module("mixed_module", """
+int VALUE_A = 10
+int VALUE_B = 20
+int VALUE_C = 30
+
+int add(int x, int y) {
+    return x + y
+}
+""")
+        
+        # Selective import of variables
+        code = """
+import mixed_module; VALUE_A, VALUE_B, add
+
+def main() {
+    print(VALUE_A)
+    print(VALUE_B)
+    print(add(VALUE_A, VALUE_B))
+}
+"""
+        result, output = self._run_code(code)
+        assert "10" in output
+        assert "20" in output
+        assert "30" in output  # 10 + 20
+
+    def test_import_all_includes_variables(self):
+        """Test that import all includes module-level variables."""
+        # Create a module with functions, classes, and variables
+        self._create_module("full_module", """
+int SETTING = 100
+str NAME = "FullModule"
+
+def helper() {
+    return SETTING * 2
+}
+
+class Config
+    int value
+    
+    def Config() {
+        self.value = SETTING
+    }
++++
+""")
+        
+        # Import all
+        code = """
+import full_module
+
+def main() {
+    print(SETTING)
+    print(NAME)
+    print(helper())
+    obj cfg = Config()
+    print(cfg.value)
+}
+"""
+        result, output = self._run_code(code)
+        assert "100" in output
+        assert "FullModule" in output
+        assert "200" in output  # helper() returns SETTING * 2

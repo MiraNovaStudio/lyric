@@ -1740,8 +1740,7 @@ class Interpreter:
                 node.column
             )
         
-        # Import ONLY functions and classes from the module
-        # Variables (including arrays, maps, etc.) are NOT imported
+        # Import functions, classes, and module-level variables from the module
         # However, functions need to retain access to their module's global scope
         
         if node.symbols:
@@ -1773,16 +1772,24 @@ class Interpreter:
                     
                     self.classes[symbol_name] = cls
                 
+                # Check if it's a module-level variable
+                elif symbol_name in module_interpreter.global_scope:
+                    value = module_interpreter.global_scope[symbol_name]
+                    
+                    # Use alias if provided, otherwise use original name
+                    target_name = alias if alias else symbol_name
+                    self.global_scope[target_name] = value
+                
                 # Symbol not found
                 else:
                     raise RuntimeErrorLyric(
                         f"ImportError: cannot import name '{symbol_name}' from module '{module_name}'. "
-                        f"'{symbol_name}' is not a function or class in the module.",
+                        f"'{symbol_name}' is not defined in the module.",
                         node.line,
                         node.column
                     )
         else:
-            # Import all functions and classes from the module
+            # Import all functions, classes, and variables from the module
             
             # Import functions with their module scope
             for name, func in module_interpreter.functions.items():
@@ -1794,6 +1801,13 @@ class Interpreter:
             # Import classes
             for name, cls in module_interpreter.classes.items():
                 self.classes[name] = cls
+            
+            # Import module-level variables
+            # We need to filter out built-in functions and only import user-defined variables
+            for name, value in module_interpreter.global_scope.items():
+                # Skip built-in functions (they are callables)
+                if not callable(value):
+                    self.global_scope[name] = value
         
         return None
     
