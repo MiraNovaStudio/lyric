@@ -90,7 +90,7 @@ Subclass methods may override base methods by using the same name.
 - Base method still accessible internally via explicit reference if needed in future versions (not implemented yet).
 - Method lookups work correctly for all inheritance depths.
 
-## Task 4 — Access Control Keywords
+## Task 4 — Access Control Keywords / Scoping 
 
 Introduce optional visibility modifiers for methods: `public`, `private`, `protected`.
 
