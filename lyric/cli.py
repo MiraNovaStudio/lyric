@@ -148,6 +148,57 @@ def _remove_shebang(source: str) -> str:
     return source
 
 
+def _check_for_auto_help(source: str, file_path: str):
+    """Check if -h was passed and program doesn't override it.
+    
+    Returns True if auto-help was shown, False otherwise.
+    """
+    from lyric.runtime import get_command_line_options
+    
+    options = get_command_line_options()
+    
+    # Check if -h was passed
+    if 'h' not in options:
+        return False
+    
+    # Check if the program uses getopts("h") or getopts('h')
+    # Simple text search to see if program overrides -h
+    if 'getopts("h")' in source or "getopts('h')" in source:
+        # Program overrides -h, let it handle it
+        return False
+    
+    # Auto-generate help
+    print(f"Usage: lyric {os.path.basename(file_path)} [options] [arguments]")
+    print()
+    print("Auto-generated help (use -h in your program to override)")
+    print()
+    
+    # Scan for getopts calls to list available options
+    import re
+    getopts_pattern = r'getopts\(["\']([^"\']+)["\']\)'
+    matches = re.findall(getopts_pattern, source)
+    
+    if matches:
+        print("Available options:")
+        for opt in sorted(set(matches)):
+            if len(opt) == 1:
+                print(f"  -{opt}")
+            else:
+                print(f"  --{opt}")
+    else:
+        print("No options defined in this program.")
+    
+    print()
+    print("Arguments:")
+    # Check if main has argc/argv parameters
+    if 'def main(int argc, arr argv)' in source or 'def main(argc, argv)' in source:
+        print("  This program accepts command-line arguments via main(argc, argv)")
+    else:
+        print("  This program does not accept arguments")
+    
+    return True
+
+
 def _execute_file(file_path: str, arguments: list = None):
     """Execute a Lyric source file.
     
@@ -175,6 +226,10 @@ def _execute_file(file_path: str, arguments: list = None):
         
         # Remove shebang line if present
         source = _remove_shebang(source)
+        
+        # Check for auto-help before parsing/executing
+        if _check_for_auto_help(source, file_path):
+            sys.exit(0)
         
         # Parse the source code
         ast = parse(source)

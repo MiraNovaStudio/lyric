@@ -329,6 +329,12 @@ def set_command_line_options(options: dict) -> None:
     _command_line_options = options
 
 
+def get_command_line_options() -> dict:
+    """Get the current command-line options."""
+    global _command_line_options
+    return _command_line_options
+
+
 def getopts_builtin(option_name: str) -> Any:
     """Built-in getopts function that retrieves command-line options.
     
