@@ -16,15 +16,15 @@ from lyric.runtime import set_command_line_options
 
 
 def _parse_options(args):
-    """Parse command-line options.
+    """Parse command-line options and separate them from regular arguments.
     
     Returns:
-        tuple: (options_dict, remaining_args)
+        tuple: (options_dict, arguments_list)
         - options_dict: Dictionary mapping option names to their values
-        - remaining_args: List of remaining non-option arguments
+        - arguments_list: List of non-option arguments
     """
     options = {}
-    remaining = []
+    arguments = []
     i = 0
     
     while i < len(args):
@@ -45,20 +45,14 @@ def _parse_options(args):
         elif arg.startswith('-') and len(arg) == 2 and arg[1].isalpha():
             # Short option (e.g., -a)
             option_name = arg[1]
-            # Check if next arg is a value or another option
-            if i + 1 < len(args) and not args[i + 1].startswith('-'):
-                # Next arg might be a value, but only if it's not a filename
-                # For now, treat single-char options as flags
-                options[option_name] = None
-            else:
-                options[option_name] = None
+            options[option_name] = None
         else:
-            # Not an option, it's a regular argument (like filename)
-            remaining.append(arg)
+            # Not an option, it's a regular argument
+            arguments.append(arg)
         
         i += 1
     
-    return options, remaining
+    return options, arguments
 
 
 def main():
@@ -77,8 +71,8 @@ def main():
         print("Usage:")
         print("  lyric --version                    Show version information")
         print("  lyric --help                       Show this help message")
-        print("  lyric run <file.ly>               Run a Lyric source file")
-        print("  lyric <file.ly>                   Run a Lyric source file (shorthand)")
+        print("  lyric run <file.ly> [options] [args]  Run a Lyric source file with options and arguments")
+        print("  lyric <file.ly> [options] [args]      Run a Lyric source file (shorthand)")
         print("  lyric -i [code]                   Interactive mode (REPL) or execute immediate code")
         print("")
         print("Options:")
@@ -86,10 +80,13 @@ def main():
         print("  --verbose, --debug, etc.          Long options (multiple characters)")
         print("  --file=myfile                     Long option with value")
         print("")
+        print("Arguments:")
+        print("  Arguments are passed after options and available via main(argc, argv)")
+        print("")
         print("Examples:")
         print("  lyric run hello.ly")
         print("  lyric hello.ly")
-        print("  lyric hello.ly -a --verbose --file=myfile")
+        print("  lyric hello.ly -a --verbose --file=myfile arg1 arg2")
         print('  lyric -i "print(2 + 2)"')
         print("  lyric -i                           Start REPL")
         sys.exit(0)
@@ -104,33 +101,35 @@ def main():
             _start_repl()
     elif command == "run":
         if len(sys.argv) < 3:
-            print("Usage: lyric run <file.ly> [options]")
+            print("Usage: lyric run <file.ly> [options] [arguments]")
             sys.exit(1)
         
-        # Parse options and get filename
+        # Parse options and get filename and arguments
         options, remaining = _parse_options(sys.argv[2:])
         
         if not remaining:
-            print("Usage: lyric run <file.ly> [options]")
+            print("Usage: lyric run <file.ly> [options] [arguments]")
             sys.exit(1)
         
         file_path = remaining[0]
+        arguments = remaining[1:]  # Everything after the filename
         
         # Set command-line options for getopts()
         set_command_line_options(options)
         
-        _execute_file(file_path)
+        _execute_file(file_path, arguments)
     elif command.endswith('.ly'):
         # Treat as shorthand for "lyric run <file.ly>"
         # Parse options from remaining args
         options, remaining = _parse_options(sys.argv[2:])
         
         file_path = command
+        arguments = remaining  # All remaining args are arguments
         
         # Set command-line options for getopts()
         set_command_line_options(options)
         
-        _execute_file(file_path)
+        _execute_file(file_path, arguments)
     else:
         print(f"Unknown command: {command}")
         print("Usage: lyric --version | lyric --help | lyric run <file.ly> | lyric <file.ly> | lyric -i [code]")
@@ -149,8 +148,16 @@ def _remove_shebang(source: str) -> str:
     return source
 
 
-def _execute_file(file_path: str):
-    """Execute a Lyric source file."""
+def _execute_file(file_path: str, arguments: list = None):
+    """Execute a Lyric source file.
+    
+    Args:
+        file_path: Path to the .ly file to execute
+        arguments: List of command-line arguments to pass to main()
+    """
+    if arguments is None:
+        arguments = []
+    
     # Check if file exists
     if not os.path.exists(file_path):
         print(f"Error: File '{file_path}' not found")
@@ -173,7 +180,8 @@ def _execute_file(file_path: str):
         ast = parse(source)
         
         # Execute the program, passing the source file path for relative imports
-        evaluate(ast, source_file=file_path)
+        # and the command-line arguments
+        evaluate(ast, source_file=file_path, cli_args=arguments)
         
     except (LexError, ParseError, SyntaxErrorLyric) as e:
         # Syntax/lexical errors

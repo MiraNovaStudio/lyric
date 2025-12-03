@@ -373,6 +373,8 @@ class Interpreter:
         self.current_instance = None
         # Track the current class name for constructor context
         self.current_class_name = None
+        # Store command-line arguments for main() function
+        self.cli_args = []
     
     def _push_scope(self):
         """Push a new scope onto the stack."""
@@ -597,7 +599,26 @@ class Interpreter:
             
             # If there's a main function, call it and return its result
             if "main" in self.functions:
-                return self._call_function("main", [])
+                # Prepare arguments for main()
+                main_func = self.functions["main"]
+                main_params = main_func['params']
+                
+                # If main() expects parameters (argc, argv), provide them
+                if len(main_params) >= 2:
+                    # Import ArrObject here to avoid circular imports
+                    from lyric.interpreter import ArrObject
+                    
+                    # Create argc (number of arguments) and argv (array of arguments)
+                    argc = len(self.cli_args)
+                    argv = ArrObject(self.cli_args)
+                    
+                    return self._call_function("main", [argc, argv])
+                elif len(main_params) == 0:
+                    # main() has no parameters
+                    return self._call_function("main", [])
+                else:
+                    # main() has 1 parameter - not a standard pattern, but allow it
+                    return self._call_function("main", [len(self.cli_args)])
             
             return None
         except Exception as e:
@@ -2172,7 +2193,15 @@ class Interpreter:
             return True
 
 
-def evaluate(ast: ProgramNode, source_file=None) -> Any:
-    """Evaluate an AST and return the result."""
+def evaluate(ast: ProgramNode, source_file=None, cli_args=None) -> Any:
+    """Evaluate an AST and return the result.
+    
+    Args:
+        ast: The program AST to evaluate
+        source_file: Optional path to the source file (for relative imports)
+        cli_args: Optional list of command-line arguments to pass to main()
+    """
     interpreter = Interpreter(source_file=source_file)
+    if cli_args:
+        interpreter.cli_args = cli_args
     return interpreter.evaluate(ast)
