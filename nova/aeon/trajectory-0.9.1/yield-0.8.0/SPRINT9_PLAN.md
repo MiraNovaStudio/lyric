@@ -247,6 +247,35 @@ creates the file
 
 Try to make the operators make sense for each datatype claude
 
+## Task 10
+
+Add the exit() builtin function, allow integer parameters and exit(1) for 
+example will exit the program with return code 1
+
+
+Add the exec("mycomamnd.sh -l") built-in also.  You can use subprocess or os.system on the
+backend
+
+Use the > operator to allow redirecting of the output to a variable
+
+str output
+like exec("mycommand.sh") > output
+
+output could also be myfile if you want to redirect to a file
+
+similarly you can pipe input to the command with the < operator
+
+str input = "1"
+
+exec("mycommand") < input > output
+
+exec() always returns the return code of the process
+
+int rc = exec("chmod 644 filename.txt")
+
+rc contain 0 the return code of the chmod command example
+
+for now you can always append stderr to stdout so it is just one stream
 
 
 ## Definition of Done

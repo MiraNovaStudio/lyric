@@ -564,10 +564,33 @@ class SliceNode(ASTNode):
         }
 
 
+@dataclass
+class FileOpNode(ASTNode):
+    """Represents a file I/O operation: var > file, var >> file, var < file."""
+    operator: str  # '>', '>>', or '<'
+    left: 'ASTNode'  # Source variable or expression
+    right: 'ASTNode'  # Target variable (usually a DskObject)
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"FileOpNode(left={self.left}, op='{self.operator}', right={self.right})"
+    
+    def to_dict(self):
+        return {
+            'type': 'FileOpNode',
+            'operator': self.operator,
+            'left': self.left.to_dict() if hasattr(self.left, 'to_dict') else str(self.left),
+            'right': self.right.to_dict() if hasattr(self.right, 'to_dict') else str(self.right),
+            'line': self.line,
+            'column': self.column
+        }
+
+
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
     ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
-    TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
+    TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode, FileOpNode
 ]

@@ -59,7 +59,7 @@ class Lexer:
     
     # Multi-character operators
     MULTI_CHARS = {
-        '==', '!=', '<', '<=', '>', '>=', '+++'
+        '==', '!=', '<', '<=', '>', '>=', '+++', '>>', '<<'
     }
     
     def __init__(self, source: str):
@@ -283,6 +283,14 @@ class Lexer:
             self._advance()  # consume second +
             self._advance()  # consume third +
             self.tokens.append(Token('CLASS_END', '+++', start_line, start_col))
+        elif first_char == '>' and self._peek() == '>':
+            # Handle >> (RSHIFT / append operator)
+            self._advance()  # consume second >
+            self.tokens.append(Token('RSHIFT', '>>', start_line, start_col))
+        elif first_char == '<' and self._peek() == '<':
+            # Handle << (LSHIFT operator)
+            self._advance()  # consume second <
+            self.tokens.append(Token('LSHIFT', '<<', start_line, start_col))
         elif first_char in '<>=!' and self._peek() == '=':
             # Handle <=, >=, ==, !=
             operator = first_char + self._advance()

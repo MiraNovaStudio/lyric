@@ -378,6 +378,69 @@ def disk_builtin(filepath: str) -> Any:
     return DskObject(filepath)
 
 
+def exit_builtin(code: int = 0) -> None:
+    """Built-in exit function that terminates the program.
+    
+    Args:
+        code: Exit code (default 0 for success)
+    """
+    import sys
+    
+    if not isinstance(code, int):
+        from lyric.errors import RuntimeErrorLyric
+        raise RuntimeErrorLyric(f"exit() expects an integer exit code, got {type(code).__name__}")
+    
+    sys.exit(code)
+
+
+def exec_builtin(command: str) -> int:
+    """Built-in exec function that executes a shell command.
+    
+    Args:
+        command: Shell command to execute
+        
+    Returns:
+        Exit code of the command (0 for success)
+    """
+    import subprocess
+    
+    if not isinstance(command, str):
+        from lyric.errors import RuntimeErrorLyric
+        raise RuntimeErrorLyric(f"exec() expects a string command, got {type(command).__name__}")
+    
+    try:
+        # Execute command and capture output
+        # stderr is redirected to stdout as per requirements
+        result = subprocess.run(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # Merge stderr into stdout
+            text=True
+        )
+        
+        # Store output for potential redirection
+        # This will be handled by the interpreter when > operator is used
+        global _last_exec_output
+        _last_exec_output = result.stdout
+        
+        return result.returncode
+        
+    except Exception as e:
+        from lyric.errors import RuntimeErrorLyric
+        raise RuntimeErrorLyric(f"exec() error: {e}")
+
+
+# Global storage for last exec output (for > operator)
+_last_exec_output = ""
+
+
+def get_last_exec_output() -> str:
+    """Get the output from the last exec() call."""
+    global _last_exec_output
+    return _last_exec_output
+
+
 def register_builtins(env: dict) -> None:
     """Register all built-in functions in the given environment."""
     env['print'] = print_builtin
@@ -396,6 +459,8 @@ def register_builtins(env: dict) -> None:
     env['type'] = type_builtin
     env['regex'] = regex_builtin
     env['getopts'] = getopts_builtin
+    env['exit'] = exit_builtin
+    env['exec'] = exec_builtin
     # Note: len(), append(), keys(), values() have been removed as built-ins
     # These are now methods on arr and map objects:
     #   len(myarray) -> myarray.len()
