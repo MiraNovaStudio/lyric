@@ -353,8 +353,8 @@ def getopts_builtin(option_name: str) -> Any:
         return False
 
 
-def dsk_builtin(filepath: str) -> Any:
-    """Built-in dsk function that creates a DskObject for file operations.
+def disk_builtin(filepath: str) -> Any:
+    """Built-in disk function that creates a DskObject for file operations.
     
     Args:
         filepath: Path to the file
@@ -367,7 +367,7 @@ def dsk_builtin(filepath: str) -> Any:
     
     if not isinstance(filepath, str):
         from lyric.errors import RuntimeErrorLyric
-        raise RuntimeErrorLyric(f"dsk() expects a string filepath, got {type(filepath).__name__}")
+        raise RuntimeErrorLyric(f"disk() expects a string filepath, got {type(filepath).__name__}")
     
     return DskObject(filepath)
 
@@ -383,7 +383,7 @@ def register_builtins(env: dict) -> None:
     env['god'] = god_builtin
     env['arr'] = arr_builtin
     env['map'] = map_builtin
-    env['dsk'] = dsk_builtin
+    env['disk'] = disk_builtin
     env['range'] = range_builtin
     env['open'] = open_builtin
     env['isinstance'] = isinstance_builtin

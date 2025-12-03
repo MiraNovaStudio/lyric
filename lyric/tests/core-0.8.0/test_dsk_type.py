@@ -17,7 +17,7 @@ def test_dsk_variable_declaration():
     """Test declaring a dsk variable."""
     code = """
 def main() {
-    dsk myfile = dsk("test.txt")
+    dsk myfile = disk("test.txt")
     print("File:", myfile)
 }
 """
@@ -43,7 +43,7 @@ def test_dsk_file_exists():
     """Test dsk.exists() method."""
     code = """
 def main() {
-    dsk myfile = dsk("test_exists.txt")
+    dsk myfile = disk("test_exists.txt")
     god exists = myfile.exists()
     print("File exists:", exists)
 }
@@ -73,11 +73,11 @@ def test_dsk_write_and_read():
         
         code = f"""
 def main() {{
-    dsk myfile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk myfile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     myfile.write("Hello, World!")
     myfile.close()
     
-    dsk readfile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk readfile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     str content = readfile.read()
     readfile.close()
     
@@ -116,7 +116,7 @@ def test_dsk_readlines():
         
         code = f"""
 def main() {{
-    dsk myfile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk myfile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     arr lines = myfile.readlines()
     myfile.close()
     
@@ -154,7 +154,7 @@ def test_dsk_append():
         
         code = f"""
 def main() {{
-    dsk myfile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk myfile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     myfile.write("First line\\n")
     myfile.close()
     
@@ -200,7 +200,7 @@ def test_dsk_delete():
         
         code = f"""
 def main() {{
-    dsk myfile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk myfile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     
     god before = myfile.exists()
     print("Exists before:", before)
@@ -245,10 +245,10 @@ def test_dsk_copy():
         
         code = f"""
 def main() {{
-    dsk source = dsk("{source_file.replace(chr(92), chr(92)*2)}")
+    dsk source = disk("{source_file.replace(chr(92), chr(92)*2)}")
     source.copy("{dest_file.replace(chr(92), chr(92)*2)}")
     
-    dsk dest = dsk("{dest_file.replace(chr(92), chr(92)*2)}")
+    dsk dest = disk("{dest_file.replace(chr(92), chr(92)*2)}")
     str content = dest.read()
     dest.close()
     
@@ -288,18 +288,18 @@ def test_dsk_move():
         
         code = f"""
 def main() {{
-    dsk myfile = dsk("{source_file.replace(chr(92), chr(92)*2)}")
+    dsk myfile = disk("{source_file.replace(chr(92), chr(92)*2)}")
     
     god before = myfile.exists()
     print("Exists at source before:", before)
     
     myfile.move("{dest_file.replace(chr(92), chr(92)*2)}")
     
-    dsk source = dsk("{source_file.replace(chr(92), chr(92)*2)}")
+    dsk source = disk("{source_file.replace(chr(92), chr(92)*2)}")
     god after_source = source.exists()
     print("Exists at source after:", after_source)
     
-    dsk dest = dsk("{dest_file.replace(chr(92), chr(92)*2)}")
+    dsk dest = disk("{dest_file.replace(chr(92), chr(92)*2)}")
     god at_dest = dest.exists()
     print("Exists at dest:", at_dest)
 }}
@@ -340,7 +340,7 @@ def test_dsk_size():
         
         code = f"""
 def main() {{
-    dsk myfile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk myfile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     int filesize = myfile.size()
     print("File size:", filesize)
 }}
@@ -371,19 +371,19 @@ def test_dsk_open_modes():
         code = f"""
 def main() {{
     # Write mode
-    dsk wfile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk wfile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     wfile.open("w")
     wfile.write("Initial content")
     wfile.close()
     
     # Append mode
-    dsk afile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk afile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     afile.open("a")
     afile.write("\\nAppended content")
     afile.close()
     
     # Read mode
-    dsk rfile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk rfile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     str content = rfile.read()
     rfile.close()
     
@@ -420,7 +420,7 @@ def test_dsk_auto_open_for_read():
         
         code = f"""
 def main() {{
-    dsk myfile = dsk("{test_file.replace(chr(92), chr(92)*2)}")
+    dsk myfile = disk("{test_file.replace(chr(92), chr(92)*2)}")
     str content = myfile.read()
     print("Content:", content)
 }}
