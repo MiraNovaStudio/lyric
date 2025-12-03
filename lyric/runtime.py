@@ -319,6 +319,40 @@ def values_builtin(obj: Any) -> list:
         raise RuntimeErrorLyric(f"values() only works on dictionaries, got {type(obj).__name__}")
 
 
+# Global storage for command-line options
+_command_line_options = {}
+
+
+def set_command_line_options(options: dict) -> None:
+    """Set the command-line options to be accessed by getopts()."""
+    global _command_line_options
+    _command_line_options = options
+
+
+def getopts_builtin(option_name: str) -> Any:
+    """Built-in getopts function that retrieves command-line options.
+    
+    Args:
+        option_name: Name of the option to retrieve (without dashes)
+        
+    Returns:
+        - The option value if it was provided with a value (e.g., --file=myfile returns "myfile")
+        - True if the option was provided as a flag (e.g., -a or --verbose returns True)
+        - False if the option was not provided at all
+    """
+    global _command_line_options
+    
+    if option_name in _command_line_options:
+        value = _command_line_options[option_name]
+        # If value is None, it means the flag was present without a value
+        if value is None:
+            return True
+        return value
+    else:
+        # Option was not provided
+        return False
+
+
 def register_builtins(env: dict) -> None:
     """Register all built-in functions in the given environment."""
     env['print'] = print_builtin
@@ -335,6 +369,7 @@ def register_builtins(env: dict) -> None:
     env['isinstance'] = isinstance_builtin
     env['type'] = type_builtin
     env['regex'] = regex_builtin
+    env['getopts'] = getopts_builtin
     # Note: len(), append(), keys(), values() have been removed as built-ins
     # These are now methods on arr and map objects:
     #   len(myarray) -> myarray.len()

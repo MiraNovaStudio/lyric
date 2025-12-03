@@ -12,6 +12,53 @@ from lyric.errors import LexError, ParseError, RuntimeErrorLyric, SyntaxErrorLyr
 from lyric.parser import parse, Parser
 from lyric.lexer import tokenize
 from lyric.interpreter import evaluate, Interpreter
+from lyric.runtime import set_command_line_options
+
+
+def _parse_options(args):
+    """Parse command-line options.
+    
+    Returns:
+        tuple: (options_dict, remaining_args)
+        - options_dict: Dictionary mapping option names to their values
+        - remaining_args: List of remaining non-option arguments
+    """
+    options = {}
+    remaining = []
+    i = 0
+    
+    while i < len(args):
+        arg = args[i]
+        
+        # Check if it's an option
+        if arg.startswith('--'):
+            # Long option (e.g., --verbose or --file=myfile)
+            if '=' in arg:
+                # Option with value: --file=myfile
+                option_name = arg[2:].split('=', 1)[0]
+                option_value = arg.split('=', 1)[1]
+                options[option_name] = option_value
+            else:
+                # Flag without value: --verbose
+                option_name = arg[2:]
+                options[option_name] = None  # Flag present, no value
+        elif arg.startswith('-') and len(arg) == 2 and arg[1].isalpha():
+            # Short option (e.g., -a)
+            option_name = arg[1]
+            # Check if next arg is a value or another option
+            if i + 1 < len(args) and not args[i + 1].startswith('-'):
+                # Next arg might be a value, but only if it's not a filename
+                # For now, treat single-char options as flags
+                options[option_name] = None
+            else:
+                options[option_name] = None
+        else:
+            # Not an option, it's a regular argument (like filename)
+            remaining.append(arg)
+        
+        i += 1
+    
+    return options, remaining
 
 
 def main():
@@ -34,9 +81,15 @@ def main():
         print("  lyric <file.ly>                   Run a Lyric source file (shorthand)")
         print("  lyric -i [code]                   Interactive mode (REPL) or execute immediate code")
         print("")
+        print("Options:")
+        print("  -a, -b, -c, etc.                  Short options (single character)")
+        print("  --verbose, --debug, etc.          Long options (multiple characters)")
+        print("  --file=myfile                     Long option with value")
+        print("")
         print("Examples:")
         print("  lyric run hello.ly")
         print("  lyric hello.ly")
+        print("  lyric hello.ly -a --verbose --file=myfile")
         print('  lyric -i "print(2 + 2)"')
         print("  lyric -i                           Start REPL")
         sys.exit(0)
@@ -51,14 +104,32 @@ def main():
             _start_repl()
     elif command == "run":
         if len(sys.argv) < 3:
-            print("Usage: lyric run <file.ly>")
+            print("Usage: lyric run <file.ly> [options]")
             sys.exit(1)
         
-        file_path = sys.argv[2]
+        # Parse options and get filename
+        options, remaining = _parse_options(sys.argv[2:])
+        
+        if not remaining:
+            print("Usage: lyric run <file.ly> [options]")
+            sys.exit(1)
+        
+        file_path = remaining[0]
+        
+        # Set command-line options for getopts()
+        set_command_line_options(options)
+        
         _execute_file(file_path)
     elif command.endswith('.ly'):
         # Treat as shorthand for "lyric run <file.ly>"
+        # Parse options from remaining args
+        options, remaining = _parse_options(sys.argv[2:])
+        
         file_path = command
+        
+        # Set command-line options for getopts()
+        set_command_line_options(options)
+        
         _execute_file(file_path)
     else:
         print(f"Unknown command: {command}")
