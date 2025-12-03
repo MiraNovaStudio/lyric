@@ -369,6 +369,8 @@ class Interpreter:
         self.classes = {}
         # Track the source file path for relative imports
         self.source_file = source_file
+        # Track the current instance context for access control
+        self.current_instance = None
     
     def _push_scope(self):
         """Push a new scope onto the stack."""
@@ -686,6 +688,72 @@ class Interpreter:
         else:
             raise RuntimeErrorLyric(f"Function '{func_name}' is not defined")
     
+    def _is_derived_from(self, child_class: str, parent_class: str) -> bool:
+        """Check if child_class is derived from parent_class."""
+        if child_class not in self.classes:
+            return False
+        
+        current = child_class
+        while current:
+            if current == parent_class:
+                return True
+            class_def = self.classes.get(current)
+            if not class_def:
+                return False
+            current = class_def.get('__base_class__')
+        
+        return False
+    
+    def _check_method_access(self, instance: dict, method_name: str, method_def: dict, caller_context: str = 'external') -> None:
+        """Check if method access is allowed based on visibility modifier.
+        
+        Args:
+            instance: The class instance
+            method_name: Name of the method being accessed
+            method_def: Method definition dictionary
+            caller_context: 'internal' if called from same class, 'derived' if from derived class, 'external' otherwise
+        """
+        visibility = method_def.get('visibility', 'public')
+        
+        # Public methods are always accessible
+        if visibility == 'public':
+            return
+        
+        # For private methods, we need additional checking
+        if visibility == 'private':
+            # Even if caller_context is 'internal', we need to verify the method
+            # is defined in the caller's class, not inherited from a base class
+            if caller_context == 'internal':
+                # Get the caller's class
+                caller_class = self.current_instance.get('__instance_class__') if self.current_instance else None
+                # Check if the method is defined in the caller's class (not inherited)
+                if caller_class and caller_class in self.classes:
+                    class_def = self.classes[caller_class]
+                    # If the method is not in this class's definition, it's inherited
+                    if method_name not in class_def:
+                        # Method is inherited from a base class, and it's private, so deny access
+                        raise RuntimeErrorLyric(
+                            f"Access error: Cannot access private method '{method_name}' inherited from base class. "
+                            f"Private methods can only be called from within the class where they are defined."
+                        )
+                # If we get here, the method is in the caller's class, so allow access
+                return
+            else:
+                # Called from outside the class
+                class_name = instance.get('__instance_class__', 'Unknown')
+                raise RuntimeErrorLyric(
+                    f"Access error: Cannot access private method '{method_name}' of class '{class_name}'. "
+                    f"Private methods can only be called from within the same class."
+                )
+        
+        # Protected methods can be called from the same class or derived classes
+        if visibility == 'protected' and caller_context not in ('internal', 'derived'):
+            class_name = instance.get('__instance_class__', 'Unknown')
+            raise RuntimeErrorLyric(
+                f"Access error: Cannot access protected method '{method_name}' of class '{class_name}'. "
+                f"Protected methods can only be called from the same class or derived classes."
+            )
+    
     def _call_method(self, instance: dict, method: dict, args: List[Any]) -> Any:
         """Call a method on an instance."""
         params = method['params']
@@ -715,11 +783,13 @@ class Interpreter:
             
             local_scope[param] = arg_value
         
-        # Save current scope
+        # Save current scope and instance context
         old_scope = self.global_scope.copy()
+        old_instance = self.current_instance
         
-        # Set local scope
+        # Set local scope and current instance for method execution
         self.global_scope.update(local_scope)
+        self.current_instance = instance
         
         # Push method scope for variable types
         self._push_scope()
@@ -734,8 +804,9 @@ class Interpreter:
             # If no explicit return, return the last statement result
             return result if not isinstance(result, ReturnValue) else result.value
         finally:
-            # Restore scope
+            # Restore scope and instance context
             self.global_scope = old_scope
+            self.current_instance = old_instance
             self._pop_scope()
     
     
@@ -1045,7 +1116,8 @@ class Interpreter:
             class_dict['__constructor__'] = {
                 'params': node.constructor_method.params,
                 'param_types': node.constructor_method.param_types,
-                'body': node.constructor_method.body_statements
+                'body': node.constructor_method.body_statements,
+                'visibility': node.constructor_method.visibility
             }
         
         for member in node.members_statements:
@@ -1066,7 +1138,8 @@ class Interpreter:
                 class_dict[member.name] = {
                     'params': member.params,
                     'param_types': member.param_types,
-                    'body': member.body_statements
+                    'body': member.body_statements,
+                    'visibility': member.visibility
                 }
         
         self.classes[node.name] = class_dict
@@ -1248,7 +1321,21 @@ class Interpreter:
                 if isinstance(current_obj, dict) and method_name in current_obj:
                     method = current_obj[method_name]
                     if isinstance(method, dict) and 'params' in method and 'body' in method:
-                        # It's a method definition
+                        # It's a method definition - determine caller context for access control
+                        caller_context = 'external'
+                        if self.current_instance is not None:
+                            # We're inside a method call
+                            current_class = self.current_instance.get('__instance_class__')
+                            target_class = current_obj.get('__instance_class__')
+                            
+                            # Check if calling from same instance (same class or derived)
+                            if current_class == target_class:
+                                caller_context = 'internal'
+                            elif self._is_derived_from(current_class, target_class):
+                                caller_context = 'derived'
+                        
+                        # Check access control
+                        self._check_method_access(current_obj, method_name, method, caller_context)
                         return self._call_method(current_obj, method, node.args)
                     else:
                         # It's a regular attribute, call it if callable

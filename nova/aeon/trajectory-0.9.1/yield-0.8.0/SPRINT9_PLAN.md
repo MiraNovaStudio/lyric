@@ -199,7 +199,19 @@ myfile.size(),
 - unit tests are created to test file operations
 - the built-in funciton open() is replaced by myfile.open()
 
+## Task 8
 
+have the -h option auto generate a usage help statement unless it is overridden
+
+**Implementation**
+
+lyric myfile.ly -h will autogenerate the help message
+
+- str host = getopts("h") # this will override the -h option
+
+### Acceptance Criteria
+
+- unittests are written to to test auto -h and override -h
 
 
 ## Definition of Done

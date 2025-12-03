@@ -87,6 +87,17 @@ class Parser:
         if self._is_at_end():
             return None
         
+        # Check for visibility modifiers (PUBLIC, PRIVATE, PROTECTED) followed by method definition
+        if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
+            return self._parse_func_def()
+        
+        # Check for visibility modifiers as IDENT (backwards compatibility)
+        if self._check('IDENT') and self._peek().value in ('public', 'private', 'protected'):
+            # Peek ahead to see if this is followed by a method definition
+            next_tok = self._peek_next()
+            if next_tok.type in ('DEF', 'TYPE_OR_IDENT'):
+                return self._parse_func_def()
+        
         # Check for typed function declaration: TYPE funcname(
         if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'LPAREN':
             return self._parse_func_def()
@@ -150,9 +161,21 @@ class Parser:
             return self._parse_assignment_or_expr_stmt()
     
     def _parse_func_def(self) -> FunctionNode:
-        """Parse function definition: TYPE IDENT "(" param_list? ")" [":"] "{" statement* "}" 
-           or: def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
+        """Parse function definition: [visibility] TYPE IDENT "(" param_list? ")" [":"] "{" statement* "}" 
+           or: [visibility] def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
         return_type = None
+        visibility = 'public'  # Default visibility
+        
+        # Check for optional visibility modifier (PUBLIC, PRIVATE, PROTECTED tokens)
+        if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
+            visibility_token = self._advance()
+            visibility = visibility_token.type.lower()  # Convert PUBLIC to 'public', etc.
+        # Also check for visibility as IDENT (backwards compatibility)
+        elif self._check('IDENT'):
+            next_token = self._peek()
+            if next_token.value in ('public', 'private', 'protected'):
+                visibility_token = self._advance()
+                visibility = visibility_token.value
         
         # Check for new-style typed function: TYPE funcname(
         if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'LPAREN':
@@ -213,7 +236,9 @@ class Parser:
         line = type_token.line if 'type_token' in locals() else (def_token.line if 'def_token' in locals() else name_token.line)
         col = type_token.col if 'type_token' in locals() else (def_token.col if 'def_token' in locals() else name_token.col)
         
-        return FunctionNode(name, params, param_types, return_type, body_statements, line, col)
+        # Create FunctionNode with visibility
+        func_node = FunctionNode(name, params, param_types, return_type, body_statements, visibility, line, col)
+        return func_node
     
     def _parse_param_list(self) -> tuple[List[str], List[str]]:
         """Parse parameter list: (TYPE IDENT | IDENT) ("," (TYPE IDENT | IDENT))*"""

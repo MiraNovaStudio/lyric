@@ -28,7 +28,7 @@ class Lexer:
         'def', 'class', 'if', 'else', 'elif', 'case', 'given', 'for', 'done', 'end', 
         'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'as', 'return',
         'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'True', 'False', 'true', 'false', 'None', 'raise', 'import', 'importpy',
-        'break', 'continue'
+        'break', 'continue', 'public', 'private', 'protected'
     }
     
     # Single character operators and delimiters
