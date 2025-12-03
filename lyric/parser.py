@@ -267,13 +267,23 @@ class Parser:
         return params, param_types
     
     def _parse_class_def(self) -> ClassNode:
-        """Parse class definition: class IDENT [":"] statement* CLASS_END"""
+        """Parse class definition: class IDENT [based on BASE_CLASS] [":"] statement* CLASS_END"""
         class_token = self._consume('CLASS', "Expected 'class'")
         
         name_token = self._consume('IDENT', "Expected class name")
         name = name_token.value
         
-        # Make colon optional after class name
+        # Check for inheritance: based on ClassName
+        base_class = None
+        if self._check('IDENT') and self._peek().value == 'based':
+            self._advance()  # consume 'based'
+            if not (self._check('IDENT') and self._peek().value == 'on'):
+                raise ParseError(f"Expected 'on' after 'based' at line {self._peek().line}, column {self._peek().col}")
+            self._advance()  # consume 'on'
+            base_class_token = self._consume('IDENT', "Expected base class name after 'based on'")
+            base_class = base_class_token.value
+        
+        # Make colon optional after class name/inheritance
         self._match('COLON')  # Optional colon
         
         # Save top-level state and set to False inside class body
@@ -312,7 +322,7 @@ class Parser:
         # Restore top-level state
         self.is_top_level = was_top_level
         
-        return ClassNode(name, members_statements, constructor_method, class_token.line, class_token.col)
+        return ClassNode(name, members_statements, constructor_method, base_class, class_token.line, class_token.col)
     
     def _parse_if_block(self) -> IfNode:
         """Parse if block: if expression [":"] statement* ("else" "if" expression [":"] statement*)* ("else" [":"] statement*)? "end" """

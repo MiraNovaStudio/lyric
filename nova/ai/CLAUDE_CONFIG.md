@@ -15,10 +15,10 @@ This applies to ALL filesystem modifications - code, config, docs, renames, dele
 - **NEVER** implement multiple tasks in one session unless explicitly instructed
 
 ## 🖥️ SHELL ENVIRONMENT REMINDER 🖥️
-**YOU ARE RUNNING POWERSHELL, NOT BASH!**
-- Use PowerShell commands: `Get-Date -Format "yyyyMMdd/HHmm"` NOT `date +"%Y%m%d/%H%M"`
-- Use PowerShell syntax for all terminal operations
-- Remember: Windows PowerShell environment in Cursor
+**YOU ARE RUNNING GIT BASH, NOT POWERSHELL!**
+- Use Bash commands: `date +"%Y%m%d/%H%M"` NOT `Get-Date -Format "yyyyMMdd/HHmm"`
+- Use Bash/Unix syntax for all terminal operations
+- Remember: Windows Git Bash environment in Cursor
 
 ## User Control Configuration
 

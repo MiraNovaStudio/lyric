@@ -137,7 +137,7 @@ class TestTypeTests:
         source = """
         var result1 = int("42")
         var result2 = str(42)
-        var result3 = float("3.14")
+        var result3 = flt("3.14")
         """
         
         tokens = tokenize(source)
@@ -160,7 +160,7 @@ class TestTypeTests:
         source = """
         var is_int = isinstance(42, int)
         var is_str = isinstance("hello", str)
-        var is_float = isinstance(3.14, float)
+        var is_flt = isinstance(3.14, flt)
         """
         
         tokens = tokenize(source)
@@ -176,7 +176,7 @@ class TestTypeTests:
         # Check values
         assert interpreter.global_scope['is_int'] == True
         assert interpreter.global_scope['is_str'] == True
-        assert interpreter.global_scope['is_float'] == True
+        assert interpreter.global_scope['is_flt'] == True
     
     def test_type_function(self):
         """Test type() function for getting type names."""

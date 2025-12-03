@@ -12,7 +12,7 @@ import pytest
 import tempfile
 import os
 from lyric.runtime import (
-    print_builtin, input_builtin, int_builtin, float_builtin, str_builtin,
+    print_builtin, input_builtin, int_builtin, flt_builtin, str_builtin,
     range_builtin, open_builtin, register_builtins
 )
 
@@ -51,12 +51,12 @@ class TestRuntimeBuiltins:
         assert int_builtin(True) == 1
         assert int_builtin(False) == 0
     
-    def test_float_builtin(self):
-        """Test float built-in function."""
-        assert float_builtin("3.14") == 3.14
-        assert float_builtin(42) == 42.0
-        assert float_builtin(True) == 1.0
-        assert float_builtin(False) == 0.0
+    def test_flt_builtin(self):
+        """Test flt built-in function."""
+        assert flt_builtin("3.14") == 3.14
+        assert flt_builtin(42) == 42.0
+        assert flt_builtin(True) == 1.0
+        assert flt_builtin(False) == 0.0
     
     def test_str_builtin(self):
         """Test str built-in function."""
@@ -126,7 +126,7 @@ class TestRuntimeBuiltins:
         assert 'print' in env
         assert 'input' in env
         assert 'int' in env
-        assert 'float' in env
+        assert 'flt' in env
         assert 'str' in env
         assert 'arr' in env
         assert 'map' in env
@@ -146,7 +146,7 @@ class TestRuntimeBuiltins:
         assert callable(env['print'])
         assert callable(env['input'])
         assert callable(env['int'])
-        assert callable(env['float'])
+        assert callable(env['flt'])
         assert callable(env['str'])
         assert callable(env['range'])
         assert callable(env['open'])
@@ -157,7 +157,7 @@ class TestRuntimeBuiltins:
         register_builtins(env)
         
         # Test print with converted values
-        env['print']("Number:", env['int']("42"), "Float:", env['float']("3.14"))
+        env['print']("Number:", env['int']("42"), "Float:", env['flt']("3.14"))
         captured = capsys.readouterr()
         assert captured.out == "Number: 42 Float: 3.14\n"
         

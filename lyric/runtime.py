@@ -47,8 +47,8 @@ def int_builtin(value: Any) -> int:
     return int(value)
 
 
-def float_builtin(value: Any) -> float:
-    """Built-in float conversion function."""
+def flt_builtin(value: Any) -> float:
+    """Built-in flt conversion function."""
     # Import ArrObject and MapObject here to avoid circular imports
     from lyric.interpreter import ArrObject, MapObject
     
@@ -230,7 +230,7 @@ def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
     if isinstance(class_or_type, str):
         if class_or_type == "int":
             return isinstance(obj, int)
-        elif class_or_type == "float":
+        elif class_or_type == "float" or class_or_type == "flt":
             return isinstance(obj, float)
         elif class_or_type == "str":
             return isinstance(obj, str)
@@ -255,16 +255,18 @@ def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
     if callable(class_or_type):
         if class_or_type.__name__ == "int_builtin":
             return isinstance(obj, int)
-        elif class_or_type.__name__ == "float_builtin":
+        elif class_or_type.__name__ == "flt_builtin":
             return isinstance(obj, float)
         elif class_or_type.__name__ == "str_builtin":
             return isinstance(obj, str)
-        elif class_or_type.__name__ == "list_builtin":
-            return isinstance(obj, list)
-        elif class_or_type.__name__ == "dict_builtin":
-            return isinstance(obj, dict)
-        elif class_or_type.__name__ == "bool_builtin":
+        elif class_or_type.__name__ == "bin_builtin" or class_or_type.__name__ == "god_builtin":
             return isinstance(obj, bool)
+        elif class_or_type.__name__ == "arr_builtin":
+            from lyric.interpreter import ArrObject
+            return isinstance(obj, (list, ArrObject))
+        elif class_or_type.__name__ == "map_builtin":
+            from lyric.interpreter import MapObject
+            return isinstance(obj, (dict, MapObject)) and not (isinstance(obj, dict) and '__instance_class__' in obj)
     
     return False
 
@@ -322,7 +324,7 @@ def register_builtins(env: dict) -> None:
     env['print'] = print_builtin
     env['input'] = input_builtin
     env['int'] = int_builtin
-    env['float'] = float_builtin
+    env['flt'] = flt_builtin
     env['str'] = str_builtin
     env['bin'] = bin_builtin
     env['god'] = god_builtin

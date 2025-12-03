@@ -233,19 +233,22 @@ class ClassNode(ASTNode):
     name: str
     members_statements: List['ASTNode']
     constructor_method: Optional['FunctionNode'] = None  # Constructor method (name matches class name)
+    base_class: Optional[str] = None  # Name of base class for inheritance
     line: int = 0
     column: int = 0
     
     def __repr__(self):
         constructor_info = f", constructor={self.constructor_method.name if self.constructor_method else 'None'}"
-        return f"ClassNode(name='{self.name}', members={len(self.members_statements)}{constructor_info})"
+        base_info = f", base_class={self.base_class}" if self.base_class else ""
+        return f"ClassNode(name='{self.name}', members={len(self.members_statements)}{constructor_info}{base_info})"
     
     def to_dict(self):
         return {
             'type': 'ClassNode',
             'name': self.name,
             'members': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.members_statements],
-            'constructor': self.constructor_method.to_dict() if self.constructor_method and hasattr(self.constructor_method, 'to_dict') else None
+            'constructor': self.constructor_method.to_dict() if self.constructor_method and hasattr(self.constructor_method, 'to_dict') else None,
+            'base_class': self.base_class
         }
 
 

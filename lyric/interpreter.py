@@ -1036,6 +1036,10 @@ class Interpreter:
         # Add a special marker to identify this as a class definition
         class_dict['__class_name__'] = node.name
         
+        # Store base class name if present
+        if node.base_class:
+            class_dict['__base_class__'] = node.base_class
+        
         # Store constructor method separately if it exists
         if node.constructor_method:
             class_dict['__constructor__'] = {
@@ -1047,6 +1051,10 @@ class Interpreter:
         for member in node.members_statements:
             if isinstance(member, AssignNode):
                 # Class member assignment
+                value = self._evaluate_expression(member.expr)
+                class_dict[member.name] = value
+            elif isinstance(member, TypeDeclarationNode):
+                # Type declaration in class
                 value = self._evaluate_expression(member.expr)
                 class_dict[member.name] = value
             elif isinstance(member, MultiDeclarationNode):
@@ -1345,16 +1353,47 @@ class Interpreter:
         elif node.func_name in self.classes:
             # Class instantiation: ClassName()
             class_def = self.classes[node.func_name]
-            # Create instance as a copy of class definition
-            instance = dict(class_def)
+            
+            # Create instance by copying from entire inheritance chain
+            instance = {}
+            
+            # Helper function to recursively copy from inheritance chain
+            def copy_from_inheritance_chain(class_name):
+                """Recursively copy members from base classes up to root."""
+                if class_name not in self.classes:
+                    raise RuntimeErrorLyric(f"Class '{class_name}' is not defined")
+                
+                current_class_def = self.classes[class_name]
+                
+                # First, recursively copy from base class (if any)
+                if '__base_class__' in current_class_def:
+                    base_class_name = current_class_def['__base_class__']
+                    copy_from_inheritance_chain(base_class_name)
+                
+                # Then copy this class's members (overriding base class members)
+                for key, value in current_class_def.items():
+                    if not key.startswith('__') or key == '__constructor__':
+                        # Copy everything except __class_name__ and __base_class__
+                        if key not in ('__class_name__', '__base_class__'):
+                            instance[key] = value
+            
+            # Copy entire inheritance chain
+            copy_from_inheritance_chain(node.func_name)
+            
             # Add instance class name marker
             instance['__instance_class__'] = node.func_name
+            
+            # Store base class chain for method resolution
+            if '__base_class__' in class_def:
+                instance['__base_class__'] = class_def['__base_class__']
             
             # Check if class has a constructor method (method name matches class name)
             if '__constructor__' in instance and isinstance(instance['__constructor__'], dict):
                 constructor_method = instance['__constructor__']
                 # Call the constructor method with the provided arguments
                 self._call_method(instance, constructor_method, node.args)
+                # Remove constructor from instance after calling it
+                del instance['__constructor__']
             # Also check for legacy init() method for backward compatibility
             elif 'init' in instance and isinstance(instance['init'], dict):
                 init_method = instance['init']

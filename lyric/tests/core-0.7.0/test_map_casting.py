@@ -3,7 +3,7 @@ Test suite for map type casting in Lyric.
 
 Tests:
 - int(map) returns number of keys
-- float(map) returns number of keys as float
+- flt(map) returns number of keys as float
 - str(map) returns string representation
 - arr(map) converts dict values to list
 - map(arr) converts list to dict with string keys
@@ -49,10 +49,10 @@ print count
         # Should print 3
 
     def test_float_map_returns_key_count_as_float(self):
-        """def main() {\n    Test that float(map) returns the number of keys as a float.\n}"""
+        """def main() {\n    Test that flt(map) returns the number of keys as a float.\n}"""
         code = """
 map data = {"x": 10, "y": 20}
-flt count = float(data)
+flt count = flt(data)
 print count
 """
         ast = parse(code, interactive=True)
@@ -128,10 +128,10 @@ print count
         # Should print 0
 
     def test_float_empty_map(self):
-        """def main() {\n    Test that float() on an empty map returns 0.0.\n}"""
+        """def main() {\n    Test that flt() on an empty map returns 0.0.\n}"""
         code = """
 map empty = {}
-flt count = float(empty)
+flt count = flt(empty)
 print count
 """
         ast = parse(code, interactive=True)
@@ -207,10 +207,10 @@ print double_count
         # Should print 6
 
     def test_float_casting_in_division(self):
-        """def main() {\n    Test using float(map) in division.\n}"""
+        """def main() {\n    Test using flt(map) in division.\n}"""
         code = """
 map data = {"a": 1, "b": 2, "c": 3, "d": 4}
-flt result = 10 / float(data)
+flt result = 10 / flt(data)
 print result
 """
         ast = parse(code, interactive=True)

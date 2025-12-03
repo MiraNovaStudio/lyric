@@ -175,6 +175,33 @@ def main(int argc, arr argv) {
 - arguments are processed and passed when command line arguments are present
 - unit tests are present to test arguments and argc and argv parameters and corner cases
 
+## Task 7 - File IO
+
+The goal is to add the dsk type and allow file operations on variables of that type
+
+**Implementation**
+- add the dsk type to specificy the file, e.g. dsk myfile = "readme.txt"
+- add the common file operations on the variable
+
+myfile.open() # default mode is ra, otherwise override with mode='rw' parameter
+myfile.readlines()
+myfile.write(...)
+myfile.append(...)
+myfile.delete()
+myfile.exists()
+myfile.close()
+myfile.copy(toPath)
+myfile.move(toPath)
+myfile.size(),
+
+### Acceptance Criteria
+
+- unit tests are created to test file operations
+- the built-in funciton open() is replaced by myfile.open()
+
+
+
+
 ## Definition of Done
 
 - Inheritance implemented with "based on" syntax.
