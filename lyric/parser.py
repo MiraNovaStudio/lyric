@@ -1097,7 +1097,7 @@ class Parser:
             raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
         
         # Validate that the type is a known type
-        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj'}
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
         if type_name not in valid_types:
             raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
         
@@ -1128,7 +1128,7 @@ class Parser:
                 raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
             
             # Validate that the type is a known type
-            valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj'}
+            valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
             if type_name not in valid_types:
                 raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
             
@@ -1158,7 +1158,7 @@ class Parser:
             raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
         
         # Validate that the type is a known type
-        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj'}
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
         if type_name not in valid_types:
             raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
         

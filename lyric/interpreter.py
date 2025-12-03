@@ -345,6 +345,198 @@ class MapObject:
         return iter(self.elements)
 
 
+class DskObject:
+    """Represents a dsk (disk/file) object with file operations."""
+    
+    def __init__(self, filepath: str):
+        """Initialize DskObject with a file path."""
+        self.filepath = filepath
+        self.file_handle = None
+    
+    def open(self, mode: str = 'r') -> 'DskObject':
+        """Open the file in specified mode.
+        
+        Args:
+            mode: File mode ('r', 'w', 'a', 'r+', 'w+', 'a+', 'rb', 'wb', 'ab')
+                 Default is 'r' (read text)
+        
+        Returns:
+            self for method chaining
+        """
+        try:
+            self.file_handle = open(self.filepath, mode)
+            return self
+        except FileNotFoundError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except PermissionError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Permission denied: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error opening file '{self.filepath}': {e}")
+    
+    def close(self) -> None:
+        """Close the file if it's open."""
+        if self.file_handle:
+            self.file_handle.close()
+            self.file_handle = None
+    
+    def readlines(self) -> 'ArrObject':
+        """Read all lines from the file and return as an ArrObject.
+        
+        Returns:
+            ArrObject containing all lines (with newlines stripped)
+        """
+        if not self.file_handle:
+            # Auto-open in read mode if not open
+            self.open('r')
+        
+        try:
+            lines = [line.rstrip('\n\r') for line in self.file_handle.readlines()]
+            return ArrObject(lines)
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error reading file '{self.filepath}': {e}")
+    
+    def read(self) -> str:
+        """Read entire file content as a string."""
+        if not self.file_handle:
+            # Auto-open in read mode if not open
+            self.open('r')
+        
+        try:
+            return self.file_handle.read()
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error reading file '{self.filepath}': {e}")
+    
+    def write(self, content: str) -> None:
+        """Write content to file (overwrites existing content).
+        
+        Args:
+            content: String content to write
+        """
+        if not self.file_handle:
+            # Auto-open in write mode if not open
+            self.open('w')
+        
+        try:
+            self.file_handle.write(str(content))
+            self.file_handle.flush()
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error writing to file '{self.filepath}': {e}")
+    
+    def append(self, content: str) -> None:
+        """Append content to file.
+        
+        Args:
+            content: String content to append
+        """
+        # Close current handle if open
+        if self.file_handle:
+            self.close()
+        
+        try:
+            # Open in append mode
+            with open(self.filepath, 'a') as f:
+                f.write(str(content))
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error appending to file '{self.filepath}': {e}")
+    
+    def delete(self) -> None:
+        """Delete the file."""
+        import os
+        
+        # Close file if open
+        if self.file_handle:
+            self.close()
+        
+        try:
+            if os.path.exists(self.filepath):
+                os.remove(self.filepath)
+            else:
+                from lyric.errors import RuntimeErrorLyric
+                raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error deleting file '{self.filepath}': {e}")
+    
+    def exists(self) -> bool:
+        """Check if file exists."""
+        import os
+        return os.path.exists(self.filepath)
+    
+    def copy(self, to_path: str) -> None:
+        """Copy file to a new location.
+        
+        Args:
+            to_path: Destination path
+        """
+        import shutil
+        
+        try:
+            shutil.copy2(self.filepath, to_path)
+        except FileNotFoundError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error copying file '{self.filepath}' to '{to_path}': {e}")
+    
+    def move(self, to_path: str) -> None:
+        """Move file to a new location.
+        
+        Args:
+            to_path: Destination path
+        """
+        import shutil
+        
+        # Close file if open
+        if self.file_handle:
+            self.close()
+        
+        try:
+            shutil.move(self.filepath, to_path)
+            # Update the filepath
+            self.filepath = to_path
+        except FileNotFoundError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error moving file '{self.filepath}' to '{to_path}': {e}")
+    
+    def size(self) -> int:
+        """Get file size in bytes."""
+        import os
+        
+        try:
+            return os.path.getsize(self.filepath)
+        except FileNotFoundError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error getting size of file '{self.filepath}': {e}")
+    
+    def __repr__(self):
+        return f"dsk('{self.filepath}')"
+    
+    def __str__(self):
+        return self.filepath
+    
+    def __del__(self):
+        """Destructor: close file if still open."""
+        if self.file_handle:
+            try:
+                self.file_handle.close()
+            except:
+                pass
+
+
 class ReturnValue:
     """Wrapper for return values to distinguish them from normal expression values."""
     def __init__(self, value):
@@ -1158,6 +1350,8 @@ class Interpreter:
             return isinstance(value, (list, ArrObject))  # arr maps to ArrObject or Python list
         elif expected_type == 'map':
             return isinstance(value, (dict, MapObject))  # map maps to MapObject or Python dict
+        elif expected_type == 'dsk':
+            return isinstance(value, DskObject)  # dsk maps to DskObject
         elif expected_type == 'obj':
             # obj is for class instances - check if it's a dict with __instance_class__ marker
             return isinstance(value, dict) and '__instance_class__' in value
@@ -1579,6 +1773,17 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: MapObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, DskObject):
+                    # Handle DskObject methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: DskObject has no attribute '{method_name}'")
                 elif callable(current_obj):
                     # Handle classes and callable objects
                     try:
