@@ -704,6 +704,73 @@ class Interpreter:
         
         return False
     
+    def _check_attribute_access(self, instance: dict, attr_name: str) -> None:
+        """Check if attribute access is allowed based on visibility modifier.
+        
+        Args:
+            instance: The class instance
+            attr_name: Name of the attribute being accessed
+        """
+        # Skip access check for special attributes
+        if attr_name.startswith('__'):
+            return
+        
+        # Get the visibility of the attribute
+        visibility_key = f'__visibility_{attr_name}__'
+        visibility = instance.get(visibility_key, 'public')
+        
+        # Public attributes are always accessible
+        if visibility == 'public':
+            return
+        
+        # Determine caller context
+        caller_context = 'external'
+        if self.current_instance is not None:
+            # We're inside a method call
+            current_class = self.current_instance.get('__instance_class__')
+            target_class = instance.get('__instance_class__')
+            
+            # Check if calling from same instance (same class or derived)
+            if current_class == target_class:
+                caller_context = 'internal'
+            elif self._is_derived_from(current_class, target_class):
+                caller_context = 'derived'
+        
+        # For private attributes, we need additional checking
+        if visibility == 'private':
+            # Even if caller_context is 'internal', we need to verify the attribute
+            # is defined in the caller's class, not inherited from a base class
+            if caller_context == 'internal':
+                # Get the caller's class
+                caller_class = self.current_instance.get('__instance_class__') if self.current_instance else None
+                # Check if the attribute is defined in the caller's class (not inherited)
+                if caller_class and caller_class in self.classes:
+                    class_def = self.classes[caller_class]
+                    # If the attribute's visibility key is not in this class's definition, it's inherited
+                    if visibility_key not in class_def:
+                        # Attribute is inherited from a base class, and it's private, so deny access
+                        raise RuntimeErrorLyric(
+                            f"Access error: Cannot access private attribute '{attr_name}' inherited from base class. "
+                            f"Private attributes can only be accessed from within the class where they are defined."
+                        )
+                # If we get here, the attribute is in the caller's class, so allow access
+                return
+            else:
+                # Called from outside the class
+                class_name = instance.get('__instance_class__', 'Unknown')
+                raise RuntimeErrorLyric(
+                    f"Access error: Cannot access private attribute '{attr_name}' of class '{class_name}'. "
+                    f"Private attributes can only be accessed from within the same class."
+                )
+        
+        # Protected attributes can be accessed from the same class or derived classes
+        if visibility == 'protected' and caller_context not in ('internal', 'derived'):
+            class_name = instance.get('__instance_class__', 'Unknown')
+            raise RuntimeErrorLyric(
+                f"Access error: Cannot access protected attribute '{attr_name}' of class '{class_name}'. "
+                f"Protected attributes can only be accessed from the same class or derived classes."
+            )
+    
     def _check_method_access(self, instance: dict, method_name: str, method_def: dict, caller_context: str = 'external') -> None:
         """Check if method access is allowed based on visibility modifier.
         
@@ -1122,17 +1189,23 @@ class Interpreter:
         
         for member in node.members_statements:
             if isinstance(member, AssignNode):
-                # Class member assignment
+                # Class member assignment (no visibility, defaults to public)
                 value = self._evaluate_expression(member.expr)
                 class_dict[member.name] = value
+                # Store visibility metadata
+                class_dict[f'__visibility_{member.name}__'] = 'public'
             elif isinstance(member, TypeDeclarationNode):
-                # Type declaration in class
+                # Type declaration in class (with visibility)
                 value = self._evaluate_expression(member.expr)
                 class_dict[member.name] = value
+                # Store visibility metadata
+                class_dict[f'__visibility_{member.name}__'] = member.visibility
             elif isinstance(member, MultiDeclarationNode):
-                # Multi-variable declaration in class
+                # Multi-variable declaration in class (with visibility)
                 for type_name, var_name in member.declarations:
                     class_dict[var_name] = None  # Declare as uninitialized
+                    # Store visibility metadata
+                    class_dict[f'__visibility_{var_name}__'] = member.visibility
             elif isinstance(member, FunctionNode):
                 # Class method
                 class_dict[member.name] = {
@@ -1294,6 +1367,10 @@ class Interpreter:
                 current_obj = obj
                 for member_name in member_path:
                     if isinstance(current_obj, dict) and member_name in current_obj:
+                        # Check if this is a class instance with access control
+                        if '__instance_class__' in current_obj:
+                            # Check attribute access
+                            self._check_attribute_access(current_obj, member_name)
                         current_obj = current_obj[member_name]
                     elif hasattr(current_obj, '__getattr__'):
                         # Handle PyModuleProxy and similar objects
@@ -1459,7 +1536,7 @@ class Interpreter:
                 
                 # Then copy this class's members (overriding base class members)
                 for key, value in current_class_def.items():
-                    if not key.startswith('__') or key == '__constructor__':
+                    if not key.startswith('__') or key == '__constructor__' or key.startswith('__visibility_'):
                         # Copy everything except __class_name__ and __base_class__
                         if key not in ('__class_name__', '__base_class__'):
                             instance[key] = value
@@ -1579,6 +1656,10 @@ class Interpreter:
                 current_obj = obj
                 for member_name in member_path:
                     if isinstance(current_obj, dict) and member_name in current_obj:
+                        # Check if this is a class instance with access control
+                        if '__instance_class__' in current_obj:
+                            # Check attribute access
+                            self._check_attribute_access(current_obj, member_name)
                         current_obj = current_obj[member_name]
                     elif hasattr(current_obj, '__getattr__'):
                         # Handle PyModuleProxy and similar objects

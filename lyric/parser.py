@@ -6,7 +6,7 @@
 
 """Parser module for converting tokens to AST."""
 
-from typing import List
+from typing import List, Union
 from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
@@ -87,16 +87,63 @@ class Parser:
         if self._is_at_end():
             return None
         
-        # Check for visibility modifiers (PUBLIC, PRIVATE, PROTECTED) followed by method definition
+        # Check for visibility modifiers (PUBLIC, PRIVATE, PROTECTED)
         if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
-            return self._parse_func_def()
+            # Could be method or variable declaration
+            next_tok = self._peek_next()
+            if next_tok.type in ('DEF', 'TYPE_OR_IDENT'):
+                # Determine if it's a method or variable declaration
+                if next_tok.type == 'DEF':
+                    return self._parse_func_def()
+                elif next_tok.type == 'TYPE_OR_IDENT':
+                    # Check if it's a typed method or variable declaration
+                    next_next_tok = self._peek_next_next()
+                    if next_next_tok.type == 'LPAREN':
+                        # Pattern: visibility TYPE() - it's a method with no name? That's def funcname()
+                        return self._parse_func_def()
+                    elif next_next_tok.type == 'IDENT':
+                        # Pattern: visibility TYPE IDENT
+                        # Could be: visibility TYPE funcname() or visibility TYPE varname =
+                        # Need to peek one more token
+                        try:
+                            third_tok_idx = self.current + 3
+                            if third_tok_idx < len(self.tokens):
+                                third_tok = self.tokens[third_tok_idx]
+                                if third_tok.type == 'LPAREN':
+                                    # It's a typed method: visibility TYPE funcname()
+                                    return self._parse_func_def()
+                                else:
+                                    # It's a variable declaration: visibility TYPE varname =
+                                    return self._parse_type_declaration_with_visibility()
+                            else:
+                                return self._parse_type_declaration_with_visibility()
+                        except:
+                            return self._parse_type_declaration_with_visibility()
+                    elif next_next_tok.type in ('ASSIGN', 'COMMA'):
+                        # It's a variable declaration
+                        return self._parse_type_declaration_with_visibility()
+                    else:
+                        return self._parse_func_def()  # Default to method
         
         # Check for visibility modifiers as IDENT (backwards compatibility)
         if self._check('IDENT') and self._peek().value in ('public', 'private', 'protected'):
-            # Peek ahead to see if this is followed by a method definition
+            # Peek ahead to see if this is followed by a method or variable definition
             next_tok = self._peek_next()
             if next_tok.type in ('DEF', 'TYPE_OR_IDENT'):
-                return self._parse_func_def()
+                # Check if it's a method or variable declaration
+                if next_tok.type == 'DEF':
+                    return self._parse_func_def()
+                elif next_tok.type == 'TYPE_OR_IDENT':
+                    # Check if it's a method or variable declaration
+                    next_next_tok = self._peek_next_next()
+                    if next_next_tok.type == 'LPAREN':
+                        # It's a method
+                        return self._parse_func_def()
+                    elif next_next_tok.type in ('IDENT', 'ASSIGN', 'COMMA'):
+                        # It's a variable declaration
+                        return self._parse_type_declaration_with_visibility()
+                    else:
+                        return self._parse_func_def()  # Default to method
         
         # Check for typed function declaration: TYPE funcname(
         if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'LPAREN':
@@ -985,6 +1032,97 @@ class Parser:
         
         return RaiseNode(exception_name, raise_token.line, raise_token.col)
 
+    def _parse_type_declaration_with_visibility(self) -> Union[TypeDeclarationNode, MultiDeclarationNode]:
+        """Parse type declaration with visibility modifier: [visibility] TYPE IDENT "=" expression or [visibility] TYPE IDENT, TYPE IDENT"""
+        visibility = 'public'  # Default
+        
+        # Check for visibility modifier (PUBLIC, PRIVATE, PROTECTED tokens)
+        if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
+            visibility_token = self._advance()
+            visibility = visibility_token.type.lower()  # Convert PUBLIC to 'public', etc.
+        # Also check for visibility as IDENT (backwards compatibility)
+        elif self._check('IDENT'):
+            next_token = self._peek()
+            if next_token.value in ('public', 'private', 'protected'):
+                visibility_token = self._advance()
+                visibility = visibility_token.value
+        
+        # Now check if it's a multi-declaration or single declaration
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT':
+            next_next = self._peek_next_next()
+            if next_next.type == 'COMMA':
+                # Multi-declaration
+                return self._parse_multi_declaration_internal(visibility)
+            elif next_next.type == 'ASSIGN':
+                # Single declaration with assignment
+                return self._parse_type_declaration_internal(visibility)
+            else:
+                # Single declaration without assignment
+                return self._parse_multi_declaration_internal(visibility)
+        else:
+            raise ParseError(f"Expected type after visibility modifier at line {self._peek().line}, column {self._peek().col}")
+    
+    def _parse_type_declaration_internal(self, visibility: str = 'public') -> TypeDeclarationNode:
+        """Internal method to parse type declaration with given visibility."""
+        type_token = self._advance()
+        type_name = type_token.value.lower()
+        
+        # Validate that pyobject is not allowed as explicit type declaration
+        if type_name == 'pyobject':
+            raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
+        
+        # Validate that the type is a known type
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj'}
+        if type_name not in valid_types:
+            raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
+        
+        name_token = self._consume('IDENT', "Expected variable name after type")
+        name = name_token.value
+        
+        self._consume('ASSIGN', "Expected '=' after variable name")
+        expr = self._parse_expression()
+        
+        return TypeDeclarationNode(type_name, name, expr, visibility, type_token.line, type_token.col)
+    
+    def _parse_multi_declaration_internal(self, visibility: str = 'public') -> MultiDeclarationNode:
+        """Internal method to parse multi-declaration with given visibility."""
+        declarations = []
+        line = self._peek().line
+        column = self._peek().col
+        
+        while True:
+            # Parse type and variable name
+            if not self._check('TYPE_OR_IDENT'):
+                raise ParseError(f"Expected type in variable declaration at line {self._peek().line}, column {self._peek().col}")
+            
+            type_token = self._advance()
+            type_name = type_token.value.lower()
+            
+            # Validate that pyobject is not allowed
+            if type_name == 'pyobject':
+                raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
+            
+            # Validate that the type is a known type
+            valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj'}
+            if type_name not in valid_types:
+                raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
+            
+            if not self._check('IDENT'):
+                raise ParseError(f"Expected variable name after type '{type_name}' at line {self._peek().line}, column {self._peek().col}")
+            
+            name_token = self._advance()
+            name = name_token.value
+            
+            declarations.append((type_name, name))
+            
+            # Check for comma (more declarations) or end
+            if self._match('COMMA'):
+                continue
+            else:
+                break
+        
+        return MultiDeclarationNode(declarations, visibility, line, column)
+
     def _parse_type_declaration(self) -> TypeDeclarationNode:
         """Parse type declaration: TYPE IDENT "=" expression"""
         type_token = self._advance()
@@ -1005,7 +1143,7 @@ class Parser:
         self._consume('ASSIGN', "Expected '=' after variable name")
         expr = self._parse_expression()
         
-        return TypeDeclarationNode(type_name, name, expr, type_token.line, type_token.col)
+        return TypeDeclarationNode(type_name, name, expr, 'public', type_token.line, type_token.col)
     
     def _parse_multi_declaration(self) -> MultiDeclarationNode:
         """Parse multi-variable declaration: TYPE IDENT "," TYPE IDENT "," ... """
@@ -1042,9 +1180,9 @@ class Parser:
                 continue
             else:
                 break
-        
-        return MultiDeclarationNode(declarations, line, column)
-    
+
+        return MultiDeclarationNode(declarations, 'public', line, column)
+
     def _parse_import_stmt(self) -> ImportNode:
         """Parse import statement: import IDENT or import IDENT; symbol1, symbol2 as alias"""
         import_token = self._consume('IMPORT', "Expected 'import'")

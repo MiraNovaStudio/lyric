@@ -362,17 +362,19 @@ class TypeDeclarationNode(ASTNode):
     type_name: str
     name: str
     expr: 'ASTNode'
+    visibility: str = 'public'  # Access modifier: 'public', 'private', or 'protected'
     line: int = 0
     column: int = 0
-    
+
     def __repr__(self):
-        return f"TypeDeclarationNode(type='{self.type_name}', name='{self.name}', expr={self.expr})"
-    
+        return f"TypeDeclarationNode(type='{self.type_name}', name='{self.name}', expr={self.expr}, visibility={self.visibility})"
+
     def to_dict(self):
         return {
             'type': 'TypeDeclarationNode',
             'type_name': self.type_name,
             'name': self.name,
+            'visibility': self.visibility,
             'expr': self.expr.to_dict() if hasattr(self.expr, 'to_dict') else str(self.expr)
         }
 
@@ -461,16 +463,18 @@ class RaiseNode(ASTNode):
 class MultiDeclarationNode(ASTNode):
     """Represents multiple variable declarations in a single line."""
     declarations: List[tuple[str, str]]  # List of (type_name, variable_name) tuples
+    visibility: str = 'public'  # Access modifier: 'public', 'private', or 'protected'
     line: int = 0
     column: int = 0
-    
+
     def __repr__(self):
-        return f"MultiDeclarationNode(declarations={self.declarations})"
-    
+        return f"MultiDeclarationNode(declarations={self.declarations}, visibility={self.visibility})"
+
     def to_dict(self):
         return {
             'type': 'MultiDeclarationNode',
-            'declarations': self.declarations
+            'declarations': self.declarations,
+            'visibility': self.visibility
         }
 
 

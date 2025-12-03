@@ -488,3 +488,172 @@ def main() {
     assert "getsecret" in error_msg
     assert "private" in error_msg
 
+
+def test_private_attribute_not_accessible_from_outside():
+    """Test that private attributes cannot be accessed from outside the class."""
+    source = """
+class BankAccount
+    private var balance = 1000
+    public var accountNumber = "12345"
++++
+
+def main() {
+    var account = BankAccount()
+    print(account.balance)
+}
+"""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        ast = parse(source)
+        evaluate(ast)
+    
+    assert "private attribute" in str(exc_info.value).lower()
+    assert "balance" in str(exc_info.value)
+
+
+def test_protected_attribute_not_accessible_from_outside():
+    """Test that protected attributes cannot be accessed from outside the class."""
+    source = """
+class Employee
+    protected var salary = 50000
+    public var name = "John"
++++
+
+def main() {
+    var emp = Employee()
+    print(emp.salary)
+}
+"""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        ast = parse(source)
+        evaluate(ast)
+    
+    assert "protected attribute" in str(exc_info.value).lower()
+    assert "salary" in str(exc_info.value)
+
+
+def test_private_attribute_accessible_from_same_class():
+    """Test that private attributes can be accessed from within the same class."""
+    source = """
+class BankAccount
+    private var balance = 1000
+    
+    public def getBalance() {
+        return self.balance
+    }
++++
+
+def main() {
+    var account = BankAccount()
+    var bal = account.getBalance()
+    print("Balance:", bal)
+}
+"""
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = io.StringIO()
+    
+    try:
+        ast = parse(source)
+        evaluate(ast)
+        output = captured_output.getvalue()
+        assert "Balance: 1000" in output
+    finally:
+        sys.stdout = old_stdout
+
+
+def test_protected_attribute_accessible_in_derived_class():
+    """Test that protected attributes are accessible from derived classes."""
+    source = """
+class Employee
+    protected var salary = 50000
+    public var name = "John"
++++
+
+class Manager based on Employee
+    public def getSalary() {
+        return self.salary
+    }
++++
+
+def main() {
+    var mgr = Manager()
+    var sal = mgr.getSalary()
+    print("Salary:", sal)
+}
+"""
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = io.StringIO()
+    
+    try:
+        ast = parse(source)
+        evaluate(ast)
+        output = captured_output.getvalue()
+        assert "Salary: 50000" in output
+    finally:
+        sys.stdout = old_stdout
+
+
+def test_public_attribute_accessible_everywhere():
+    """Test that public attributes are accessible from everywhere."""
+    source = """
+class Person
+    public var name = "Alice"
+    private var ssn = "123-45-6789"
++++
+
+def main() {
+    var p = Person()
+    print("Name:", p.name)
+}
+"""
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = io.StringIO()
+    
+    try:
+        ast = parse(source)
+        evaluate(ast)
+        output = captured_output.getvalue()
+        assert "Name: Alice" in output
+    finally:
+        sys.stdout = old_stdout
+
+
+def test_mixed_visibility_attributes_and_methods():
+    """Test a class with mixed visibility for both attributes and methods."""
+    source = """
+class SecureData
+    private var secret = "classified"
+    protected var internal = "internal-use"
+    public var publicInfo = "public"
+    
+    private def getSecret() {
+        return self.secret
+    }
+    
+    public def getPublicInfo() {
+        return self.publicInfo
+    }
+    
+    public def accessSecretViaMethod() {
+        return self.getSecret()
+    }
++++
+
+def main() {
+    var data = SecureData()
+    print("Public:", data.publicInfo)
+    var secretData = data.accessSecretViaMethod()
+    print("Secret via method:", secretData)
+}
+"""
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = io.StringIO()
+    
+    try:
+        ast = parse(source)
+        evaluate(ast)
+        output = captured_output.getvalue()
+        assert "Public: public" in output
+        assert "Secret via method: classified" in output
+    finally:
+        sys.stdout = old_stdout
+
