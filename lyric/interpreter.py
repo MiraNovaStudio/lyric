@@ -371,6 +371,8 @@ class Interpreter:
         self.source_file = source_file
         # Track the current instance context for access control
         self.current_instance = None
+        # Track the current class name for constructor context
+        self.current_class_name = None
     
     def _push_scope(self):
         """Push a new scope onto the stack."""
@@ -727,14 +729,29 @@ class Interpreter:
         caller_context = 'external'
         if self.current_instance is not None:
             # We're inside a method call
-            current_class = self.current_instance.get('__instance_class__')
+            # Use current_class_name if set (for constructor context), otherwise use instance's class
+            current_class = self.current_class_name if self.current_class_name is not None else self.current_instance.get('__instance_class__')
             target_class = instance.get('__instance_class__')
             
-            # Check if calling from same instance (same class or derived)
-            if current_class == target_class:
+            # Check if calling from same instance
+            if instance is self.current_instance:
+                # Accessing attributes of self - context depends on class hierarchy
+                if current_class == target_class:
+                    caller_context = 'internal'
+                elif self._is_derived_from(current_class, target_class):
+                    caller_context = 'derived'
+                elif self._is_derived_from(target_class, current_class):
+                    # Target class derives from current class (e.g., Base constructor accessing Child instance)
+                    # This is 'internal' for attributes defined in current class
+                    caller_context = 'internal'
+                else:
+                    caller_context = 'external'
+            elif current_class == target_class:
                 caller_context = 'internal'
             elif self._is_derived_from(current_class, target_class):
                 caller_context = 'derived'
+            else:
+                caller_context = 'external'
         
         # For private attributes, we need additional checking
         if visibility == 'private':
@@ -742,7 +759,7 @@ class Interpreter:
             # is defined in the caller's class, not inherited from a base class
             if caller_context == 'internal':
                 # Get the caller's class
-                caller_class = self.current_instance.get('__instance_class__') if self.current_instance else None
+                caller_class = self.current_class_name if self.current_class_name is not None else (self.current_instance.get('__instance_class__') if self.current_instance else None)
                 # Check if the attribute is defined in the caller's class (not inherited)
                 if caller_class and caller_class in self.classes:
                     class_def = self.classes[caller_class]
@@ -756,7 +773,7 @@ class Interpreter:
                 # If we get here, the attribute is in the caller's class, so allow access
                 return
             else:
-                # Called from outside the class
+                # Called from outside the class or from a derived class
                 class_name = instance.get('__instance_class__', 'Unknown')
                 raise RuntimeErrorLyric(
                     f"Access error: Cannot access private attribute '{attr_name}' of class '{class_name}'. "
@@ -770,6 +787,56 @@ class Interpreter:
                 f"Access error: Cannot access protected attribute '{attr_name}' of class '{class_name}'. "
                 f"Protected attributes can only be accessed from the same class or derived classes."
             )
+    
+    def _is_derived_from(self, child_class: str, base_class: str) -> bool:
+        """Check if child_class is derived from base_class."""
+        if child_class == base_class:
+            return False  # Same class, not derived
+        
+        # Walk up the inheritance chain
+        current = child_class
+        while current in self.classes:
+            class_def = self.classes[current]
+            if '__base_class__' in class_def:
+                parent = class_def['__base_class__']
+                if parent == base_class:
+                    return True
+                current = parent
+            else:
+                break
+        return False
+    
+    def _find_method_defining_class(self, instance: dict, method_name: str) -> str:
+        """Find which class in the inheritance chain defines a given method.
+        
+        Args:
+            instance: The instance dictionary
+            method_name: The name of the method to find
+            
+        Returns:
+            The name of the class that defines the method, or the instance's class if not found
+        """
+        # Start from the instance's class
+        instance_class = instance.get('__instance_class__')
+        if not instance_class:
+            return None
+        
+        # Walk up the inheritance chain to find where the method is defined
+        current_class = instance_class
+        while current_class in self.classes:
+            class_def = self.classes[current_class]
+            if method_name in class_def and isinstance(class_def[method_name], dict) and 'body' in class_def[method_name]:
+                # Found the method definition in this class
+                return current_class
+            
+            # Move to base class
+            if '__base_class__' in class_def:
+                current_class = class_def['__base_class__']
+            else:
+                break
+        
+        # Method not found in class hierarchy, return instance class as fallback
+        return instance_class
     
     def _check_method_access(self, instance: dict, method_name: str, method_def: dict, caller_context: str = 'external') -> None:
         """Check if method access is allowed based on visibility modifier.
@@ -821,8 +888,15 @@ class Interpreter:
                 f"Protected methods can only be called from the same class or derived classes."
             )
     
-    def _call_method(self, instance: dict, method: dict, args: List[Any]) -> Any:
-        """Call a method on an instance."""
+    def _call_method(self, instance: dict, method: dict, args: List[Any], class_context: str = None) -> Any:
+        """Call a method on an instance.
+        
+        Args:
+            instance: The instance dictionary
+            method: The method dictionary containing params, body, etc.
+            args: Arguments to pass to the method
+            class_context: Optional class name to use as the execution context (for constructors)
+        """
         params = method['params']
         param_types = method.get('param_types', [])
         body = method['body']
@@ -853,10 +927,13 @@ class Interpreter:
         # Save current scope and instance context
         old_scope = self.global_scope.copy()
         old_instance = self.current_instance
+        old_class_name = self.current_class_name
         
-        # Set local scope and current instance for method execution
+        # Set local scope and current instance/class for method execution
         self.global_scope.update(local_scope)
         self.current_instance = instance
+        # Use provided class_context if available (for constructors), otherwise use instance's class
+        self.current_class_name = class_context if class_context is not None else instance.get('__instance_class__')
         
         # Push method scope for variable types
         self._push_scope()
@@ -874,6 +951,7 @@ class Interpreter:
             # Restore scope and instance context
             self.global_scope = old_scope
             self.current_instance = old_instance
+            self.current_class_name = old_class_name
             self._pop_scope()
     
     
@@ -1413,7 +1491,11 @@ class Interpreter:
                         
                         # Check access control
                         self._check_method_access(current_obj, method_name, method, caller_context)
-                        return self._call_method(current_obj, method, node.args)
+                        
+                        # Determine which class defines this method
+                        defining_class = self._find_method_defining_class(current_obj, method_name)
+                        
+                        return self._call_method(current_obj, method, node.args, class_context=defining_class)
                     else:
                         # It's a regular attribute, call it if callable
                         args = [self._evaluate_expression(arg) for arg in node.args]
@@ -1577,10 +1659,10 @@ class Interpreter:
             for class_name, constructor_method in constructor_chain:
                 # Only pass arguments to the most derived (child) constructor
                 if class_name == node.func_name:
-                    self._call_method(instance, constructor_method, node.args)
+                    self._call_method(instance, constructor_method, node.args, class_context=class_name)
                 else:
                     # Base class constructors are called with no arguments (automatic chaining)
-                    self._call_method(instance, constructor_method, [])
+                    self._call_method(instance, constructor_method, [], class_context=class_name)
             
             # Remove constructor from instance after calling all constructors
             if '__constructor__' in instance:

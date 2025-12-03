@@ -91,10 +91,13 @@ class Parser:
         if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
             # Could be method or variable declaration
             next_tok = self._peek_next()
-            if next_tok.type in ('DEF', 'TYPE_OR_IDENT'):
+            if next_tok.type in ('DEF', 'TYPE_OR_IDENT', 'VAR'):
                 # Determine if it's a method or variable declaration
                 if next_tok.type == 'DEF':
                     return self._parse_func_def()
+                elif next_tok.type == 'VAR':
+                    # Pattern: visibility var x, y
+                    return self._parse_multi_declaration_with_visibility()
                 elif next_tok.type == 'TYPE_OR_IDENT':
                     # Check if it's a typed method or variable declaration
                     next_next_tok = self._peek_next_next()
@@ -1059,8 +1062,30 @@ class Parser:
             else:
                 # Single declaration without assignment
                 return self._parse_multi_declaration_internal(visibility)
+        elif self._check('TYPE_OR_IDENT'):
+            # Could be just a type without variable name, or untyped var declaration
+            # This handles cases like "private var" where we need to parse the full multi-decl
+            return self._parse_multi_declaration_internal(visibility)
         else:
             raise ParseError(f"Expected type after visibility modifier at line {self._peek().line}, column {self._peek().col}")
+    
+    def _parse_multi_declaration_with_visibility(self) -> MultiDeclarationNode:
+        """Parse multi-declaration with visibility modifier: [visibility] var x, y, z"""
+        visibility = 'public'  # Default
+        
+        # Check for visibility modifier (PUBLIC, PRIVATE, PROTECTED tokens)
+        if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
+            visibility_token = self._advance()
+            visibility = visibility_token.type.lower()  # Convert PUBLIC to 'public', etc.
+        # Also check for visibility as IDENT (backwards compatibility)
+        elif self._check('IDENT'):
+            next_token = self._peek()
+            if next_token.value in ('public', 'private', 'protected'):
+                visibility_token = self._advance()
+                visibility = visibility_token.value
+        
+        # Now parse the multi-declaration
+        return self._parse_multi_declaration_internal(visibility)
     
     def _parse_type_declaration_internal(self, visibility: str = 'public') -> TypeDeclarationNode:
         """Internal method to parse type declaration with given visibility."""
@@ -1092,11 +1117,11 @@ class Parser:
         
         while True:
             # Parse type and variable name
-            if not self._check('TYPE_OR_IDENT'):
+            if not self._check('TYPE_OR_IDENT', 'VAR'):
                 raise ParseError(f"Expected type in variable declaration at line {self._peek().line}, column {self._peek().col}")
             
             type_token = self._advance()
-            type_name = type_token.value.lower()
+            type_name = type_token.value.lower() if type_token.type == 'TYPE_OR_IDENT' else 'var'
             
             # Validate that pyobject is not allowed
             if type_name == 'pyobject':
