@@ -1377,6 +1377,27 @@ class Interpreter:
                         if key not in ('__class_name__', '__base_class__'):
                             instance[key] = value
             
+            # Helper function to collect constructor chain from base to child
+            def collect_constructor_chain(class_name):
+                """Collect constructors in base→child order."""
+                constructors = []
+                
+                if class_name not in self.classes:
+                    return constructors
+                
+                current_class_def = self.classes[class_name]
+                
+                # First, recursively collect from base class (if any)
+                if '__base_class__' in current_class_def:
+                    base_class_name = current_class_def['__base_class__']
+                    constructors.extend(collect_constructor_chain(base_class_name))
+                
+                # Then add this class's constructor (if it exists)
+                if '__constructor__' in current_class_def:
+                    constructors.append((class_name, current_class_def['__constructor__']))
+                
+                return constructors
+            
             # Copy entire inheritance chain
             copy_from_inheritance_chain(node.func_name)
             
@@ -1387,15 +1408,22 @@ class Interpreter:
             if '__base_class__' in class_def:
                 instance['__base_class__'] = class_def['__base_class__']
             
-            # Check if class has a constructor method (method name matches class name)
-            if '__constructor__' in instance and isinstance(instance['__constructor__'], dict):
-                constructor_method = instance['__constructor__']
-                # Call the constructor method with the provided arguments
-                self._call_method(instance, constructor_method, node.args)
-                # Remove constructor from instance after calling it
+            # Call constructors in base→child order (automatic chaining)
+            constructor_chain = collect_constructor_chain(node.func_name)
+            for class_name, constructor_method in constructor_chain:
+                # Only pass arguments to the most derived (child) constructor
+                if class_name == node.func_name:
+                    self._call_method(instance, constructor_method, node.args)
+                else:
+                    # Base class constructors are called with no arguments (automatic chaining)
+                    self._call_method(instance, constructor_method, [])
+            
+            # Remove constructor from instance after calling all constructors
+            if '__constructor__' in instance:
                 del instance['__constructor__']
-            # Also check for legacy init() method for backward compatibility
-            elif 'init' in instance and isinstance(instance['init'], dict):
+            
+            # Also check for legacy init() method for backward compatibility (if no constructor was called)
+            if not constructor_chain and 'init' in instance and isinstance(instance['init'], dict):
                 init_method = instance['init']
                 # Call the init method with the provided arguments
                 self._call_method(instance, init_method, node.args)

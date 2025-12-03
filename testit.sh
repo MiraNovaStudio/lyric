@@ -48,7 +48,7 @@ else
     echo "=================================="
     echo "All tests completed!"
     echo ""
-    echo "For detailed output, run: ./testit.sh -v"
+    #echo "For detailed output, run: ./testit.sh -v"
 fi
 
 
