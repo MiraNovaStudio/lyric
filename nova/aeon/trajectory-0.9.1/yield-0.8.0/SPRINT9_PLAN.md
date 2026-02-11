@@ -250,7 +250,7 @@ Try to make the operators make sense for each datatype claude (map, god, etc.)
 Make sure you match ->> before you match -> so there is no ambiguity.
 
 Do not allow file i/o operators inside of an assignement chat.  So
-do not do x = (a + b) -> myfile
+do not do something like int x = (a + b) -> myfile
 
 Let's start with this and see how it goes
 
@@ -263,10 +263,10 @@ example will exit the program with return code 1
 Add the exec("mycomamnd.sh -l") built-in also.  You can use subprocess or os.system on the
 backend
 
-Use the > operator to allow redirecting of the output to a variable
+Use the -> ->> and <- operator to allow redirecting of the input/output of the command to a variable
 
 str output
-like exec("mycommand.sh") > output
+exec("mycommand.sh") -> output
 
 output could also be myfile if you want to redirect to a file
 
@@ -274,7 +274,7 @@ similarly you can pipe input to the command with the < operator
 
 str input = "1"
 
-exec("mycommand") < input > output
+exec("mycommand") <- input -> output
 
 exec() always returns the return code of the process
 
