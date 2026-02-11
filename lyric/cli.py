@@ -8,12 +8,13 @@
 
 import sys
 import os
-from lyric import __version__
 from lyric.errors import LexError, ParseError, RuntimeErrorLyric, SyntaxErrorLyric, NameErrorLyric
 from lyric.parser import parse, Parser
 from lyric.lexer import tokenize
 from lyric.interpreter import evaluate, Interpreter
 from lyric.runtime import set_command_line_options
+
+__version__ = "0.8.3"
 
 
 def _parse_options(args):
