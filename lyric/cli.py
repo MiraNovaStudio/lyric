@@ -8,6 +8,7 @@
 
 import sys
 import os
+from lyric import __version__
 from lyric.errors import LexError, ParseError, RuntimeErrorLyric, SyntaxErrorLyric, NameErrorLyric
 from lyric.parser import parse, Parser
 from lyric.lexer import tokenize
@@ -64,7 +65,7 @@ def main():
     command = sys.argv[1]
     
     if command == "--version":
-        print("Lyric 0.7.4")
+        print(f"Lyric {__version__}")
     elif command == "--help":
         print("Lyric Language Interpreter")
         print("")
