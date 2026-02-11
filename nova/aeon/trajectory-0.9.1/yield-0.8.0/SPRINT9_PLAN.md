@@ -216,36 +216,43 @@ lyric myfile.ly -h will autogenerate the help message
 
 ## Task 9 - File operators
 
-Add file operators > >> and < to get data to and from the file
+Add file operators -> ->> and <- to get data to and from the file
 
 dsk myfile = "test.txt"
-print "test" >> myfile
+print "test" ->> myfile
 
-equivalent to str test = "test", test >> myfile
+equivalent to str test = "test", test ->> myfile
 
 
 appends to the string test to myfile
 
-print < myfile, prints the file
+print <- myfile, prints the file
 
-and print "Test" > myfile, overwrites my file
+and print "Test" -> myfile, overwrites my file
 
-str myvar < myfile
+str myvar <- myfile
 
 loads myvar with the contents of myfile assuming it is not a binary file
 
-same for arr myarr < myfile loads the array with each line of the file
+same for arr myarr <- myfile loads the array with each line of the file
 
 arr myarr = [1,2,3]
 
-myarr >> myfile
+myarr ->> myfile
 
 creates the file
 1
 2
 3
 
-Try to make the operators make sense for each datatype claude
+Try to make the operators make sense for each datatype claude (map, god, etc.)
+
+Make sure you match ->> before you match -> so there is no ambiguity.
+
+Do not allow file i/o operators inside of an assignement chat.  So
+do not do x = (a + b) -> myfile
+
+Let's start with this and see how it goes
 
 ## Task 10
 
