@@ -1,8 +1,6 @@
 # Lyric Programming Language
-# Copyright (c) 2025 MiraNova Studios
-# Designed and Architected by Michael (Aeonath) and ChatGPT
-# Implemented by Claude
-# Licensed under the GNU General Public License v3.0
+# Copyright (c) 2025-2026 MiraNova Studios
+# All rights reserved.
 
 """
 Test suite for Lyric CLI functionality.
@@ -11,6 +9,7 @@ Test suite for Lyric CLI functionality.
 import pytest
 import sys
 import os
+import re
 from unittest.mock import patch
 
 
@@ -29,7 +28,11 @@ class TestCLI:
                 with patch('builtins.print') as mock_print:
                     from lyric.cli import main
                     main()
-                    mock_print.assert_called_with("Lyric 0.7.4")
+                    # Verify version format matches semantic versioning (e.g., 0.8.3, 1.12.1, 10.10.10)
+                    mock_print.assert_called_once()
+                    call_args = mock_print.call_args[0][0]
+                    assert re.match(r'^Lyric \d+\.\d+\.\d+$', call_args), \
+                        f"Version output '{call_args}' does not match expected format 'Lyric X.Y.Z'"
     
     def test_run_command_valid_file(self):
         """Test run command with valid .ly file."""

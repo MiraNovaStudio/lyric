@@ -26,12 +26,12 @@ var anything4 = True
 # Test 5: Type compatibility with built-in functions
 var result1 = int("42")
 var result2 = str(42)
-var result3 = float("3.14")
+var result3 = flt("3.14")
 
 # Test 6: Type checking with isinstance
 var is_int = isinstance(42, int)
 var is_str = isinstance("hello", str)
-var is_float = isinstance(3.14, float)
+var is_flt = isinstance(3.14, flt)
 
 # Test 7: Type checking with type() function
 var type_name1 = type(42)

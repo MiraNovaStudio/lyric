@@ -1,8 +1,6 @@
 # Lyric Programming Language
-# Copyright (c) 2025 MiraNova Studios
-# Designed and Architected by Michael (Aeonath) and ChatGPT
-# Implemented by Claude
-# Licensed under the GNU General Public License v3.0
+# Copyright (c) 2025-2026 MiraNova Studios
+# All rights reserved.
 
 """Runtime module with built-in functions."""
 
@@ -47,8 +45,8 @@ def int_builtin(value: Any) -> int:
     return int(value)
 
 
-def float_builtin(value: Any) -> float:
-    """Built-in float conversion function."""
+def flt_builtin(value: Any) -> float:
+    """Built-in flt conversion function."""
     # Import ArrObject and MapObject here to avoid circular imports
     from lyric.interpreter import ArrObject, MapObject
     
@@ -230,7 +228,7 @@ def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
     if isinstance(class_or_type, str):
         if class_or_type == "int":
             return isinstance(obj, int)
-        elif class_or_type == "float":
+        elif class_or_type == "float" or class_or_type == "flt":
             return isinstance(obj, float)
         elif class_or_type == "str":
             return isinstance(obj, str)
@@ -255,16 +253,18 @@ def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
     if callable(class_or_type):
         if class_or_type.__name__ == "int_builtin":
             return isinstance(obj, int)
-        elif class_or_type.__name__ == "float_builtin":
+        elif class_or_type.__name__ == "flt_builtin":
             return isinstance(obj, float)
         elif class_or_type.__name__ == "str_builtin":
             return isinstance(obj, str)
-        elif class_or_type.__name__ == "list_builtin":
-            return isinstance(obj, list)
-        elif class_or_type.__name__ == "dict_builtin":
-            return isinstance(obj, dict)
-        elif class_or_type.__name__ == "bool_builtin":
+        elif class_or_type.__name__ == "bin_builtin" or class_or_type.__name__ == "god_builtin":
             return isinstance(obj, bool)
+        elif class_or_type.__name__ == "arr_builtin":
+            from lyric.interpreter import ArrObject
+            return isinstance(obj, (list, ArrObject))
+        elif class_or_type.__name__ == "map_builtin":
+            from lyric.interpreter import MapObject
+            return isinstance(obj, (dict, MapObject)) and not (isinstance(obj, dict) and '__instance_class__' in obj)
     
     return False
 
@@ -317,22 +317,148 @@ def values_builtin(obj: Any) -> list:
         raise RuntimeErrorLyric(f"values() only works on dictionaries, got {type(obj).__name__}")
 
 
+# Global storage for command-line options
+_command_line_options = {}
+
+
+def set_command_line_options(options: dict) -> None:
+    """Set the command-line options to be accessed by getopts()."""
+    global _command_line_options
+    _command_line_options = options
+
+
+def get_command_line_options() -> dict:
+    """Get the current command-line options."""
+    global _command_line_options
+    return _command_line_options
+
+
+def getopts_builtin(option_name: str) -> Any:
+    """Built-in getopts function that retrieves command-line options.
+    
+    Args:
+        option_name: Name of the option to retrieve (without dashes)
+        
+    Returns:
+        - The option value if it was provided with a value (e.g., --file=myfile returns "myfile")
+        - True if the option was provided as a flag (e.g., -a or --verbose returns True)
+        - False if the option was not provided at all
+    """
+    global _command_line_options
+    
+    if option_name in _command_line_options:
+        value = _command_line_options[option_name]
+        # If value is None, it means the flag was present without a value
+        if value is None:
+            return True
+        return value
+    else:
+        # Option was not provided
+        return False
+
+
+def disk_builtin(filepath: str) -> Any:
+    """Built-in disk function that creates a DskObject for file operations.
+    
+    Args:
+        filepath: Path to the file
+        
+    Returns:
+        DskObject instance
+    """
+    # Import DskObject here to avoid circular imports
+    from lyric.interpreter import DskObject
+    
+    if not isinstance(filepath, str):
+        from lyric.errors import RuntimeErrorLyric
+        raise RuntimeErrorLyric(f"disk() expects a string filepath, got {type(filepath).__name__}")
+    
+    return DskObject(filepath)
+
+
+def exit_builtin(code: int = 0) -> None:
+    """Built-in exit function that terminates the program.
+    
+    Args:
+        code: Exit code (default 0 for success)
+    """
+    import sys
+    
+    if not isinstance(code, int):
+        from lyric.errors import RuntimeErrorLyric
+        raise RuntimeErrorLyric(f"exit() expects an integer exit code, got {type(code).__name__}")
+    
+    sys.exit(code)
+
+
+def exec_builtin(command: str) -> int:
+    """Built-in exec function that executes a shell command.
+    
+    Args:
+        command: Shell command to execute
+        
+    Returns:
+        Exit code of the command (0 for success)
+    """
+    import subprocess
+    
+    if not isinstance(command, str):
+        from lyric.errors import RuntimeErrorLyric
+        raise RuntimeErrorLyric(f"exec() expects a string command, got {type(command).__name__}")
+    
+    try:
+        # Execute command and capture output
+        # stderr is redirected to stdout as per requirements
+        result = subprocess.run(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # Merge stderr into stdout
+            text=True
+        )
+        
+        # Store output for potential redirection
+        # This will be handled by the interpreter when > operator is used
+        global _last_exec_output
+        _last_exec_output = result.stdout
+        
+        return result.returncode
+        
+    except Exception as e:
+        from lyric.errors import RuntimeErrorLyric
+        raise RuntimeErrorLyric(f"exec() error: {e}")
+
+
+# Global storage for last exec output (for > operator)
+_last_exec_output = ""
+
+
+def get_last_exec_output() -> str:
+    """Get the output from the last exec() call."""
+    global _last_exec_output
+    return _last_exec_output
+
+
 def register_builtins(env: dict) -> None:
     """Register all built-in functions in the given environment."""
     env['print'] = print_builtin
     env['input'] = input_builtin
     env['int'] = int_builtin
-    env['float'] = float_builtin
+    env['flt'] = flt_builtin
     env['str'] = str_builtin
     env['bin'] = bin_builtin
     env['god'] = god_builtin
     env['arr'] = arr_builtin
     env['map'] = map_builtin
+    env['disk'] = disk_builtin
     env['range'] = range_builtin
     env['open'] = open_builtin
     env['isinstance'] = isinstance_builtin
     env['type'] = type_builtin
     env['regex'] = regex_builtin
+    env['getopts'] = getopts_builtin
+    env['exit'] = exit_builtin
+    env['exec'] = exec_builtin
     # Note: len(), append(), keys(), values() have been removed as built-ins
     # These are now methods on arr and map objects:
     #   len(myarray) -> myarray.len()

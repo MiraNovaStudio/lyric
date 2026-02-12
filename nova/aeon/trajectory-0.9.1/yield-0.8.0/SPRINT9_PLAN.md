@@ -90,7 +90,7 @@ Subclass methods may override base methods by using the same name.
 - Base method still accessible internally via explicit reference if needed in future versions (not implemented yet).
 - Method lookups work correctly for all inheritance depths.
 
-## Task 4 — Access Control Keywords
+## Task 4 — Access Control Keywords / Scoping 
 
 Introduce optional visibility modifiers for methods: `public`, `private`, `protected`.
 
@@ -174,6 +174,116 @@ def main(int argc, arr argv) {
 
 - arguments are processed and passed when command line arguments are present
 - unit tests are present to test arguments and argc and argv parameters and corner cases
+
+## Task 7 - File IO
+
+The goal is to add the dsk type and allow file operations on variables of that type
+
+**Implementation**
+- add the dsk type to specificy the file, e.g. dsk myfile = "readme.txt"
+- add the common file operations on the variable
+
+myfile.open() # default mode is ra, otherwise override with mode='rw' parameter
+myfile.readlines()
+myfile.write(...)
+myfile.append(...)
+myfile.delete()
+myfile.exists()
+myfile.close()
+myfile.copy(toPath)
+myfile.move(toPath)
+myfile.size(),
+
+### Acceptance Criteria
+
+- unit tests are created to test file operations
+- the built-in funciton open() is replaced by myfile.open()
+
+## Task 8
+
+have the -h option auto generate a usage help statement unless it is overridden
+
+**Implementation**
+
+lyric myfile.ly -h will autogenerate the help message
+
+- str host = getopts("h") # this will override the -h option
+
+### Acceptance Criteria
+
+- unittests are written to to test auto -h and override -h
+
+
+## Task 9 - File operators
+
+Add file operators -> ->> and <- to get data to and from the file
+
+dsk myfile = "test.txt"
+print "test" ->> myfile
+
+equivalent to str test = "test", test ->> myfile
+
+
+appends to the string test to myfile
+
+print <- myfile, prints the file
+
+and print "Test" -> myfile, overwrites my file
+
+str myvar <- myfile
+
+loads myvar with the contents of myfile assuming it is not a binary file
+
+same for arr myarr <- myfile loads the array with each line of the file
+
+arr myarr = [1,2,3]
+
+myarr ->> myfile
+
+creates the file
+1
+2
+3
+
+Try to make the operators make sense for each datatype claude (map, god, etc.)
+
+Make sure you match ->> before you match -> so there is no ambiguity.
+
+Do not allow file i/o operators inside of an assignement chat.  So
+do not do something like int x = (a + b) -> myfile
+
+Let's start with this and see how it goes
+
+## Task 10
+
+Add the exit() builtin function, allow integer parameters and exit(1) for 
+example will exit the program with return code 1
+
+
+Add the exec("mycomamnd.sh -l") built-in also.  You can use subprocess or os.system on the
+backend
+
+Use the -> ->> and <- operator to allow redirecting of the input/output of the command to a variable
+
+str output
+exec("mycommand.sh") -> output
+
+output could also be myfile if you want to redirect to a file
+
+similarly you can pipe input to the command with the < operator
+
+str input = "1"
+
+exec("mycommand") <- input -> output
+
+exec() always returns the return code of the process
+
+int rc = exec("chmod 644 filename.txt")
+
+rc contain 0 the return code of the chmod command example
+
+for now you can always append stderr to stdout so it is just one stream
+
 
 ## Definition of Done
 

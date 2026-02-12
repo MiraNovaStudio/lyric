@@ -3,7 +3,7 @@ Test suite for arr type casting in Lyric.
 
 Tests:
 - int(arr) returns length
-- float(arr) returns length as float
+- flt(arr) returns length as float
 - str(arr) returns string representation
 - map(arr) converts to dict with string keys
 - arr(str) converts string to list of characters
@@ -48,10 +48,10 @@ print length
         # Should print 5
 
     def test_float_arr_returns_length_as_float(self):
-        """def main() {\n    Test that float(arr) returns the length as a float.\n}"""
+        """def main() {\n    Test that flt(arr) returns the length as a float.\n}"""
         code = """
 arr items = [1, 2, 3]
-flt length = float(items)
+flt length = flt(items)
 print length
 """
         ast = parse(code, interactive=True)
@@ -120,10 +120,10 @@ print count
         # Should print 0
 
     def test_float_empty_arr(self):
-        """def main() {\n    Test that float() on an empty array returns 0.0.\n}"""
+        """def main() {\n    Test that flt() on an empty array returns 0.0.\n}"""
         code = """
 arr empty = []
-flt count = float(empty)
+flt count = flt(empty)
 print count
 """
         ast = parse(code, interactive=True)
@@ -221,10 +221,10 @@ print double_length
         # Should print 10
 
     def test_float_casting_in_division(self):
-        """def main() {\n    Test using float(arr) in division.\n}"""
+        """def main() {\n    Test using flt(arr) in division.\n}"""
         code = """
 arr data = [1, 2, 3, 4]
-flt average = 10 / float(data)
+flt average = 10 / flt(data)
 print average
 """
         ast = parse(code, interactive=True)

@@ -1,17 +1,15 @@
 # Lyric Programming Language
-# Copyright (c) 2025 MiraNova Studios
-# Designed and Architected by Michael (Aeonath) and ChatGPT
-# Implemented by Claude
-# Licensed under the GNU General Public License v3.0
+# Copyright (c) 2025-2026 MiraNova Studios
+# All rights reserved.
 
 """Parser module for converting tokens to AST."""
 
-from typing import List
+from typing import List, Union
 from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, FileOpNode, ExecChainNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -87,6 +85,67 @@ class Parser:
         if self._is_at_end():
             return None
         
+        # Check for visibility modifiers (PUBLIC, PRIVATE, PROTECTED)
+        if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
+            # Could be method or variable declaration
+            next_tok = self._peek_next()
+            if next_tok.type in ('DEF', 'TYPE_OR_IDENT', 'VAR'):
+                # Determine if it's a method or variable declaration
+                if next_tok.type == 'DEF':
+                    return self._parse_func_def()
+                elif next_tok.type == 'VAR':
+                    # Pattern: visibility var x, y
+                    return self._parse_multi_declaration_with_visibility()
+                elif next_tok.type == 'TYPE_OR_IDENT':
+                    # Check if it's a typed method or variable declaration
+                    next_next_tok = self._peek_next_next()
+                    if next_next_tok.type == 'LPAREN':
+                        # Pattern: visibility TYPE() - it's a method with no name? That's def funcname()
+                        return self._parse_func_def()
+                    elif next_next_tok.type == 'IDENT':
+                        # Pattern: visibility TYPE IDENT
+                        # Could be: visibility TYPE funcname() or visibility TYPE varname =
+                        # Need to peek one more token
+                        try:
+                            third_tok_idx = self.current + 3
+                            if third_tok_idx < len(self.tokens):
+                                third_tok = self.tokens[third_tok_idx]
+                                if third_tok.type == 'LPAREN':
+                                    # It's a typed method: visibility TYPE funcname()
+                                    return self._parse_func_def()
+                                else:
+                                    # It's a variable declaration: visibility TYPE varname =
+                                    return self._parse_type_declaration_with_visibility()
+                            else:
+                                return self._parse_type_declaration_with_visibility()
+                        except:
+                            return self._parse_type_declaration_with_visibility()
+                    elif next_next_tok.type in ('ASSIGN', 'COMMA'):
+                        # It's a variable declaration
+                        return self._parse_type_declaration_with_visibility()
+                    else:
+                        return self._parse_func_def()  # Default to method
+        
+        # Check for visibility modifiers as IDENT (backwards compatibility)
+        if self._check('IDENT') and self._peek().value in ('public', 'private', 'protected'):
+            # Peek ahead to see if this is followed by a method or variable definition
+            next_tok = self._peek_next()
+            if next_tok.type in ('DEF', 'TYPE_OR_IDENT'):
+                # Check if it's a method or variable declaration
+                if next_tok.type == 'DEF':
+                    return self._parse_func_def()
+                elif next_tok.type == 'TYPE_OR_IDENT':
+                    # Check if it's a method or variable declaration
+                    next_next_tok = self._peek_next_next()
+                    if next_next_tok.type == 'LPAREN':
+                        # It's a method
+                        return self._parse_func_def()
+                    elif next_next_tok.type in ('IDENT', 'ASSIGN', 'COMMA'):
+                        # It's a variable declaration
+                        return self._parse_type_declaration_with_visibility()
+                    else:
+                        return self._parse_func_def()  # Default to method
+        
         # Check for typed function declaration: TYPE funcname(
         if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'LPAREN':
             return self._parse_func_def()
@@ -146,13 +205,32 @@ class Parser:
         else:
             if self.is_top_level:
                 token = self._peek()
+                # Check if this might be a file operator statement before rejecting
+                # File operators are allowed at top level for convenience
+                if self._is_file_operator_ahead():
+                    return self._parse_file_operator_stmt()
                 raise SyntaxErrorLyric(f"Only variable declarations, functions, and classes are allowed at module level. Execution starts in main().", token.line, token.col)
+            # Check for file operator statements: expr ->> expr, expr -> expr, expr <- expr
+            if self._is_file_operator_ahead():
+                return self._parse_file_operator_stmt()
             return self._parse_assignment_or_expr_stmt()
     
     def _parse_func_def(self) -> FunctionNode:
-        """Parse function definition: TYPE IDENT "(" param_list? ")" [":"] "{" statement* "}" 
-           or: def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
+        """Parse function definition: [visibility] TYPE IDENT "(" param_list? ")" [":"] "{" statement* "}" 
+           or: [visibility] def IDENT "(" param_list? ")" [":"] "{" statement* "}" """
         return_type = None
+        visibility = 'public'  # Default visibility
+        
+        # Check for optional visibility modifier (PUBLIC, PRIVATE, PROTECTED tokens)
+        if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
+            visibility_token = self._advance()
+            visibility = visibility_token.type.lower()  # Convert PUBLIC to 'public', etc.
+        # Also check for visibility as IDENT (backwards compatibility)
+        elif self._check('IDENT'):
+            next_token = self._peek()
+            if next_token.value in ('public', 'private', 'protected'):
+                visibility_token = self._advance()
+                visibility = visibility_token.value
         
         # Check for new-style typed function: TYPE funcname(
         if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'LPAREN':
@@ -213,7 +291,9 @@ class Parser:
         line = type_token.line if 'type_token' in locals() else (def_token.line if 'def_token' in locals() else name_token.line)
         col = type_token.col if 'type_token' in locals() else (def_token.col if 'def_token' in locals() else name_token.col)
         
-        return FunctionNode(name, params, param_types, return_type, body_statements, line, col)
+        # Create FunctionNode with visibility
+        func_node = FunctionNode(name, params, param_types, return_type, body_statements, visibility, line, col)
+        return func_node
     
     def _parse_param_list(self) -> tuple[List[str], List[str]]:
         """Parse parameter list: (TYPE IDENT | IDENT) ("," (TYPE IDENT | IDENT))*"""
@@ -267,13 +347,23 @@ class Parser:
         return params, param_types
     
     def _parse_class_def(self) -> ClassNode:
-        """Parse class definition: class IDENT [":"] statement* CLASS_END"""
+        """Parse class definition: class IDENT [based on BASE_CLASS] [":"] statement* CLASS_END"""
         class_token = self._consume('CLASS', "Expected 'class'")
         
         name_token = self._consume('IDENT', "Expected class name")
         name = name_token.value
         
-        # Make colon optional after class name
+        # Check for inheritance: based on ClassName
+        base_class = None
+        if self._check('IDENT') and self._peek().value == 'based':
+            self._advance()  # consume 'based'
+            if not (self._check('IDENT') and self._peek().value == 'on'):
+                raise ParseError(f"Expected 'on' after 'based' at line {self._peek().line}, column {self._peek().col}")
+            self._advance()  # consume 'on'
+            base_class_token = self._consume('IDENT', "Expected base class name after 'based on'")
+            base_class = base_class_token.value
+        
+        # Make colon optional after class name/inheritance
         self._match('COLON')  # Optional colon
         
         # Save top-level state and set to False inside class body
@@ -312,7 +402,7 @@ class Parser:
         # Restore top-level state
         self.is_top_level = was_top_level
         
-        return ClassNode(name, members_statements, constructor_method, class_token.line, class_token.col)
+        return ClassNode(name, members_statements, constructor_method, base_class, class_token.line, class_token.col)
     
     def _parse_if_block(self) -> IfNode:
         """Parse if block: if expression [":"] statement* ("else" "if" expression [":"] statement*)* ("else" [":"] statement*)? "end" """
@@ -441,6 +531,9 @@ class Parser:
     
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""
+        # Note: Don't check for exec chain here, as they can be part of assignments
+        # They'll be parsed as expressions and handled by assignment logic
+        
         if self._check('IDENT', 'TYPE_OR_IDENT'):
             # Check for print statement syntax: print <expr>
             if (self._peek().value == 'print' and 
@@ -505,6 +598,9 @@ class Parser:
                 expr = self._parse_expression()
                 
                 return AssignNode(f"{obj_name}[{index_token.value}]", expr, obj_token.line, obj_token.col)
+            # Check for file operator statements
+            elif self._peek_next().type in ('FILE_APPEND', 'FILE_WRITE', 'FILE_READ'):
+                return self._parse_file_operator_stmt()
         
         # Expression statement
         return self._parse_expression()
@@ -622,7 +718,45 @@ class Parser:
             line, col = self._get_position_from_token(self._previous())
             return UnaryOpNode(operator, right, line, col)
         
-        return self._parse_primary()
+        return self._parse_exec_chain_or_primary()
+    
+    def _parse_exec_chain_or_primary(self):
+        """Parse exec chains or primary expressions."""
+        # Parse the first element
+        expr = self._parse_primary()
+        
+        # Check if this is the start of an exec chain
+        if isinstance(expr, CallNode) and expr.func_name == 'exec':
+            # Check if followed by pipe operators
+            if self._check('PIPE', 'AND', 'OR'):
+                # This is an exec chain! Parse it as such
+                elements = [expr]
+                operators = []
+                
+                while self._check('PIPE', 'AND', 'OR'):
+                    op_token = self._advance()
+                    if op_token.type == 'PIPE':
+                        operators.append('|')
+                    elif op_token.type == 'AND':
+                        operators.append('&&')
+                    elif op_token.type == 'OR':
+                        operators.append('||')
+                    
+                    # Parse next element (should be exec() or print)
+                    next_elem = self._parse_exec_chain_element()
+                    elements.append(next_elem)
+                
+                # Create ExecChainNode
+                return ExecChainNode(
+                    elements=elements,
+                    operators=operators,
+                    input_source=None,
+                    output_target=None,
+                    line=expr.line,
+                    column=expr.column
+                )
+        
+        return expr
     
     def _parse_primary(self):
         """Parse primary expressions."""
@@ -950,6 +1084,119 @@ class Parser:
         
         return RaiseNode(exception_name, raise_token.line, raise_token.col)
 
+    def _parse_type_declaration_with_visibility(self) -> Union[TypeDeclarationNode, MultiDeclarationNode]:
+        """Parse type declaration with visibility modifier: [visibility] TYPE IDENT "=" expression or [visibility] TYPE IDENT, TYPE IDENT"""
+        visibility = 'public'  # Default
+        
+        # Check for visibility modifier (PUBLIC, PRIVATE, PROTECTED tokens)
+        if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
+            visibility_token = self._advance()
+            visibility = visibility_token.type.lower()  # Convert PUBLIC to 'public', etc.
+        # Also check for visibility as IDENT (backwards compatibility)
+        elif self._check('IDENT'):
+            next_token = self._peek()
+            if next_token.value in ('public', 'private', 'protected'):
+                visibility_token = self._advance()
+                visibility = visibility_token.value
+        
+        # Now check if it's a multi-declaration or single declaration
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT':
+            next_next = self._peek_next_next()
+            if next_next.type == 'COMMA':
+                # Multi-declaration
+                return self._parse_multi_declaration_internal(visibility)
+            elif next_next.type == 'ASSIGN':
+                # Single declaration with assignment
+                return self._parse_type_declaration_internal(visibility)
+            else:
+                # Single declaration without assignment
+                return self._parse_multi_declaration_internal(visibility)
+        elif self._check('TYPE_OR_IDENT'):
+            # Could be just a type without variable name, or untyped var declaration
+            # This handles cases like "private var" where we need to parse the full multi-decl
+            return self._parse_multi_declaration_internal(visibility)
+        else:
+            raise ParseError(f"Expected type after visibility modifier at line {self._peek().line}, column {self._peek().col}")
+    
+    def _parse_multi_declaration_with_visibility(self) -> MultiDeclarationNode:
+        """Parse multi-declaration with visibility modifier: [visibility] var x, y, z"""
+        visibility = 'public'  # Default
+        
+        # Check for visibility modifier (PUBLIC, PRIVATE, PROTECTED tokens)
+        if self._check('PUBLIC', 'PRIVATE', 'PROTECTED'):
+            visibility_token = self._advance()
+            visibility = visibility_token.type.lower()  # Convert PUBLIC to 'public', etc.
+        # Also check for visibility as IDENT (backwards compatibility)
+        elif self._check('IDENT'):
+            next_token = self._peek()
+            if next_token.value in ('public', 'private', 'protected'):
+                visibility_token = self._advance()
+                visibility = visibility_token.value
+        
+        # Now parse the multi-declaration
+        return self._parse_multi_declaration_internal(visibility)
+    
+    def _parse_type_declaration_internal(self, visibility: str = 'public') -> TypeDeclarationNode:
+        """Internal method to parse type declaration with given visibility."""
+        type_token = self._advance()
+        type_name = type_token.value.lower()
+        
+        # Validate that pyobject is not allowed as explicit type declaration
+        if type_name == 'pyobject':
+            raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
+        
+        # Validate that the type is a known type
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
+        if type_name not in valid_types:
+            raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
+        
+        name_token = self._consume('IDENT', "Expected variable name after type")
+        name = name_token.value
+        
+        self._consume('ASSIGN', "Expected '=' after variable name")
+        expr = self._parse_expression()
+        
+        return TypeDeclarationNode(type_name, name, expr, visibility, type_token.line, type_token.col)
+    
+    def _parse_multi_declaration_internal(self, visibility: str = 'public') -> MultiDeclarationNode:
+        """Internal method to parse multi-declaration with given visibility."""
+        declarations = []
+        line = self._peek().line
+        column = self._peek().col
+        
+        while True:
+            # Parse type and variable name
+            if not self._check('TYPE_OR_IDENT', 'VAR'):
+                raise ParseError(f"Expected type in variable declaration at line {self._peek().line}, column {self._peek().col}")
+            
+            type_token = self._advance()
+            type_name = type_token.value.lower() if type_token.type == 'TYPE_OR_IDENT' else 'var'
+            
+            # Validate that pyobject is not allowed
+            if type_name == 'pyobject':
+                raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
+            
+            # Validate that the type is a known type
+            valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
+            if type_name not in valid_types:
+                raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
+            
+            if not self._check('IDENT'):
+                raise ParseError(f"Expected variable name after type '{type_name}' at line {self._peek().line}, column {self._peek().col}")
+            
+            name_token = self._advance()
+            name = name_token.value
+            
+            declarations.append((type_name, name))
+            
+            # Check for comma (more declarations) or end
+            if self._match('COMMA'):
+                continue
+            else:
+                break
+        
+        return MultiDeclarationNode(declarations, visibility, line, column)
+
     def _parse_type_declaration(self) -> TypeDeclarationNode:
         """Parse type declaration: TYPE IDENT "=" expression"""
         type_token = self._advance()
@@ -960,7 +1207,7 @@ class Parser:
             raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
         
         # Validate that the type is a known type
-        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj'}
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
         if type_name not in valid_types:
             raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
         
@@ -970,7 +1217,7 @@ class Parser:
         self._consume('ASSIGN', "Expected '=' after variable name")
         expr = self._parse_expression()
         
-        return TypeDeclarationNode(type_name, name, expr, type_token.line, type_token.col)
+        return TypeDeclarationNode(type_name, name, expr, 'public', type_token.line, type_token.col)
     
     def _parse_multi_declaration(self) -> MultiDeclarationNode:
         """Parse multi-variable declaration: TYPE IDENT "," TYPE IDENT "," ... """
@@ -1007,9 +1254,9 @@ class Parser:
                 continue
             else:
                 break
-        
-        return MultiDeclarationNode(declarations, line, column)
-    
+
+        return MultiDeclarationNode(declarations, 'public', line, column)
+
     def _parse_import_stmt(self) -> ImportNode:
         """Parse import statement: import IDENT or import IDENT; symbol1, symbol2 as alias"""
         import_token = self._consume('IMPORT', "Expected 'import'")
@@ -1054,6 +1301,213 @@ class Parser:
         module_token = self._consume('IDENT', "Expected module name after 'importpy'")
         
         return ImportPyNode(module_token.value, importpy_token.line, importpy_token.col)
+    
+    def _is_file_operator_ahead(self) -> bool:
+        """Check if there's a file operator ahead in the token stream."""
+        # Look ahead for FILE_APPEND, FILE_WRITE, or FILE_READ tokens
+        # We need to scan forward but not consume tokens
+        saved_pos = self.current
+        try:
+            # Skip the first token (it will be an expression)
+            # Look for file operators in the next few tokens
+            # Increased range to handle exec chains: exec() | exec() ->> file
+            for i in range(30):  # Look ahead up to 30 tokens for exec chains
+                if self.current + i >= len(self.tokens):
+                    return False
+                tok = self.tokens[self.current + i]
+                if tok.type in ('FILE_APPEND', 'FILE_WRITE', 'FILE_READ'):
+                    return True
+                # Stop if we hit a statement terminator
+                if tok.type in ('NEWLINE', 'EOF', 'RBRACE'):
+                    return False
+            return False
+        finally:
+            self.current = saved_pos
+    
+    def _parse_file_operator_stmt(self) -> FileOpNode:
+        """Parse file operator statement: expr ->> expr, expr -> expr, or expr <- expr
+        
+        Note: File operators are NOT allowed in assignments or expressions.
+        They are standalone statements.
+        """
+        line = self._peek().line
+        column = self._peek().col
+        
+        # Parse left side expression
+        left = self._parse_expression()
+        
+        # Check for file operator
+        if self._check('FILE_APPEND'):
+            op_token = self._advance()
+            operator = '->>'
+        elif self._check('FILE_WRITE'):
+            op_token = self._advance()
+            operator = '->'
+        elif self._check('FILE_READ'):
+            op_token = self._advance()
+            operator = '<-'
+        else:
+            raise ParseError(f"Expected file operator (->> -> or <-) at line {self._peek().line}, column {self._peek().col}")
+        
+        # Parse right side expression
+        right = self._parse_expression()
+        
+        return FileOpNode(operator=operator, left=left, right=right, line=line, column=column)
+    
+    def _is_exec_chain_ahead(self) -> bool:
+        """Check if there's an exec chain pattern ahead (exec/print followed by |, &&, ||)."""
+        saved_pos = self.current
+        try:
+            # Check if current token starts an exec chain
+            curr = self._peek()
+            
+            # Must start with exec() call or print statement
+            if curr.type == 'IDENT':
+                if curr.value == 'exec':
+                    # Look for opening paren
+                    if self._peek_next().type == 'LPAREN':
+                        # Scan ahead to find closing paren, then check for pipe operators
+                        paren_depth = 1  # Start at 1 since we know there's an opening paren
+                        for i in range(2, 20):  # Start at 2 (after the LPAREN)
+                            if self.current + i >= len(self.tokens):
+                                return False
+                            tok = self.tokens[self.current + i]
+                            if tok.type == 'LPAREN':
+                                paren_depth += 1
+                            elif tok.type == 'RPAREN':
+                                paren_depth -= 1
+                                if paren_depth == 0:
+                                    # Found matching closing paren, check next token
+                                    if self.current + i + 1 < len(self.tokens):
+                                        next_tok = self.tokens[self.current + i + 1]
+                                        return next_tok.type in ('PIPE', 'AND', 'OR')
+                                    return False
+                        return False
+                elif curr.value == 'print':
+                    # print statement - check if followed by pipe
+                    for i in range(1, 10):
+                        if self.current + i >= len(self.tokens):
+                            return False
+                        tok = self.tokens[self.current + i]
+                        if tok.type == 'PIPE':
+                            return True
+                        if tok.type in ('NEWLINE', 'EOF', 'RBRACE'):
+                            return False
+                    return False
+            return False
+        finally:
+            self.current = saved_pos
+    
+    def _parse_exec_chain_stmt(self):
+        """Parse exec chain statement with pipes and short-circuit operators.
+        
+        Patterns:
+            exec('cmd') | exec('cmd2')
+            exec('cmd') | print
+            print "text" | exec('cmd')
+            exec('cmd1') && exec('cmd2')
+            exec('cmd1') || exec('cmd2')
+            exec('cmd') <- input | exec('cmd2') -> output
+        """
+        line = self._peek().line
+        column = self._peek().col
+        
+        elements = []
+        operators = []
+        input_source = None
+        output_target = None
+        
+        # Check for optional input source at the beginning
+        # Pattern: exec('cmd') <- input | ...
+        # We need to look ahead to see if there's a <- before the first pipe
+        
+        # Parse first element (exec() or print)
+        first_elem = self._parse_exec_chain_element()
+        
+        # Check if first element is followed by <-
+        if self._check('FILE_READ'):
+            self._advance()  # consume <-
+            input_source = self._parse_expression()
+            # After <- input, there should be a pipe operator
+            if not self._check('PIPE', 'AND', 'OR'):
+                # This is just exec() <- input without chaining, treat as file op
+                return FileOpNode(operator='<-', left=first_elem, right=input_source, line=line, column=column)
+        
+        elements.append(first_elem)
+        
+        # Parse chain operators and subsequent elements
+        while self._check('PIPE', 'AND', 'OR'):
+            op_token = self._advance()
+            if op_token.type == 'PIPE':
+                operators.append('|')
+            elif op_token.type == 'AND':
+                operators.append('&&')
+            elif op_token.type == 'OR':
+                operators.append('||')
+            
+            # Parse next element
+            elem = self._parse_exec_chain_element()
+            elements.append(elem)
+        
+        # Check for optional output target at the end
+        # Pattern: ... | exec('cmd') -> output
+        if self._check('FILE_WRITE', 'FILE_APPEND'):
+            op_token = self._advance()
+            output_target = self._parse_expression()
+        
+        # If we only have one element and no operators, this might not be a chain
+        if len(elements) == 1 and len(operators) == 0:
+            # Not really a chain, return as regular statement
+            # This shouldn't happen due to _is_exec_chain_ahead check
+            return elements[0]
+        
+        return ExecChainNode(
+            elements=elements,
+            operators=operators,
+            input_source=input_source,
+            output_target=output_target,
+            line=line,
+            column=column
+        )
+    
+    def _parse_exec_chain_element(self):
+        """Parse a single element in an exec chain (exec() call or print statement)."""
+        curr = self._peek()
+        
+        if curr.type == 'IDENT' and curr.value == 'exec':
+            # Parse exec() function call using primary parser
+            return self._parse_primary()
+        elif curr.type == 'IDENT' and curr.value == 'print':
+            print_token = self._advance()
+            
+            # Check if it's print(...) or print expr or just print (for piped input)
+            if self._check('LPAREN'):
+                # Back up and parse as primary
+                self.current -= 1
+                return self._parse_primary()
+            elif self._check('PIPE', 'AND', 'OR', 'NEWLINE', 'EOF', 'RBRACE'):
+                # Just 'print' by itself - will print piped input
+                # Create CallNode with no arguments
+                return CallNode('print', [], print_token.line, print_token.col)
+            else:
+                # print expr statement
+                args = []
+                
+                # Parse expression argument (but not beyond pipe operators)
+                # We need to parse carefully to not consume the pipe
+                saved_pos = self.current
+                try:
+                    expr = self._parse_comparison()  # Lower precedence to stop at pipe
+                    args.append(expr)
+                except:
+                    self.current = saved_pos
+                    expr = self._parse_term()
+                    args.append(expr)
+                
+                # Create CallNode for print
+                return CallNode('print', args, print_token.line, print_token.col)
+        else:
+            raise ParseError(f"Expected exec() or print in chain at line {curr.line}, column {curr.col}")
 
 
 def parse(source: str, interactive: bool = False) -> ProgramNode:

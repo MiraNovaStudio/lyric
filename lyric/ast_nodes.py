@@ -1,8 +1,6 @@
 # Lyric Programming Language
-# Copyright (c) 2025 MiraNova Studios
-# Designed and Architected by Michael (Aeonath) and ChatGPT
-# Implemented by Claude
-# Licensed under the GNU General Public License v3.0
+# Copyright (c) 2025-2026 MiraNova Studios
+# All rights reserved.
 
 """AST node definitions for Lyric language."""
 
@@ -43,6 +41,7 @@ class FunctionNode(ASTNode):
     param_types: Optional[List[str]] = None  # Optional list of parameter types
     return_type: Optional[str] = None  # Optional return type (None means inferred)
     body_statements: List['ASTNode'] = None
+    visibility: str = 'public'  # Access modifier: 'public', 'private', or 'protected'
     line: int = 0
     column: int = 0
     
@@ -53,7 +52,7 @@ class FunctionNode(ASTNode):
             self.param_types = []
     
     def __repr__(self):
-        return f"FunctionNode(name='{self.name}', params={self.params}, param_types={self.param_types}, return_type={self.return_type}, body={len(self.body_statements)})"
+        return f"FunctionNode(name='{self.name}', params={self.params}, param_types={self.param_types}, return_type={self.return_type}, visibility={self.visibility}, body={len(self.body_statements)})"
     
     def to_dict(self):
         return {
@@ -61,6 +60,7 @@ class FunctionNode(ASTNode):
             'name': self.name,
             'params': self.params,
             'param_types': self.param_types,
+            'visibility': self.visibility,
             'body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.body_statements]
         }
 
@@ -233,19 +233,22 @@ class ClassNode(ASTNode):
     name: str
     members_statements: List['ASTNode']
     constructor_method: Optional['FunctionNode'] = None  # Constructor method (name matches class name)
+    base_class: Optional[str] = None  # Name of base class for inheritance
     line: int = 0
     column: int = 0
     
     def __repr__(self):
         constructor_info = f", constructor={self.constructor_method.name if self.constructor_method else 'None'}"
-        return f"ClassNode(name='{self.name}', members={len(self.members_statements)}{constructor_info})"
+        base_info = f", base_class={self.base_class}" if self.base_class else ""
+        return f"ClassNode(name='{self.name}', members={len(self.members_statements)}{constructor_info}{base_info})"
     
     def to_dict(self):
         return {
             'type': 'ClassNode',
             'name': self.name,
             'members': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.members_statements],
-            'constructor': self.constructor_method.to_dict() if self.constructor_method and hasattr(self.constructor_method, 'to_dict') else None
+            'constructor': self.constructor_method.to_dict() if self.constructor_method and hasattr(self.constructor_method, 'to_dict') else None,
+            'base_class': self.base_class
         }
 
 
@@ -357,17 +360,19 @@ class TypeDeclarationNode(ASTNode):
     type_name: str
     name: str
     expr: 'ASTNode'
+    visibility: str = 'public'  # Access modifier: 'public', 'private', or 'protected'
     line: int = 0
     column: int = 0
-    
+
     def __repr__(self):
-        return f"TypeDeclarationNode(type='{self.type_name}', name='{self.name}', expr={self.expr})"
-    
+        return f"TypeDeclarationNode(type='{self.type_name}', name='{self.name}', expr={self.expr}, visibility={self.visibility})"
+
     def to_dict(self):
         return {
             'type': 'TypeDeclarationNode',
             'type_name': self.type_name,
             'name': self.name,
+            'visibility': self.visibility,
             'expr': self.expr.to_dict() if hasattr(self.expr, 'to_dict') else str(self.expr)
         }
 
@@ -456,16 +461,18 @@ class RaiseNode(ASTNode):
 class MultiDeclarationNode(ASTNode):
     """Represents multiple variable declarations in a single line."""
     declarations: List[tuple[str, str]]  # List of (type_name, variable_name) tuples
+    visibility: str = 'public'  # Access modifier: 'public', 'private', or 'protected'
     line: int = 0
     column: int = 0
-    
+
     def __repr__(self):
-        return f"MultiDeclarationNode(declarations={self.declarations})"
-    
+        return f"MultiDeclarationNode(declarations={self.declarations}, visibility={self.visibility})"
+
     def to_dict(self):
         return {
             'type': 'MultiDeclarationNode',
-            'declarations': self.declarations
+            'declarations': self.declarations,
+            'visibility': self.visibility
         }
 
 
@@ -555,10 +562,66 @@ class SliceNode(ASTNode):
         }
 
 
+@dataclass
+class FileOpNode(ASTNode):
+    """Represents a file I/O operation: var > file, var >> file, var < file."""
+    operator: str  # '>', '>>', or '<'
+    left: 'ASTNode'  # Source variable or expression
+    right: 'ASTNode'  # Target variable (usually a DskObject)
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        return f"FileOpNode(left={self.left}, op='{self.operator}', right={self.right})"
+    
+    def to_dict(self):
+        return {
+            'type': 'FileOpNode',
+            'operator': self.operator,
+            'left': self.left.to_dict() if hasattr(self.left, 'to_dict') else str(self.left),
+            'right': self.right.to_dict() if hasattr(self.right, 'to_dict') else str(self.right),
+            'line': self.line,
+            'column': self.column
+        }
+
+
+@dataclass
+class ExecChainNode(ASTNode):
+    """Represents a chain of exec() calls with pipe operators.
+    
+    Examples:
+        exec('ls') | exec('grep test')
+        exec('cmd') | print
+        exec('cmd1') && exec('cmd2')
+        print "text" | exec('grep x')
+    """
+    elements: List['ASTNode']  # List of CallNode (exec/print) or PrintNode
+    operators: List[str]  # List of '|', '&&', '||' operators between elements
+    input_source: Optional['ASTNode'] = None  # Optional <- input source
+    output_target: Optional['ASTNode'] = None  # Optional -> output target
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        ops_str = ' '.join(self.operators)
+        return f"ExecChainNode(elements={len(self.elements)}, ops=[{ops_str}])"
+    
+    def to_dict(self):
+        return {
+            'type': 'ExecChainNode',
+            'elements': [e.to_dict() if hasattr(e, 'to_dict') else str(e) for e in self.elements],
+            'operators': self.operators,
+            'input_source': self.input_source.to_dict() if self.input_source and hasattr(self.input_source, 'to_dict') else None,
+            'output_target': self.output_target.to_dict() if self.output_target and hasattr(self.output_target, 'to_dict') else None,
+            'line': self.line,
+            'column': self.column
+        }
+
+
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
     ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
-    TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode
+    TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode, FileOpNode, ExecChainNode
 ]

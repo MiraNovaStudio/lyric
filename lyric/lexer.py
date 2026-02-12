@@ -1,8 +1,6 @@
 # Lyric Programming Language
-# Copyright (c) 2025 MiraNova Studios
-# Designed and Architected by Michael (Aeonath) and ChatGPT
-# Implemented by Claude
-# Licensed under the GNU General Public License v3.0
+# Copyright (c) 2025-2026 MiraNova Studios
+# All rights reserved.
 
 """Lexer module for tokenizing Lyric source code."""
 
@@ -27,8 +25,8 @@ class Lexer:
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'elif', 'case', 'given', 'for', 'done', 'end', 
         'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'as', 'return',
-        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'True', 'False', 'true', 'false', 'None', 'raise', 'import', 'importpy',
-        'break', 'continue'
+        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'True', 'False', 'true', 'false', 'None', 'raise', 'import', 'importpy',
+        'break', 'continue', 'public', 'private', 'protected'
     }
     
     # Single character operators and delimiters
@@ -59,7 +57,7 @@ class Lexer:
     
     # Multi-character operators
     MULTI_CHARS = {
-        '==', '!=', '<', '<=', '>', '>=', '+++'
+        '==', '!=', '<', '<=', '>', '>=', '+++', '->>', '->', '<-', '&&', '||'
     }
     
     def __init__(self, source: str):
@@ -153,7 +151,7 @@ class Lexer:
             return
         
         # Handle multi-character operators
-        if char in '<>=!+':
+        if char in '<>=!+-&|':
             self._scan_multi_char_operator(char)
             return
         
@@ -258,7 +256,7 @@ class Lexer:
             elif value == 'None':
                 # Convert None keyword to actual None value
                 self.tokens.append(Token('NONE', None, start_line, start_col))
-            elif value in ('int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'obj'):
+            elif value in ('int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'):
                 # Type keywords can also be used as identifiers in expressions
                 # We'll let the parser decide based on context
                 self.tokens.append(Token('TYPE_OR_IDENT', value, start_line, start_col))
@@ -283,6 +281,30 @@ class Lexer:
             self._advance()  # consume second +
             self._advance()  # consume third +
             self.tokens.append(Token('CLASS_END', '+++', start_line, start_col))
+        elif first_char == '-' and self._peek() == '>' and self._peek_next() == '>':
+            # Handle ->> (file append operator) - must check before ->
+            self._advance()  # consume >
+            self._advance()  # consume second >
+            self.tokens.append(Token('FILE_APPEND', '->>', start_line, start_col))
+        elif first_char == '-' and self._peek() == '>':
+            # Handle -> (file write operator)
+            self._advance()  # consume >
+            self.tokens.append(Token('FILE_WRITE', '->', start_line, start_col))
+        elif first_char == '<' and self._peek() == '-':
+            # Handle <- (file read operator)
+            self._advance()  # consume -
+            self.tokens.append(Token('FILE_READ', '<-', start_line, start_col))
+        elif first_char == '&' and self._peek() == '&':
+            # Handle && (logical AND / exec chain operator)
+            self._advance()  # consume second &
+            self.tokens.append(Token('AND', '&&', start_line, start_col))
+        elif first_char == '|' and self._peek() == '|':
+            # Handle || (logical OR / exec chain operator)
+            self._advance()  # consume second |
+            self.tokens.append(Token('OR', '||', start_line, start_col))
+        elif first_char == '|':
+            # Handle | (pipe operator)
+            self.tokens.append(Token('PIPE', '|', start_line, start_col))
         elif first_char in '<>=!' and self._peek() == '=':
             # Handle <=, >=, ==, !=
             operator = first_char + self._advance()

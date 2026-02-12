@@ -1,10 +1,28 @@
-Lyric Language License
+MiraNova Software License
 
-Copyright (c) 2025 MiraNova Studios
+Copyright (c) 2025–2026 MiraNova Studios.
+All rights reserved.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Permission is granted to individuals and organizations to use and
+redistribute unmodified copies of this software and its accompanying
+documentation for personal or internal purposes only, provided that this
+license and the above copyright notice are included with all copies.
 
-https://www.gnu.org/licenses/gpl.txt
+No other rights are granted. In particular, without prior written consent
+from MiraNova Studios, you may not:
+
+1. Modify, adapt, fork, or create derivative works of this software.
+
+2. Sell, sublicense, or include this software as part of any commercial
+product or service.
+
+3. Provide this software as a hosted, managed, or software-as-a-service
+(SaaS) offering to third parties.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL
+MIRANOVA STUDIOS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT
+OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

@@ -1,8 +1,6 @@
 # Lyric Programming Language
-# Copyright (c) 2025 MiraNova Studios
-# Designed and Architected by Michael (Aeonath) and ChatGPT
-# Implemented by Claude
-# Licensed under the GNU General Public License v3.0
+# Copyright (c) 2025-2026 MiraNova Studios
+# All rights reserved.
 
 """Interpreter module for executing Lyric AST nodes."""
 
@@ -11,7 +9,7 @@ import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode, FileOpNode, ExecChainNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
@@ -345,6 +343,218 @@ class MapObject:
         return iter(self.elements)
 
 
+class DskObject:
+    """Represents a dsk (disk/file) object with file operations."""
+    
+    def __init__(self, filepath: str):
+        """Initialize DskObject with a file path."""
+        self.filepath = filepath
+        self.file_handle = None
+    
+    def open(self, mode: str = 'r') -> 'DskObject':
+        """Open the file in specified mode.
+        
+        Args:
+            mode: File mode ('r', 'w', 'a', 'r+', 'w+', 'a+', 'rb', 'wb', 'ab')
+                 Default is 'r' (read text)
+        
+        Returns:
+            self for method chaining
+        """
+        try:
+            self.file_handle = open(self.filepath, mode)
+            return self
+        except FileNotFoundError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except PermissionError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Permission denied: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error opening file '{self.filepath}': {e}")
+    
+    def close(self) -> None:
+        """Close the file if it's open."""
+        if self.file_handle:
+            self.file_handle.close()
+            self.file_handle = None
+    
+    def readlines(self) -> 'ArrObject':
+        """Read all lines from the file and return as an ArrObject.
+        
+        Returns:
+            ArrObject containing all lines (with newlines stripped)
+        """
+        if not self.file_handle:
+            # Auto-open in read mode if not open
+            self.open('r')
+        
+        try:
+            lines = [line.rstrip('\n\r') for line in self.file_handle.readlines()]
+            return ArrObject(lines)
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error reading file '{self.filepath}': {e}")
+    
+    def read(self) -> str:
+        """Read entire file content as a string."""
+        if not self.file_handle:
+            # Auto-open in read mode if not open
+            self.open('r')
+        
+        try:
+            return self.file_handle.read()
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error reading file '{self.filepath}': {e}")
+    
+    def write(self, content: str) -> None:
+        """Write content to file (overwrites existing content).
+        
+        Args:
+            content: String content to write
+        """
+        if not self.file_handle:
+            # Auto-open in write mode if not open
+            self.open('w')
+        
+        try:
+            self.file_handle.write(str(content))
+            self.file_handle.flush()
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error writing to file '{self.filepath}': {e}")
+    
+    def append(self, content: str) -> None:
+        """Append content to file.
+        
+        Args:
+            content: String content to append
+        """
+        # Close current handle if open
+        if self.file_handle:
+            self.close()
+        
+        try:
+            # Open in append mode
+            with open(self.filepath, 'a') as f:
+                f.write(str(content))
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error appending to file '{self.filepath}': {e}")
+    
+    def overwrite(self, content: str) -> None:
+        """Overwrite file content (always opens in 'w' mode).
+        
+        This is used by the -> file operator to ensure consistent overwriting behavior.
+        
+        Args:
+            content: String content to write
+        """
+        # Close current handle if open (to ensure we overwrite)
+        if self.file_handle:
+            self.close()
+        
+        try:
+            # Always open in write mode to overwrite
+            with open(self.filepath, 'w') as f:
+                f.write(str(content))
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error overwriting file '{self.filepath}': {e}")
+    
+    def delete(self) -> None:
+        """Delete the file."""
+        import os
+        
+        # Close file if open
+        if self.file_handle:
+            self.close()
+        
+        try:
+            if os.path.exists(self.filepath):
+                os.remove(self.filepath)
+            else:
+                from lyric.errors import RuntimeErrorLyric
+                raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error deleting file '{self.filepath}': {e}")
+    
+    def exists(self) -> bool:
+        """Check if file exists."""
+        import os
+        return os.path.exists(self.filepath)
+    
+    def copy(self, to_path: str) -> None:
+        """Copy file to a new location.
+        
+        Args:
+            to_path: Destination path
+        """
+        import shutil
+        
+        try:
+            shutil.copy2(self.filepath, to_path)
+        except FileNotFoundError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error copying file '{self.filepath}' to '{to_path}': {e}")
+    
+    def move(self, to_path: str) -> None:
+        """Move file to a new location.
+        
+        Args:
+            to_path: Destination path
+        """
+        import shutil
+        
+        # Close file if open
+        if self.file_handle:
+            self.close()
+        
+        try:
+            shutil.move(self.filepath, to_path)
+            # Update the filepath
+            self.filepath = to_path
+        except FileNotFoundError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error moving file '{self.filepath}' to '{to_path}': {e}")
+    
+    def size(self) -> int:
+        """Get file size in bytes."""
+        import os
+        
+        try:
+            return os.path.getsize(self.filepath)
+        except FileNotFoundError:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"File not found: '{self.filepath}'")
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error getting size of file '{self.filepath}': {e}")
+    
+    def __repr__(self):
+        return f"dsk('{self.filepath}')"
+    
+    def __str__(self):
+        return self.filepath
+    
+    def __del__(self):
+        """Destructor: close file if still open."""
+        if self.file_handle:
+            try:
+                self.file_handle.close()
+            except:
+                pass
+
+
 class ReturnValue:
     """Wrapper for return values to distinguish them from normal expression values."""
     def __init__(self, value):
@@ -369,6 +579,12 @@ class Interpreter:
         self.classes = {}
         # Track the source file path for relative imports
         self.source_file = source_file
+        # Track the current instance context for access control
+        self.current_instance = None
+        # Track the current class name for constructor context
+        self.current_class_name = None
+        # Store command-line arguments for main() function
+        self.cli_args = []
     
     def _push_scope(self):
         """Push a new scope onto the stack."""
@@ -407,6 +623,20 @@ class Interpreter:
         """Set a variable in the current scope."""
         current_scope = self._get_current_scope()
         current_scope[var_name] = var_type
+    
+    def _get_variable_type(self, var_name: str) -> str:
+        """Get the declared type of a variable."""
+        # Check all scopes from innermost to outermost
+        for scope in reversed(self.scope_stack):
+            if var_name in scope:
+                return scope[var_name]
+        
+        # Check global scope
+        if var_name in self.variable_types:
+            return self.variable_types[var_name]
+        
+        # Not found - return 'var' as default
+        return 'var'
     
     def _infer_function_return_type(self, func_node: FunctionNode) -> str:
         """Infer the return type of a function by analyzing all return statements."""
@@ -593,7 +823,26 @@ class Interpreter:
             
             # If there's a main function, call it and return its result
             if "main" in self.functions:
-                return self._call_function("main", [])
+                # Prepare arguments for main()
+                main_func = self.functions["main"]
+                main_params = main_func['params']
+                
+                # If main() expects parameters (argc, argv), provide them
+                if len(main_params) >= 2:
+                    # Import ArrObject here to avoid circular imports
+                    from lyric.interpreter import ArrObject
+                    
+                    # Create argc (number of arguments) and argv (array of arguments)
+                    argc = len(self.cli_args)
+                    argv = ArrObject(self.cli_args)
+                    
+                    return self._call_function("main", [argc, argv])
+                elif len(main_params) == 0:
+                    # main() has no parameters
+                    return self._call_function("main", [])
+                else:
+                    # main() has 1 parameter - not a standard pattern, but allow it
+                    return self._call_function("main", [len(self.cli_args)])
             
             return None
         except Exception as e:
@@ -686,8 +935,213 @@ class Interpreter:
         else:
             raise RuntimeErrorLyric(f"Function '{func_name}' is not defined")
     
-    def _call_method(self, instance: dict, method: dict, args: List[Any]) -> Any:
-        """Call a method on an instance."""
+    def _is_derived_from(self, child_class: str, parent_class: str) -> bool:
+        """Check if child_class is derived from parent_class."""
+        if child_class not in self.classes:
+            return False
+        
+        current = child_class
+        while current:
+            if current == parent_class:
+                return True
+            class_def = self.classes.get(current)
+            if not class_def:
+                return False
+            current = class_def.get('__base_class__')
+        
+        return False
+    
+    def _check_attribute_access(self, instance: dict, attr_name: str) -> None:
+        """Check if attribute access is allowed based on visibility modifier.
+        
+        Args:
+            instance: The class instance
+            attr_name: Name of the attribute being accessed
+        """
+        # Skip access check for special attributes
+        if attr_name.startswith('__'):
+            return
+        
+        # Get the visibility of the attribute
+        visibility_key = f'__visibility_{attr_name}__'
+        visibility = instance.get(visibility_key, 'public')
+        
+        # Public attributes are always accessible
+        if visibility == 'public':
+            return
+        
+        # Determine caller context
+        caller_context = 'external'
+        if self.current_instance is not None:
+            # We're inside a method call
+            # Use current_class_name if set (for constructor context), otherwise use instance's class
+            current_class = self.current_class_name if self.current_class_name is not None else self.current_instance.get('__instance_class__')
+            target_class = instance.get('__instance_class__')
+            
+            # Check if calling from same instance
+            if instance is self.current_instance:
+                # Accessing attributes of self - context depends on class hierarchy
+                if current_class == target_class:
+                    caller_context = 'internal'
+                elif self._is_derived_from(current_class, target_class):
+                    caller_context = 'derived'
+                elif self._is_derived_from(target_class, current_class):
+                    # Target class derives from current class (e.g., Base constructor accessing Child instance)
+                    # This is 'internal' for attributes defined in current class
+                    caller_context = 'internal'
+                else:
+                    caller_context = 'external'
+            elif current_class == target_class:
+                caller_context = 'internal'
+            elif self._is_derived_from(current_class, target_class):
+                caller_context = 'derived'
+            else:
+                caller_context = 'external'
+        
+        # For private attributes, we need additional checking
+        if visibility == 'private':
+            # Even if caller_context is 'internal', we need to verify the attribute
+            # is defined in the caller's class, not inherited from a base class
+            if caller_context == 'internal':
+                # Get the caller's class
+                caller_class = self.current_class_name if self.current_class_name is not None else (self.current_instance.get('__instance_class__') if self.current_instance else None)
+                # Check if the attribute is defined in the caller's class (not inherited)
+                if caller_class and caller_class in self.classes:
+                    class_def = self.classes[caller_class]
+                    # If the attribute's visibility key is not in this class's definition, it's inherited
+                    if visibility_key not in class_def:
+                        # Attribute is inherited from a base class, and it's private, so deny access
+                        raise RuntimeErrorLyric(
+                            f"Access error: Cannot access private attribute '{attr_name}' inherited from base class. "
+                            f"Private attributes can only be accessed from within the class where they are defined."
+                        )
+                # If we get here, the attribute is in the caller's class, so allow access
+                return
+            else:
+                # Called from outside the class or from a derived class
+                class_name = instance.get('__instance_class__', 'Unknown')
+                raise RuntimeErrorLyric(
+                    f"Access error: Cannot access private attribute '{attr_name}' of class '{class_name}'. "
+                    f"Private attributes can only be accessed from within the same class."
+                )
+        
+        # Protected attributes can be accessed from the same class or derived classes
+        if visibility == 'protected' and caller_context not in ('internal', 'derived'):
+            class_name = instance.get('__instance_class__', 'Unknown')
+            raise RuntimeErrorLyric(
+                f"Access error: Cannot access protected attribute '{attr_name}' of class '{class_name}'. "
+                f"Protected attributes can only be accessed from the same class or derived classes."
+            )
+    
+    def _is_derived_from(self, child_class: str, base_class: str) -> bool:
+        """Check if child_class is derived from base_class."""
+        if child_class == base_class:
+            return False  # Same class, not derived
+        
+        # Walk up the inheritance chain
+        current = child_class
+        while current in self.classes:
+            class_def = self.classes[current]
+            if '__base_class__' in class_def:
+                parent = class_def['__base_class__']
+                if parent == base_class:
+                    return True
+                current = parent
+            else:
+                break
+        return False
+    
+    def _find_method_defining_class(self, instance: dict, method_name: str) -> str:
+        """Find which class in the inheritance chain defines a given method.
+        
+        Args:
+            instance: The instance dictionary
+            method_name: The name of the method to find
+            
+        Returns:
+            The name of the class that defines the method, or the instance's class if not found
+        """
+        # Start from the instance's class
+        instance_class = instance.get('__instance_class__')
+        if not instance_class:
+            return None
+        
+        # Walk up the inheritance chain to find where the method is defined
+        current_class = instance_class
+        while current_class in self.classes:
+            class_def = self.classes[current_class]
+            if method_name in class_def and isinstance(class_def[method_name], dict) and 'body' in class_def[method_name]:
+                # Found the method definition in this class
+                return current_class
+            
+            # Move to base class
+            if '__base_class__' in class_def:
+                current_class = class_def['__base_class__']
+            else:
+                break
+        
+        # Method not found in class hierarchy, return instance class as fallback
+        return instance_class
+    
+    def _check_method_access(self, instance: dict, method_name: str, method_def: dict, caller_context: str = 'external') -> None:
+        """Check if method access is allowed based on visibility modifier.
+        
+        Args:
+            instance: The class instance
+            method_name: Name of the method being accessed
+            method_def: Method definition dictionary
+            caller_context: 'internal' if called from same class, 'derived' if from derived class, 'external' otherwise
+        """
+        visibility = method_def.get('visibility', 'public')
+        
+        # Public methods are always accessible
+        if visibility == 'public':
+            return
+        
+        # For private methods, we need additional checking
+        if visibility == 'private':
+            # Even if caller_context is 'internal', we need to verify the method
+            # is defined in the caller's class, not inherited from a base class
+            if caller_context == 'internal':
+                # Get the caller's class
+                caller_class = self.current_instance.get('__instance_class__') if self.current_instance else None
+                # Check if the method is defined in the caller's class (not inherited)
+                if caller_class and caller_class in self.classes:
+                    class_def = self.classes[caller_class]
+                    # If the method is not in this class's definition, it's inherited
+                    if method_name not in class_def:
+                        # Method is inherited from a base class, and it's private, so deny access
+                        raise RuntimeErrorLyric(
+                            f"Access error: Cannot access private method '{method_name}' inherited from base class. "
+                            f"Private methods can only be called from within the class where they are defined."
+                        )
+                # If we get here, the method is in the caller's class, so allow access
+                return
+            else:
+                # Called from outside the class
+                class_name = instance.get('__instance_class__', 'Unknown')
+                raise RuntimeErrorLyric(
+                    f"Access error: Cannot access private method '{method_name}' of class '{class_name}'. "
+                    f"Private methods can only be called from within the same class."
+                )
+        
+        # Protected methods can be called from the same class or derived classes
+        if visibility == 'protected' and caller_context not in ('internal', 'derived'):
+            class_name = instance.get('__instance_class__', 'Unknown')
+            raise RuntimeErrorLyric(
+                f"Access error: Cannot access protected method '{method_name}' of class '{class_name}'. "
+                f"Protected methods can only be called from the same class or derived classes."
+            )
+    
+    def _call_method(self, instance: dict, method: dict, args: List[Any], class_context: str = None) -> Any:
+        """Call a method on an instance.
+        
+        Args:
+            instance: The instance dictionary
+            method: The method dictionary containing params, body, etc.
+            args: Arguments to pass to the method
+            class_context: Optional class name to use as the execution context (for constructors)
+        """
         params = method['params']
         param_types = method.get('param_types', [])
         body = method['body']
@@ -715,11 +1169,16 @@ class Interpreter:
             
             local_scope[param] = arg_value
         
-        # Save current scope
+        # Save current scope and instance context
         old_scope = self.global_scope.copy()
+        old_instance = self.current_instance
+        old_class_name = self.current_class_name
         
-        # Set local scope
+        # Set local scope and current instance/class for method execution
         self.global_scope.update(local_scope)
+        self.current_instance = instance
+        # Use provided class_context if available (for constructors), otherwise use instance's class
+        self.current_class_name = class_context if class_context is not None else instance.get('__instance_class__')
         
         # Push method scope for variable types
         self._push_scope()
@@ -734,8 +1193,10 @@ class Interpreter:
             # If no explicit return, return the last statement result
             return result if not isinstance(result, ReturnValue) else result.value
         finally:
-            # Restore scope
+            # Restore scope and instance context
             self.global_scope = old_scope
+            self.current_instance = old_instance
+            self.current_class_name = old_class_name
             self._pop_scope()
     
     
@@ -771,6 +1232,10 @@ class Interpreter:
             return self._evaluate_import_statement(statement)
         elif isinstance(statement, ImportPyNode):
             return self._evaluate_importpy_statement(statement)
+        elif isinstance(statement, FileOpNode):
+            return self._evaluate_file_op(statement)
+        elif isinstance(statement, ExecChainNode):
+            return self._evaluate_exec_chain(statement)
         else:
             # Expression statement
             return self._evaluate_expression(statement)
@@ -921,6 +1386,8 @@ class Interpreter:
             return isinstance(value, (list, ArrObject))  # arr maps to ArrObject or Python list
         elif expected_type == 'map':
             return isinstance(value, (dict, MapObject))  # map maps to MapObject or Python dict
+        elif expected_type == 'dsk':
+            return isinstance(value, DskObject)  # dsk maps to DskObject
         elif expected_type == 'obj':
             # obj is for class instances - check if it's a dict with __instance_class__ marker
             return isinstance(value, dict) and '__instance_class__' in value
@@ -1036,29 +1503,45 @@ class Interpreter:
         # Add a special marker to identify this as a class definition
         class_dict['__class_name__'] = node.name
         
+        # Store base class name if present
+        if node.base_class:
+            class_dict['__base_class__'] = node.base_class
+        
         # Store constructor method separately if it exists
         if node.constructor_method:
             class_dict['__constructor__'] = {
                 'params': node.constructor_method.params,
                 'param_types': node.constructor_method.param_types,
-                'body': node.constructor_method.body_statements
+                'body': node.constructor_method.body_statements,
+                'visibility': node.constructor_method.visibility
             }
         
         for member in node.members_statements:
             if isinstance(member, AssignNode):
-                # Class member assignment
+                # Class member assignment (no visibility, defaults to public)
                 value = self._evaluate_expression(member.expr)
                 class_dict[member.name] = value
+                # Store visibility metadata
+                class_dict[f'__visibility_{member.name}__'] = 'public'
+            elif isinstance(member, TypeDeclarationNode):
+                # Type declaration in class (with visibility)
+                value = self._evaluate_expression(member.expr)
+                class_dict[member.name] = value
+                # Store visibility metadata
+                class_dict[f'__visibility_{member.name}__'] = member.visibility
             elif isinstance(member, MultiDeclarationNode):
-                # Multi-variable declaration in class
+                # Multi-variable declaration in class (with visibility)
                 for type_name, var_name in member.declarations:
                     class_dict[var_name] = None  # Declare as uninitialized
+                    # Store visibility metadata
+                    class_dict[f'__visibility_{var_name}__'] = member.visibility
             elif isinstance(member, FunctionNode):
                 # Class method
                 class_dict[member.name] = {
                     'params': member.params,
                     'param_types': member.param_types,
-                    'body': member.body_statements
+                    'body': member.body_statements,
+                    'visibility': member.visibility
                 }
         
         self.classes[node.name] = class_dict
@@ -1213,6 +1696,10 @@ class Interpreter:
                 current_obj = obj
                 for member_name in member_path:
                     if isinstance(current_obj, dict) and member_name in current_obj:
+                        # Check if this is a class instance with access control
+                        if '__instance_class__' in current_obj:
+                            # Check attribute access
+                            self._check_attribute_access(current_obj, member_name)
                         current_obj = current_obj[member_name]
                     elif hasattr(current_obj, '__getattr__'):
                         # Handle PyModuleProxy and similar objects
@@ -1240,8 +1727,26 @@ class Interpreter:
                 if isinstance(current_obj, dict) and method_name in current_obj:
                     method = current_obj[method_name]
                     if isinstance(method, dict) and 'params' in method and 'body' in method:
-                        # It's a method definition
-                        return self._call_method(current_obj, method, node.args)
+                        # It's a method definition - determine caller context for access control
+                        caller_context = 'external'
+                        if self.current_instance is not None:
+                            # We're inside a method call
+                            current_class = self.current_instance.get('__instance_class__')
+                            target_class = current_obj.get('__instance_class__')
+                            
+                            # Check if calling from same instance (same class or derived)
+                            if current_class == target_class:
+                                caller_context = 'internal'
+                            elif self._is_derived_from(current_class, target_class):
+                                caller_context = 'derived'
+                        
+                        # Check access control
+                        self._check_method_access(current_obj, method_name, method, caller_context)
+                        
+                        # Determine which class defines this method
+                        defining_class = self._find_method_defining_class(current_obj, method_name)
+                        
+                        return self._call_method(current_obj, method, node.args, class_context=defining_class)
                     else:
                         # It's a regular attribute, call it if callable
                         args = [self._evaluate_expression(arg) for arg in node.args]
@@ -1304,6 +1809,17 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: MapObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, DskObject):
+                    # Handle DskObject methods
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: DskObject has no attribute '{method_name}'")
                 elif callable(current_obj):
                     # Handle classes and callable objects
                     try:
@@ -1345,18 +1861,77 @@ class Interpreter:
         elif node.func_name in self.classes:
             # Class instantiation: ClassName()
             class_def = self.classes[node.func_name]
-            # Create instance as a copy of class definition
-            instance = dict(class_def)
+            
+            # Create instance by copying from entire inheritance chain
+            instance = {}
+            
+            # Helper function to recursively copy from inheritance chain
+            def copy_from_inheritance_chain(class_name):
+                """Recursively copy members from base classes up to root."""
+                if class_name not in self.classes:
+                    raise RuntimeErrorLyric(f"Class '{class_name}' is not defined")
+                
+                current_class_def = self.classes[class_name]
+                
+                # First, recursively copy from base class (if any)
+                if '__base_class__' in current_class_def:
+                    base_class_name = current_class_def['__base_class__']
+                    copy_from_inheritance_chain(base_class_name)
+                
+                # Then copy this class's members (overriding base class members)
+                for key, value in current_class_def.items():
+                    if not key.startswith('__') or key == '__constructor__' or key.startswith('__visibility_'):
+                        # Copy everything except __class_name__ and __base_class__
+                        if key not in ('__class_name__', '__base_class__'):
+                            instance[key] = value
+            
+            # Helper function to collect constructor chain from base to child
+            def collect_constructor_chain(class_name):
+                """Collect constructors in base→child order."""
+                constructors = []
+                
+                if class_name not in self.classes:
+                    return constructors
+                
+                current_class_def = self.classes[class_name]
+                
+                # First, recursively collect from base class (if any)
+                if '__base_class__' in current_class_def:
+                    base_class_name = current_class_def['__base_class__']
+                    constructors.extend(collect_constructor_chain(base_class_name))
+                
+                # Then add this class's constructor (if it exists)
+                if '__constructor__' in current_class_def:
+                    constructors.append((class_name, current_class_def['__constructor__']))
+                
+                return constructors
+            
+            # Copy entire inheritance chain
+            copy_from_inheritance_chain(node.func_name)
+            
             # Add instance class name marker
             instance['__instance_class__'] = node.func_name
             
-            # Check if class has a constructor method (method name matches class name)
-            if '__constructor__' in instance and isinstance(instance['__constructor__'], dict):
-                constructor_method = instance['__constructor__']
-                # Call the constructor method with the provided arguments
-                self._call_method(instance, constructor_method, node.args)
-            # Also check for legacy init() method for backward compatibility
-            elif 'init' in instance and isinstance(instance['init'], dict):
+            # Store base class chain for method resolution
+            if '__base_class__' in class_def:
+                instance['__base_class__'] = class_def['__base_class__']
+            
+            # Call constructors in base→child order (automatic chaining)
+            constructor_chain = collect_constructor_chain(node.func_name)
+            for class_name, constructor_method in constructor_chain:
+                # Only pass arguments to the most derived (child) constructor
+                if class_name == node.func_name:
+                    self._call_method(instance, constructor_method, node.args, class_context=class_name)
+                else:
+                    # Base class constructors are called with no arguments (automatic chaining)
+                    self._call_method(instance, constructor_method, [], class_context=class_name)
+            
+            # Remove constructor from instance after calling all constructors
+            if '__constructor__' in instance:
+                del instance['__constructor__']
+            
+            # Also check for legacy init() method for backward compatibility (if no constructor was called)
+            if not constructor_chain and 'init' in instance and isinstance(instance['init'], dict):
                 init_method = instance['init']
                 # Call the init method with the provided arguments
                 self._call_method(instance, init_method, node.args)
@@ -1407,6 +1982,8 @@ class Interpreter:
             return self._evaluate_slice(expr)
         elif isinstance(expr, RexNode):
             return self._evaluate_rex_literal(expr)
+        elif isinstance(expr, ExecChainNode):
+            return self._evaluate_exec_chain(expr)
         else:
             raise RuntimeErrorLyric(f"Unknown expression type: {type(expr)}")
     
@@ -1425,6 +2002,10 @@ class Interpreter:
                 current_obj = obj
                 for member_name in member_path:
                     if isinstance(current_obj, dict) and member_name in current_obj:
+                        # Check if this is a class instance with access control
+                        if '__instance_class__' in current_obj:
+                            # Check attribute access
+                            self._check_attribute_access(current_obj, member_name)
                         current_obj = current_obj[member_name]
                     elif hasattr(current_obj, '__getattr__'):
                         # Handle PyModuleProxy and similar objects
@@ -1821,6 +2402,492 @@ class Interpreter:
         
         return None
     
+    def _evaluate_file_op(self, node: FileOpNode) -> None:
+        """Evaluate a file operator statement: expr ->> dsk, expr -> dsk, or expr <- dsk
+        
+        Special handling for exec() calls:
+        - exec("cmd") -> var: Redirect stdout to variable
+        - exec("cmd") <- var: Pipe variable as stdin
+        - exec("cmd") <- input -> output: Both redirections
+        """
+        # Check if left side is an exec() call or exec chain for special I/O redirection handling
+        if isinstance(node.left, CallNode) and node.left.func_name == 'exec':
+            return self._evaluate_exec_with_io(node)
+        elif isinstance(node.left, ExecChainNode):
+            # Handle exec chain with file redirection
+            return self._evaluate_exec_chain_with_file_io(node)
+        
+        # Check if this is a chained operation: expr <- source -> dest
+        # This would be for exec("cmd") <- input -> output
+        # We need to handle this at parser level - for now, treat as regular file op
+        
+        left_val = self._evaluate_expression(node.left)
+        right_val = self._evaluate_expression(node.right)
+        
+        if node.operator in ('->>', '->'):
+            # Write operations: right side must be dsk
+            if not isinstance(right_val, DskObject):
+                raise RuntimeErrorLyric(
+                    f"File write operators ({node.operator}) require dsk type on right side, got {type(right_val).__name__}",
+                    node.line, node.column
+                )
+            
+            if node.operator == '->>':
+                # Append operation
+                if isinstance(left_val, str):
+                    # Append string to file
+                    right_val.append(left_val)
+                elif isinstance(left_val, ArrObject):
+                    # Append array elements as lines
+                    for item in left_val.elements:
+                        right_val.append(str(item) + '\n')
+                elif isinstance(left_val, (int, float, bool)):
+                    # Append primitive value as string
+                    right_val.append(str(left_val) + '\n')
+                elif isinstance(left_val, MapObject):
+                    # Append map as JSON-like string
+                    right_val.append(str(left_val.elements) + '\n')
+                else:
+                    raise RuntimeErrorLyric(
+                        f"Cannot append {type(left_val).__name__} to file. Supported types: str, arr, int, flt, god, map",
+                        node.line, node.column
+                    )
+            else:  # node.operator == '->'
+                # Overwrite operation
+                if isinstance(left_val, str):
+                    # Overwrite file with string
+                    right_val.overwrite(left_val)
+                elif isinstance(left_val, ArrObject):
+                    # Overwrite file with array elements as lines
+                    content = '\n'.join(str(item) for item in left_val.elements)
+                    right_val.overwrite(content)
+                elif isinstance(left_val, (int, float, bool)):
+                    # Overwrite with primitive value
+                    right_val.overwrite(str(left_val))
+                elif isinstance(left_val, MapObject):
+                    # Overwrite with map as JSON-like string
+                    right_val.overwrite(str(left_val.elements))
+                else:
+                    raise RuntimeErrorLyric(
+                        f"Cannot write {type(left_val).__name__} to file. Supported types: str, arr, int, flt, god, map",
+                        node.line, node.column
+                    )
+        
+        elif node.operator == '<-':
+            # Read operation: right side must be dsk, left side must be a variable identifier
+            if not isinstance(right_val, DskObject):
+                raise RuntimeErrorLyric(
+                    f"File read operator (<-) requires dsk type on right side, got {type(right_val).__name__}",
+                    node.line, node.column
+                )
+            
+            # Left side must be an identifier (variable name)
+            if not isinstance(node.left, IdentifierNode):
+                raise RuntimeErrorLyric(
+                    f"File read operator (<-) requires variable name on left side, not expression",
+                    node.line, node.column
+                )
+            
+            var_name = node.left.name
+            
+            # Get the declared type of the variable if it exists
+            var_type = self._get_variable_type(var_name)
+            
+            # Read from file
+            if var_type == 'arr' or (var_type == 'var' and isinstance(self.global_scope.get(var_name), ArrObject)):
+                # Read file as array of lines
+                content = right_val.read()
+                lines = content.splitlines()
+                self.global_scope[var_name] = ArrObject(lines)
+            else:
+                # Read file as string (default)
+                content = right_val.read()
+                self.global_scope[var_name] = content
+        
+        else:
+            raise RuntimeErrorLyric(
+                f"Unknown file operator: {node.operator}",
+                node.line, node.column
+            )
+        
+        return None
+    
+    def _evaluate_exec_with_io(self, node: FileOpNode) -> None:
+        """Handle exec() calls with I/O redirection operators.
+        
+        Supports:
+        - exec("cmd") -> var: Capture stdout to variable
+        - exec("cmd") <- var: Pipe variable content as stdin  
+        - exec("cmd") <- input -> output: Both (requires chained parsing)
+        """
+        import subprocess
+        
+        # Get the command from exec() arguments
+        exec_call = node.left
+        if not exec_call.args or len(exec_call.args) == 0:
+            raise RuntimeErrorLyric(
+                "exec() requires a command argument",
+                node.line, node.column
+            )
+        
+        command_node = exec_call.args[0]
+        command = self._evaluate_expression(command_node)
+        
+        if not isinstance(command, str):
+            raise RuntimeErrorLyric(
+                f"exec() expects a string command, got {type(command).__name__}",
+                node.line, node.column
+            )
+        
+        stdin_data = None
+        capture_output = False
+        output_target = None
+        
+        # Determine operation based on operator
+        if node.operator == '->':
+            # exec("cmd") -> output: Capture stdout to variable
+            capture_output = True
+            if not isinstance(node.right, IdentifierNode):
+                raise RuntimeErrorLyric(
+                    "exec() output redirection requires a variable name on right side",
+                    node.line, node.column
+                )
+            output_target = node.right.name
+            
+        elif node.operator == '<-':
+            # exec("cmd") <- input: Pipe input to command's stdin
+            stdin_source = self._evaluate_expression(node.right)
+            if isinstance(stdin_source, str):
+                stdin_data = stdin_source
+            elif isinstance(stdin_source, ArrObject):
+                # Join array elements with newlines
+                stdin_data = '\n'.join(str(elem) for elem in stdin_source.elements)
+            else:
+                stdin_data = str(stdin_source)
+        
+        elif node.operator == '->>':
+            # exec("cmd") ->> file: Append stdout to file
+            # This is less common but we'll support it
+            capture_output = True
+            right_val = self._evaluate_expression(node.right)
+            if not isinstance(right_val, DskObject):
+                raise RuntimeErrorLyric(
+                    "exec() append operator (->> requires dsk type on right side",
+                    node.line, node.column
+                )
+            output_target = right_val  # Store the file object directly
+        
+        # Execute the command
+        try:
+            if stdin_data:
+                # When we have stdin data, use input= parameter directly
+                result = subprocess.run(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE if capture_output else None,
+                    stderr=subprocess.STDOUT,  # Always merge stderr to stdout
+                    input=stdin_data,  # Pass stdin data directly as string
+                    text=True  # Use text mode for simplicity
+                )
+            else:
+                # No stdin data
+                result = subprocess.run(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE if capture_output else None,
+                    stderr=subprocess.STDOUT,
+                    text=True
+                )
+            
+            # Handle output redirection
+            if capture_output and output_target:
+                output_str = result.stdout if result.stdout else ""
+                
+                if isinstance(output_target, str):
+                    # Redirect to variable
+                    self.global_scope[output_target] = output_str
+                elif isinstance(output_target, DskObject):
+                    # Append to file
+                    output_target.append(output_str)
+            
+            # Store return code in a special variable that can be accessed
+            # For now, we'll just not return it since file operators don't return values
+            # The user can check $? or similar if we implement that later
+            
+        except Exception as e:
+            raise RuntimeErrorLyric(
+                f"Error executing command '{command}': {e}",
+                node.line, node.column
+            )
+        
+        return None
+    
+    def _evaluate_exec_chain(self, node: ExecChainNode) -> int:
+        """Evaluate an exec chain with pipe operators (|, &&, ||).
+        
+        Behaviors:
+        - | (pipe): Pass output to next command, always continue
+        - && (and): Short-circuit on failure (non-zero exit code)
+        - || (or): Short-circuit on success (zero exit code)
+        
+        Returns: First non-zero exit code, or 0 if all succeed
+        """
+        import subprocess
+        
+        current_output = ""
+        first_nonzero_rc = 0
+        
+        # Handle optional input source (<-)
+        if node.input_source:
+            input_val = self._evaluate_expression(node.input_source)
+            if isinstance(input_val, str):
+                current_output = input_val
+            elif isinstance(input_val, ArrObject):
+                current_output = '\n'.join(str(elem) for elem in input_val.elements)
+            elif isinstance(input_val, DskObject):
+                # Read from file
+                current_output = input_val.read()
+            else:
+                current_output = str(input_val)
+        
+        # Execute chain
+        for i, element in enumerate(node.elements):
+            # Check if we should skip this element due to short-circuit from previous
+            if i > 0:
+                prev_operator = node.operators[i - 1]
+                prev_exit_code = exit_code if 'exit_code' in locals() else 0
+                
+                # Short-circuit logic BEFORE executing current element
+                if prev_operator == '&&' and prev_exit_code != 0:
+                    # AND: skip if previous failed
+                    break
+                elif prev_operator == '||' and prev_exit_code == 0:
+                    # OR: skip if previous succeeded
+                    break
+            
+            # Determine if this element receives input (only for pipe operator)
+            has_input = False
+            if i > 0:
+                prev_operator = node.operators[i - 1]
+                has_input = (prev_operator == '|')
+            elif i == 0 and node.input_source is not None:
+                has_input = True
+            
+            # Execute element
+            if isinstance(element, CallNode):
+                if element.func_name == 'exec':
+                    # Execute command
+                    if not element.args or len(element.args) == 0:
+                        raise RuntimeErrorLyric(
+                            "exec() requires a command argument",
+                            node.line, node.column
+                        )
+                    
+                    command = self._evaluate_expression(element.args[0])
+                    if not isinstance(command, str):
+                        raise RuntimeErrorLyric(
+                            f"exec() expects a string command, got {type(command).__name__}",
+                            node.line, node.column
+                        )
+                    
+                    # Execute with optional input
+                    try:
+                        if has_input and current_output:
+                            result = subprocess.run(
+                                command,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                input=current_output,
+                                text=True
+                            )
+                        else:
+                            result = subprocess.run(
+                                command,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                text=True
+                            )
+                        
+                        exit_code = result.returncode
+                        current_output = result.stdout if result.stdout else ""
+                        
+                        # Track first non-zero return code
+                        if exit_code != 0 and first_nonzero_rc == 0:
+                            first_nonzero_rc = exit_code
+                        
+                    except Exception as e:
+                        raise RuntimeErrorLyric(
+                            f"Error executing command '{command}': {e}",
+                            node.line, node.column
+                        )
+                
+                elif element.func_name == 'print':
+                    # Print statement in chain
+                    if has_input and current_output:
+                        # Print the piped input
+                        print(current_output, end='')
+                    else:
+                        # Evaluate print arguments normally
+                        for arg in element.args:
+                            val = self._evaluate_expression(arg)
+                            print(val, end=' ')
+                        print()  # Newline after print
+                    
+                    # print doesn't produce output for next command
+                    current_output = ""
+                
+                else:
+                    # Other function call - evaluate normally but don't pipe
+                    self._evaluate_function_call(element)
+                    current_output = ""
+            
+            else:
+                raise RuntimeErrorLyric(
+                    f"Invalid element in exec chain: {type(element).__name__}",
+                    node.line, node.column
+                )
+        
+        # Handle optional output target (->)
+        if node.output_target:
+            if isinstance(node.output_target, IdentifierNode):
+                # Assign to variable
+                self.global_scope[node.output_target.name] = current_output
+            elif isinstance(node.output_target, DskObject):
+                # Append to file
+                output_obj = self._evaluate_expression(node.output_target)
+                if isinstance(output_obj, DskObject):
+                    output_obj.append(current_output)
+        
+        return first_nonzero_rc
+    
+    def _evaluate_exec_chain_with_file_io(self, file_op_node: FileOpNode) -> None:
+        """Evaluate an exec chain with file I/O redirection.
+        
+        Patterns:
+        - exec() | exec() -> var: Capture final output to variable
+        - exec() | exec() ->> file: Append final output to file
+        - exec() <- input | exec() -> output: Input + chaining + output
+        """
+        exec_chain = file_op_node.left  # This is an ExecChainNode
+        operator = file_op_node.operator
+        target = file_op_node.right
+        
+        # Set up the output_target on the exec chain
+        if operator == '->':
+            # Output to variable
+            exec_chain.output_target = target
+        elif operator == '->>':
+            # Append to file
+            exec_chain.output_target = target
+        elif operator == '<-':
+            # Input from source
+            exec_chain.input_source = target
+        
+        # Now evaluate the exec chain, which will handle the I/O
+        # We need to modify _evaluate_exec_chain to write output to file for ->>
+        # For now, let's execute the chain and handle output manually
+        import subprocess
+        
+        current_output = ""
+        first_nonzero_rc = 0
+        exit_code = 0
+        
+        # Handle optional input source (<-)
+        if exec_chain.input_source or operator == '<-':
+            input_source = exec_chain.input_source if exec_chain.input_source else target
+            input_val = self._evaluate_expression(input_source)
+            if isinstance(input_val, str):
+                current_output = input_val
+            elif isinstance(input_val, ArrObject):
+                current_output = '\n'.join(str(elem) for elem in input_val.elements)
+            elif isinstance(input_val, DskObject):
+                current_output = input_val.read()
+            else:
+                current_output = str(input_val)
+        
+        # Execute chain
+        for i, element in enumerate(exec_chain.elements):
+            # Short-circuit logic
+            if i > 0:
+                prev_operator = exec_chain.operators[i - 1]
+                prev_exit_code = exit_code
+                
+                if prev_operator == '&&' and prev_exit_code != 0:
+                    break
+                elif prev_operator == '||' and prev_exit_code == 0:
+                    break
+            
+            # Determine if this element receives input (only for pipe)
+            has_input = False
+            if i > 0:
+                prev_operator = exec_chain.operators[i - 1]
+                has_input = (prev_operator == '|')
+            elif operator == '<-':
+                has_input = True
+            
+            # Execute element
+            if isinstance(element, CallNode):
+                if element.func_name == 'exec':
+                    command = self._evaluate_expression(element.args[0])
+                    
+                    try:
+                        if has_input and current_output:
+                            result = subprocess.run(
+                                command,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                input=current_output,
+                                text=True
+                            )
+                        else:
+                            result = subprocess.run(
+                                command,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                text=True
+                            )
+                        
+                        exit_code = result.returncode
+                        current_output = result.stdout if result.stdout else ""
+                        
+                        if exit_code != 0 and first_nonzero_rc == 0:
+                            first_nonzero_rc = exit_code
+                    
+                    except Exception as e:
+                        raise RuntimeErrorLyric(
+                            f"Error executing command '{command}': {e}",
+                            file_op_node.line, file_op_node.column
+                        )
+        
+        # Handle output redirection
+        if operator in ('->', '->>'):
+            target_val = self._evaluate_expression(target)
+            
+            if operator == '->':
+                # Redirect to variable
+                if isinstance(target, IdentifierNode):
+                    self.global_scope[target.name] = current_output
+                else:
+                    raise RuntimeErrorLyric(
+                        f"Cannot redirect output to {type(target).__name__}",
+                        file_op_node.line, file_op_node.column
+                    )
+            elif operator == '->>':
+                # Append to file
+                if isinstance(target_val, DskObject):
+                    target_val.append(current_output)
+                else:
+                    raise RuntimeErrorLyric(
+                        f"File append operator (->) requires dsk type, got {type(target_val).__name__}",
+                        file_op_node.line, file_op_node.column
+                    )
+        
+        return None
+    
     def _evaluate_return_statement(self, node: ReturnNode) -> ReturnValue:
         """Evaluate a return statement."""
         if node.value is not None:
@@ -1855,7 +2922,15 @@ class Interpreter:
             return True
 
 
-def evaluate(ast: ProgramNode, source_file=None) -> Any:
-    """Evaluate an AST and return the result."""
+def evaluate(ast: ProgramNode, source_file=None, cli_args=None) -> Any:
+    """Evaluate an AST and return the result.
+    
+    Args:
+        ast: The program AST to evaluate
+        source_file: Optional path to the source file (for relative imports)
+        cli_args: Optional list of command-line arguments to pass to main()
+    """
     interpreter = Interpreter(source_file=source_file)
+    if cli_args:
+        interpreter.cli_args = cli_args
     return interpreter.evaluate(ast)

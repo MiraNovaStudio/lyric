@@ -1,8 +1,6 @@
 # Lyric Programming Language
-# Copyright (c) 2025 MiraNova Studios
-# Designed and Architected by Michael (Aeonath) and ChatGPT
-# Implemented by Claude
-# Licensed under the GNU General Public License v3.0
+# Copyright (c) 2025-2026 MiraNova Studios
+# All rights reserved.
 
 """Command-line interface for Lyric interpreter."""
 
@@ -12,6 +10,49 @@ from lyric.errors import LexError, ParseError, RuntimeErrorLyric, SyntaxErrorLyr
 from lyric.parser import parse, Parser
 from lyric.lexer import tokenize
 from lyric.interpreter import evaluate, Interpreter
+from lyric.runtime import set_command_line_options
+
+__version__ = "0.8.4"
+
+
+def _parse_options(args):
+    """Parse command-line options and separate them from regular arguments.
+    
+    Returns:
+        tuple: (options_dict, arguments_list)
+        - options_dict: Dictionary mapping option names to their values
+        - arguments_list: List of non-option arguments
+    """
+    options = {}
+    arguments = []
+    i = 0
+    
+    while i < len(args):
+        arg = args[i]
+        
+        # Check if it's an option
+        if arg.startswith('--'):
+            # Long option (e.g., --verbose or --file=myfile)
+            if '=' in arg:
+                # Option with value: --file=myfile
+                option_name = arg[2:].split('=', 1)[0]
+                option_value = arg.split('=', 1)[1]
+                options[option_name] = option_value
+            else:
+                # Flag without value: --verbose
+                option_name = arg[2:]
+                options[option_name] = None  # Flag present, no value
+        elif arg.startswith('-') and len(arg) == 2 and arg[1].isalpha():
+            # Short option (e.g., -a)
+            option_name = arg[1]
+            options[option_name] = None
+        else:
+            # Not an option, it's a regular argument
+            arguments.append(arg)
+        
+        i += 1
+    
+    return options, arguments
 
 
 def main():
@@ -23,20 +64,29 @@ def main():
     command = sys.argv[1]
     
     if command == "--version":
-        print("Lyric 0.7.4")
+        print(f"Lyric {__version__}")
     elif command == "--help":
         print("Lyric Language Interpreter")
         print("")
         print("Usage:")
         print("  lyric --version                    Show version information")
         print("  lyric --help                       Show this help message")
-        print("  lyric run <file.ly>               Run a Lyric source file")
-        print("  lyric <file.ly>                   Run a Lyric source file (shorthand)")
+        print("  lyric run <file.ly> [options] [args]  Run a Lyric source file with options and arguments")
+        print("  lyric <file.ly> [options] [args]      Run a Lyric source file (shorthand)")
         print("  lyric -i [code]                   Interactive mode (REPL) or execute immediate code")
+        print("")
+        print("Options:")
+        print("  -a, -b, -c, etc.                  Short options (single character)")
+        print("  --verbose, --debug, etc.          Long options (multiple characters)")
+        print("  --file=myfile                     Long option with value")
+        print("")
+        print("Arguments:")
+        print("  Arguments are passed after options and available via main(argc, argv)")
         print("")
         print("Examples:")
         print("  lyric run hello.ly")
         print("  lyric hello.ly")
+        print("  lyric hello.ly -a --verbose --file=myfile arg1 arg2")
         print('  lyric -i "print(2 + 2)"')
         print("  lyric -i                           Start REPL")
         sys.exit(0)
@@ -51,15 +101,35 @@ def main():
             _start_repl()
     elif command == "run":
         if len(sys.argv) < 3:
-            print("Usage: lyric run <file.ly>")
+            print("Usage: lyric run <file.ly> [options] [arguments]")
             sys.exit(1)
         
-        file_path = sys.argv[2]
-        _execute_file(file_path)
+        # Parse options and get filename and arguments
+        options, remaining = _parse_options(sys.argv[2:])
+        
+        if not remaining:
+            print("Usage: lyric run <file.ly> [options] [arguments]")
+            sys.exit(1)
+        
+        file_path = remaining[0]
+        arguments = remaining[1:]  # Everything after the filename
+        
+        # Set command-line options for getopts()
+        set_command_line_options(options)
+        
+        _execute_file(file_path, arguments)
     elif command.endswith('.ly'):
         # Treat as shorthand for "lyric run <file.ly>"
+        # Parse options from remaining args
+        options, remaining = _parse_options(sys.argv[2:])
+        
         file_path = command
-        _execute_file(file_path)
+        arguments = remaining  # All remaining args are arguments
+        
+        # Set command-line options for getopts()
+        set_command_line_options(options)
+        
+        _execute_file(file_path, arguments)
     else:
         print(f"Unknown command: {command}")
         print("Usage: lyric --version | lyric --help | lyric run <file.ly> | lyric <file.ly> | lyric -i [code]")
@@ -78,8 +148,67 @@ def _remove_shebang(source: str) -> str:
     return source
 
 
-def _execute_file(file_path: str):
-    """Execute a Lyric source file."""
+def _check_for_auto_help(source: str, file_path: str):
+    """Check if -h was passed and program doesn't override it.
+    
+    Returns True if auto-help was shown, False otherwise.
+    """
+    from lyric.runtime import get_command_line_options
+    
+    options = get_command_line_options()
+    
+    # Check if -h was passed
+    if 'h' not in options:
+        return False
+    
+    # Check if the program uses getopts("h") or getopts('h')
+    # Simple text search to see if program overrides -h
+    if 'getopts("h")' in source or "getopts('h')" in source:
+        # Program overrides -h, let it handle it
+        return False
+    
+    # Auto-generate help
+    print(f"Usage: lyric {os.path.basename(file_path)} [options] [arguments]")
+    print()
+    print("Auto-generated help (use -h in your program to override)")
+    print()
+    
+    # Scan for getopts calls to list available options
+    import re
+    getopts_pattern = r'getopts\(["\']([^"\']+)["\']\)'
+    matches = re.findall(getopts_pattern, source)
+    
+    if matches:
+        print("Available options:")
+        for opt in sorted(set(matches)):
+            if len(opt) == 1:
+                print(f"  -{opt}")
+            else:
+                print(f"  --{opt}")
+    else:
+        print("No options defined in this program.")
+    
+    print()
+    print("Arguments:")
+    # Check if main has argc/argv parameters
+    if 'def main(int argc, arr argv)' in source or 'def main(argc, argv)' in source:
+        print("  This program accepts command-line arguments via main(argc, argv)")
+    else:
+        print("  This program does not accept arguments")
+    
+    return True
+
+
+def _execute_file(file_path: str, arguments: list = None):
+    """Execute a Lyric source file.
+    
+    Args:
+        file_path: Path to the .ly file to execute
+        arguments: List of command-line arguments to pass to main()
+    """
+    if arguments is None:
+        arguments = []
+    
     # Check if file exists
     if not os.path.exists(file_path):
         print(f"Error: File '{file_path}' not found")
@@ -98,11 +227,16 @@ def _execute_file(file_path: str):
         # Remove shebang line if present
         source = _remove_shebang(source)
         
+        # Check for auto-help before parsing/executing
+        if _check_for_auto_help(source, file_path):
+            sys.exit(0)
+        
         # Parse the source code
         ast = parse(source)
         
         # Execute the program, passing the source file path for relative imports
-        evaluate(ast, source_file=file_path)
+        # and the command-line arguments
+        evaluate(ast, source_file=file_path, cli_args=arguments)
         
     except (LexError, ParseError, SyntaxErrorLyric) as e:
         # Syntax/lexical errors
