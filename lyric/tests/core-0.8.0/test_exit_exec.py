@@ -291,3 +291,125 @@ def main() {
     finally:
         os.unlink(temp_file)
 
+
+def test_exec_output_redirection():
+    """Test exec() -> variable (output redirection)."""
+    code = """
+def main() {
+    str output
+    exec("echo Hello World") -> output
+    print("Output:", output)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "Output: Hello World" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_input_piping():
+    """Test exec() <- variable (input piping)."""
+    # Use a simple echo command that we pipe input to
+    # Note: This is platform-dependent, so we'll use a simple approach
+    code = """
+def main() {
+    str input_data = "test input data"
+    str output
+    exec("cat") <- input_data
+    print("Input piped successfully")
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        # Just verify it doesn't crash - cat behavior varies by platform
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_output_multiple_lines():
+    """Test exec() output redirection with multi-line output."""
+    code = """
+def main() {
+    str output
+    exec("echo Line1 && echo Line2") -> output
+    print("Output:", output)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "Line1" in result.stdout
+        assert "Line2" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_with_file_output():
+    """Test exec() ->> file (append output to file)."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_file = os.path.join(tmpdir, "output.txt")
+        test_file_normalized = test_file.replace('\\', '/')
+        
+        code = f"""
+def main() {{
+    dsk outfile = disk("{test_file_normalized}")
+    exec("echo Test output") ->> outfile
+    outfile.close()
+    
+    dsk readfile = disk("{test_file_normalized}")
+    str content = readfile.read()
+    print("File contains:", content)
+    readfile.close()
+}}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+            f.write(code)
+            f.flush()
+            temp_ly_file = f.name
+        
+        try:
+            result = subprocess.run(
+                [sys.executable, '-m', 'lyric.cli', temp_ly_file],
+                capture_output=True,
+                text=True,
+                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            )
+            assert "Test output" in result.stdout
+            assert result.returncode == 0
+        finally:
+            os.unlink(temp_ly_file)
+
+

@@ -2399,7 +2399,21 @@ class Interpreter:
         return None
     
     def _evaluate_file_op(self, node: FileOpNode) -> None:
-        """Evaluate a file operator statement: expr ->> dsk, expr -> dsk, or expr <- dsk"""
+        """Evaluate a file operator statement: expr ->> dsk, expr -> dsk, or expr <- dsk
+        
+        Special handling for exec() calls:
+        - exec("cmd") -> var: Redirect stdout to variable
+        - exec("cmd") <- var: Pipe variable as stdin
+        - exec("cmd") <- input -> output: Both redirections
+        """
+        # Check if left side is an exec() call for special I/O redirection handling
+        if isinstance(node.left, CallNode) and node.left.func_name == 'exec':
+            return self._evaluate_exec_with_io(node)
+        
+        # Check if this is a chained operation: expr <- source -> dest
+        # This would be for exec("cmd") <- input -> output
+        # We need to handle this at parser level - for now, treat as regular file op
+        
         left_val = self._evaluate_expression(node.left)
         right_val = self._evaluate_expression(node.right)
         
@@ -2486,6 +2500,116 @@ class Interpreter:
         else:
             raise RuntimeErrorLyric(
                 f"Unknown file operator: {node.operator}",
+                node.line, node.column
+            )
+        
+        return None
+    
+    def _evaluate_exec_with_io(self, node: FileOpNode) -> None:
+        """Handle exec() calls with I/O redirection operators.
+        
+        Supports:
+        - exec("cmd") -> var: Capture stdout to variable
+        - exec("cmd") <- var: Pipe variable content as stdin  
+        - exec("cmd") <- input -> output: Both (requires chained parsing)
+        """
+        import subprocess
+        
+        # Get the command from exec() arguments
+        exec_call = node.left
+        if not exec_call.args or len(exec_call.args) == 0:
+            raise RuntimeErrorLyric(
+                "exec() requires a command argument",
+                node.line, node.column
+            )
+        
+        command_node = exec_call.args[0]
+        command = self._evaluate_expression(command_node)
+        
+        if not isinstance(command, str):
+            raise RuntimeErrorLyric(
+                f"exec() expects a string command, got {type(command).__name__}",
+                node.line, node.column
+            )
+        
+        stdin_data = None
+        capture_output = False
+        output_target = None
+        
+        # Determine operation based on operator
+        if node.operator == '->':
+            # exec("cmd") -> output: Capture stdout to variable
+            capture_output = True
+            if not isinstance(node.right, IdentifierNode):
+                raise RuntimeErrorLyric(
+                    "exec() output redirection requires a variable name on right side",
+                    node.line, node.column
+                )
+            output_target = node.right.name
+            
+        elif node.operator == '<-':
+            # exec("cmd") <- input: Pipe input to command's stdin
+            stdin_source = self._evaluate_expression(node.right)
+            if isinstance(stdin_source, str):
+                stdin_data = stdin_source
+            elif isinstance(stdin_source, ArrObject):
+                # Join array elements with newlines
+                stdin_data = '\n'.join(str(elem) for elem in stdin_source.elements)
+            else:
+                stdin_data = str(stdin_source)
+        
+        elif node.operator == '->>':
+            # exec("cmd") ->> file: Append stdout to file
+            # This is less common but we'll support it
+            capture_output = True
+            right_val = self._evaluate_expression(node.right)
+            if not isinstance(right_val, DskObject):
+                raise RuntimeErrorLyric(
+                    "exec() append operator (->> requires dsk type on right side",
+                    node.line, node.column
+                )
+            output_target = right_val  # Store the file object directly
+        
+        # Execute the command
+        try:
+            if stdin_data:
+                # When we have stdin data, use input= parameter directly
+                result = subprocess.run(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE if capture_output else None,
+                    stderr=subprocess.STDOUT,  # Always merge stderr to stdout
+                    input=stdin_data,  # Pass stdin data directly as string
+                    text=True  # Use text mode for simplicity
+                )
+            else:
+                # No stdin data
+                result = subprocess.run(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE if capture_output else None,
+                    stderr=subprocess.STDOUT,
+                    text=True
+                )
+            
+            # Handle output redirection
+            if capture_output and output_target:
+                output_str = result.stdout if result.stdout else ""
+                
+                if isinstance(output_target, str):
+                    # Redirect to variable
+                    self.global_scope[output_target] = output_str
+                elif isinstance(output_target, DskObject):
+                    # Append to file
+                    output_target.append(output_str)
+            
+            # Store return code in a special variable that can be accessed
+            # For now, we'll just not return it since file operators don't return values
+            # The user can check $? or similar if we implement that later
+            
+        except Exception as e:
+            raise RuntimeErrorLyric(
+                f"Error executing command '{command}': {e}",
                 node.line, node.column
             )
         
