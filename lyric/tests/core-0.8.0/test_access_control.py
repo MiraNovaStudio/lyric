@@ -1,8 +1,6 @@
 # Lyric Programming Language
-# Copyright (c) 2025 MiraNova Studios
-# Designed and Architected by Michael (Aeonath) and ChatGPT
-# Implemented by Claude
-# Licensed under the GNU General Public License v3.0
+# Copyright (c) 2025-2026 MiraNova Studios
+# All rights reserved.
 
 """Tests for access control keywords: public, private, protected (Sprint 9 Task 4)."""
 
