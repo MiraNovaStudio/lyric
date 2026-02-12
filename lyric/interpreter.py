@@ -11,7 +11,7 @@ import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode, FileOpNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
@@ -446,6 +446,26 @@ class DskObject:
             from lyric.errors import RuntimeErrorLyric
             raise RuntimeErrorLyric(f"Error appending to file '{self.filepath}': {e}")
     
+    def overwrite(self, content: str) -> None:
+        """Overwrite file content (always opens in 'w' mode).
+        
+        This is used by the -> file operator to ensure consistent overwriting behavior.
+        
+        Args:
+            content: String content to write
+        """
+        # Close current handle if open (to ensure we overwrite)
+        if self.file_handle:
+            self.close()
+        
+        try:
+            # Always open in write mode to overwrite
+            with open(self.filepath, 'w') as f:
+                f.write(str(content))
+        except Exception as e:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(f"Error overwriting file '{self.filepath}': {e}")
+    
     def delete(self) -> None:
         """Delete the file."""
         import os
@@ -605,6 +625,20 @@ class Interpreter:
         """Set a variable in the current scope."""
         current_scope = self._get_current_scope()
         current_scope[var_name] = var_type
+    
+    def _get_variable_type(self, var_name: str) -> str:
+        """Get the declared type of a variable."""
+        # Check all scopes from innermost to outermost
+        for scope in reversed(self.scope_stack):
+            if var_name in scope:
+                return scope[var_name]
+        
+        # Check global scope
+        if var_name in self.variable_types:
+            return self.variable_types[var_name]
+        
+        # Not found - return 'var' as default
+        return 'var'
     
     def _infer_function_return_type(self, func_node: FunctionNode) -> str:
         """Infer the return type of a function by analyzing all return statements."""
@@ -1200,6 +1234,8 @@ class Interpreter:
             return self._evaluate_import_statement(statement)
         elif isinstance(statement, ImportPyNode):
             return self._evaluate_importpy_statement(statement)
+        elif isinstance(statement, FileOpNode):
+            return self._evaluate_file_op(statement)
         else:
             # Expression statement
             return self._evaluate_expression(statement)
@@ -2361,6 +2397,99 @@ class Interpreter:
         # Create the module proxy and bind it to the global scope
         proxy = PyModuleProxy(node.module_name)
         self.global_scope[node.module_name] = proxy
+        
+        return None
+    
+    def _evaluate_file_op(self, node: FileOpNode) -> None:
+        """Evaluate a file operator statement: expr ->> dsk, expr -> dsk, or expr <- dsk"""
+        left_val = self._evaluate_expression(node.left)
+        right_val = self._evaluate_expression(node.right)
+        
+        if node.operator in ('->>', '->'):
+            # Write operations: right side must be dsk
+            if not isinstance(right_val, DskObject):
+                raise RuntimeErrorLyric(
+                    f"File write operators ({node.operator}) require dsk type on right side, got {type(right_val).__name__}",
+                    node.line, node.column
+                )
+            
+            if node.operator == '->>':
+                # Append operation
+                if isinstance(left_val, str):
+                    # Append string to file
+                    right_val.append(left_val)
+                elif isinstance(left_val, ArrObject):
+                    # Append array elements as lines
+                    for item in left_val.elements:
+                        right_val.append(str(item) + '\n')
+                elif isinstance(left_val, (int, float, bool)):
+                    # Append primitive value as string
+                    right_val.append(str(left_val) + '\n')
+                elif isinstance(left_val, MapObject):
+                    # Append map as JSON-like string
+                    right_val.append(str(left_val.elements) + '\n')
+                else:
+                    raise RuntimeErrorLyric(
+                        f"Cannot append {type(left_val).__name__} to file. Supported types: str, arr, int, flt, god, map",
+                        node.line, node.column
+                    )
+            else:  # node.operator == '->'
+                # Overwrite operation
+                if isinstance(left_val, str):
+                    # Overwrite file with string
+                    right_val.overwrite(left_val)
+                elif isinstance(left_val, ArrObject):
+                    # Overwrite file with array elements as lines
+                    content = '\n'.join(str(item) for item in left_val.elements)
+                    right_val.overwrite(content)
+                elif isinstance(left_val, (int, float, bool)):
+                    # Overwrite with primitive value
+                    right_val.overwrite(str(left_val))
+                elif isinstance(left_val, MapObject):
+                    # Overwrite with map as JSON-like string
+                    right_val.overwrite(str(left_val.elements))
+                else:
+                    raise RuntimeErrorLyric(
+                        f"Cannot write {type(left_val).__name__} to file. Supported types: str, arr, int, flt, god, map",
+                        node.line, node.column
+                    )
+        
+        elif node.operator == '<-':
+            # Read operation: right side must be dsk, left side must be a variable identifier
+            if not isinstance(right_val, DskObject):
+                raise RuntimeErrorLyric(
+                    f"File read operator (<-) requires dsk type on right side, got {type(right_val).__name__}",
+                    node.line, node.column
+                )
+            
+            # Left side must be an identifier (variable name)
+            if not isinstance(node.left, IdentifierNode):
+                raise RuntimeErrorLyric(
+                    f"File read operator (<-) requires variable name on left side, not expression",
+                    node.line, node.column
+                )
+            
+            var_name = node.left.name
+            
+            # Get the declared type of the variable if it exists
+            var_type = self._get_variable_type(var_name)
+            
+            # Read from file
+            if var_type == 'arr' or (var_type == 'var' and isinstance(self.global_scope.get(var_name), ArrObject)):
+                # Read file as array of lines
+                content = right_val.read()
+                lines = content.splitlines()
+                self.global_scope[var_name] = ArrObject(lines)
+            else:
+                # Read file as string (default)
+                content = right_val.read()
+                self.global_scope[var_name] = content
+        
+        else:
+            raise RuntimeErrorLyric(
+                f"Unknown file operator: {node.operator}",
+                node.line, node.column
+            )
         
         return None
     

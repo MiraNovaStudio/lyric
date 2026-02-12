@@ -59,7 +59,7 @@ class Lexer:
     
     # Multi-character operators
     MULTI_CHARS = {
-        '==', '!=', '<', '<=', '>', '>=', '+++', '>>', '<<'
+        '==', '!=', '<', '<=', '>', '>=', '+++', '->>', '->', '<-'
     }
     
     def __init__(self, source: str):
@@ -153,7 +153,7 @@ class Lexer:
             return
         
         # Handle multi-character operators
-        if char in '<>=!+':
+        if char in '<>=!+-':
             self._scan_multi_char_operator(char)
             return
         
@@ -283,14 +283,19 @@ class Lexer:
             self._advance()  # consume second +
             self._advance()  # consume third +
             self.tokens.append(Token('CLASS_END', '+++', start_line, start_col))
-        elif first_char == '>' and self._peek() == '>':
-            # Handle >> (RSHIFT / append operator)
+        elif first_char == '-' and self._peek() == '>' and self._peek_next() == '>':
+            # Handle ->> (file append operator) - must check before ->
+            self._advance()  # consume >
             self._advance()  # consume second >
-            self.tokens.append(Token('RSHIFT', '>>', start_line, start_col))
-        elif first_char == '<' and self._peek() == '<':
-            # Handle << (LSHIFT operator)
-            self._advance()  # consume second <
-            self.tokens.append(Token('LSHIFT', '<<', start_line, start_col))
+            self.tokens.append(Token('FILE_APPEND', '->>', start_line, start_col))
+        elif first_char == '-' and self._peek() == '>':
+            # Handle -> (file write operator)
+            self._advance()  # consume >
+            self.tokens.append(Token('FILE_WRITE', '->', start_line, start_col))
+        elif first_char == '<' and self._peek() == '-':
+            # Handle <- (file read operator)
+            self._advance()  # consume -
+            self.tokens.append(Token('FILE_READ', '<-', start_line, start_col))
         elif first_char in '<>=!' and self._peek() == '=':
             # Handle <=, >=, ==, !=
             operator = first_char + self._advance()

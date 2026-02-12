@@ -207,7 +207,14 @@ class Parser:
         else:
             if self.is_top_level:
                 token = self._peek()
+                # Check if this might be a file operator statement before rejecting
+                # File operators are allowed at top level for convenience
+                if self._is_file_operator_ahead():
+                    return self._parse_file_operator_stmt()
                 raise SyntaxErrorLyric(f"Only variable declarations, functions, and classes are allowed at module level. Execution starts in main().", token.line, token.col)
+            # Check for file operator statements: expr ->> expr, expr -> expr, expr <- expr
+            if self._is_file_operator_ahead():
+                return self._parse_file_operator_stmt()
             return self._parse_assignment_or_expr_stmt()
     
     def _parse_func_def(self) -> FunctionNode:
@@ -590,6 +597,9 @@ class Parser:
                 expr = self._parse_expression()
                 
                 return AssignNode(f"{obj_name}[{index_token.value}]", expr, obj_token.line, obj_token.col)
+            # Check for file operator statements
+            elif self._peek_next().type in ('FILE_APPEND', 'FILE_WRITE', 'FILE_READ'):
+                return self._parse_file_operator_stmt()
         
         # Expression statement
         return self._parse_expression()
@@ -1252,6 +1262,57 @@ class Parser:
         module_token = self._consume('IDENT', "Expected module name after 'importpy'")
         
         return ImportPyNode(module_token.value, importpy_token.line, importpy_token.col)
+    
+    def _is_file_operator_ahead(self) -> bool:
+        """Check if there's a file operator ahead in the token stream."""
+        # Look ahead for FILE_APPEND, FILE_WRITE, or FILE_READ tokens
+        # We need to scan forward but not consume tokens
+        saved_pos = self.current
+        try:
+            # Skip the first token (it will be an expression)
+            # Look for file operators in the next few tokens
+            for i in range(5):  # Look ahead up to 5 tokens
+                if self.current + i >= len(self.tokens):
+                    return False
+                tok = self.tokens[self.current + i]
+                if tok.type in ('FILE_APPEND', 'FILE_WRITE', 'FILE_READ'):
+                    return True
+                # Stop if we hit a statement terminator
+                if tok.type in ('NEWLINE', 'EOF', 'RBRACE'):
+                    return False
+            return False
+        finally:
+            self.current = saved_pos
+    
+    def _parse_file_operator_stmt(self) -> FileOpNode:
+        """Parse file operator statement: expr ->> expr, expr -> expr, or expr <- expr
+        
+        Note: File operators are NOT allowed in assignments or expressions.
+        They are standalone statements.
+        """
+        line = self._peek().line
+        column = self._peek().col
+        
+        # Parse left side expression
+        left = self._parse_expression()
+        
+        # Check for file operator
+        if self._check('FILE_APPEND'):
+            op_token = self._advance()
+            operator = '->>'
+        elif self._check('FILE_WRITE'):
+            op_token = self._advance()
+            operator = '->'
+        elif self._check('FILE_READ'):
+            op_token = self._advance()
+            operator = '<-'
+        else:
+            raise ParseError(f"Expected file operator (->> -> or <-) at line {self._peek().line}, column {self._peek().col}")
+        
+        # Parse right side expression
+        right = self._parse_expression()
+        
+        return FileOpNode(operator=operator, left=left, right=right, line=line, column=column)
 
 
 def parse(source: str, interactive: bool = False) -> ProgramNode:
