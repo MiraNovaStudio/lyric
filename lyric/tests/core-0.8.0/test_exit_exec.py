@@ -413,3 +413,266 @@ def main() {{
             os.unlink(temp_ly_file)
 
 
+def test_exec_pipe_simple():
+    """Test exec() | exec() pipe operator (Sprint 9 Task 11)."""
+    code = """
+def main() {
+    str output
+    exec("echo hello") | exec("cat") -> output
+    print("Output:", output)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "Output: hello" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_pipe_to_print():
+    """Test exec() | print (Sprint 9 Task 11)."""
+    code = """
+def main() {
+    exec("echo hello world") | print
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "hello world" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_and_shortcircuit_success():
+    """Test exec() && exec() when first succeeds (Sprint 9 Task 11)."""
+    code = """
+def main() {
+    str output
+    exec("echo first") && exec("echo second") -> output
+    print("Output:", output)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "Output: second" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_and_shortcircuit_failure():
+    """Test exec() && exec() when first fails (Sprint 9 Task 11)."""
+    code = """
+def main() {
+    str output
+    exec("exit 1") && exec("echo should not run") -> output
+    print("Output:", output)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "Output:" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_or_shortcircuit_success():
+    """Test exec() || exec() when first succeeds (Sprint 9 Task 11)."""
+    code = """
+def main() {
+    str output
+    exec("echo success") || exec("echo should not run") -> output
+    print("Output:", output)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "Output: success" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_or_shortcircuit_failure():
+    """Test exec() || exec() when first fails (Sprint 9 Task 11)."""
+    code = """
+def main() {
+    str output
+    exec("exit 1") || exec("echo fallback") -> output
+    print("Output:", output)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "Output: fallback" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_chain_return_code():
+    """Test that exec chains return the first non-zero return code (Sprint 9 Task 11)."""
+    code = """
+def main() {
+    int rc1 = exec("echo test") | exec("cat")
+    print("RC1:", rc1)
+    
+    int rc2 = exec("exit 5") && exec("echo test")
+    print("RC2:", rc2)
+    
+    int rc3 = exec("echo test") && exec("exit 7")
+    print("RC3:", rc3)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "RC1: 0" in result.stdout
+        assert "RC2: 5" in result.stdout
+        assert "RC3: 7" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)
+
+
+def test_exec_chain_file_append():
+    """Test exec() | exec() ->> file (Sprint 9 Task 11)."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_file = os.path.join(tmpdir, "output.txt")
+        test_file_normalized = test_file.replace('\\', '/')
+        
+        code = f"""
+def main() {{
+    var outfile = disk("{test_file_normalized}")
+    
+    exec("echo line1") ->> outfile
+    exec("echo line2") | exec("cat") ->> outfile
+    
+    outfile.close()
+    
+    var readfile = disk("{test_file_normalized}")
+    str content = readfile.read()
+    print("File content:")
+    print(content)
+    readfile.close()
+}}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+            f.write(code)
+            f.flush()
+            temp_ly_file = f.name
+        
+        try:
+            result = subprocess.run(
+                [sys.executable, '-m', 'lyric.cli', temp_ly_file],
+                capture_output=True,
+                text=True,
+                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            )
+            assert "line1" in result.stdout
+            assert "line2" in result.stdout
+            assert result.returncode == 0
+        finally:
+            os.unlink(temp_ly_file)
+
+
+def test_exec_chain_complex():
+    """Test complex exec chain with multiple operators (Sprint 9 Task 11)."""
+    code = """
+def main() {
+    int rc1 = exec("echo step1") | exec("cat") | exec("cat")
+    print("RC1:", rc1)
+    
+    int rc2 = exec("echo test") && exec("echo pass") && exec("echo done")
+    print("RC2:", rc2)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "RC1: 0" in result.stdout
+        assert "RC2: 0" in result.stdout
+        assert result.returncode == 0
+    finally:
+        os.unlink(temp_file)

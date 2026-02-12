@@ -9,7 +9,7 @@ import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode, FileOpNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode, FileOpNode, ExecChainNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
@@ -1234,6 +1234,8 @@ class Interpreter:
             return self._evaluate_importpy_statement(statement)
         elif isinstance(statement, FileOpNode):
             return self._evaluate_file_op(statement)
+        elif isinstance(statement, ExecChainNode):
+            return self._evaluate_exec_chain(statement)
         else:
             # Expression statement
             return self._evaluate_expression(statement)
@@ -1980,6 +1982,8 @@ class Interpreter:
             return self._evaluate_slice(expr)
         elif isinstance(expr, RexNode):
             return self._evaluate_rex_literal(expr)
+        elif isinstance(expr, ExecChainNode):
+            return self._evaluate_exec_chain(expr)
         else:
             raise RuntimeErrorLyric(f"Unknown expression type: {type(expr)}")
     
@@ -2406,9 +2410,12 @@ class Interpreter:
         - exec("cmd") <- var: Pipe variable as stdin
         - exec("cmd") <- input -> output: Both redirections
         """
-        # Check if left side is an exec() call for special I/O redirection handling
+        # Check if left side is an exec() call or exec chain for special I/O redirection handling
         if isinstance(node.left, CallNode) and node.left.func_name == 'exec':
             return self._evaluate_exec_with_io(node)
+        elif isinstance(node.left, ExecChainNode):
+            # Handle exec chain with file redirection
+            return self._evaluate_exec_chain_with_file_io(node)
         
         # Check if this is a chained operation: expr <- source -> dest
         # This would be for exec("cmd") <- input -> output
@@ -2612,6 +2619,272 @@ class Interpreter:
                 f"Error executing command '{command}': {e}",
                 node.line, node.column
             )
+        
+        return None
+    
+    def _evaluate_exec_chain(self, node: ExecChainNode) -> int:
+        """Evaluate an exec chain with pipe operators (|, &&, ||).
+        
+        Behaviors:
+        - | (pipe): Pass output to next command, always continue
+        - && (and): Short-circuit on failure (non-zero exit code)
+        - || (or): Short-circuit on success (zero exit code)
+        
+        Returns: First non-zero exit code, or 0 if all succeed
+        """
+        import subprocess
+        
+        current_output = ""
+        first_nonzero_rc = 0
+        
+        # Handle optional input source (<-)
+        if node.input_source:
+            input_val = self._evaluate_expression(node.input_source)
+            if isinstance(input_val, str):
+                current_output = input_val
+            elif isinstance(input_val, ArrObject):
+                current_output = '\n'.join(str(elem) for elem in input_val.elements)
+            elif isinstance(input_val, DskObject):
+                # Read from file
+                current_output = input_val.read()
+            else:
+                current_output = str(input_val)
+        
+        # Execute chain
+        for i, element in enumerate(node.elements):
+            # Check if we should skip this element due to short-circuit from previous
+            if i > 0:
+                prev_operator = node.operators[i - 1]
+                prev_exit_code = exit_code if 'exit_code' in locals() else 0
+                
+                # Short-circuit logic BEFORE executing current element
+                if prev_operator == '&&' and prev_exit_code != 0:
+                    # AND: skip if previous failed
+                    break
+                elif prev_operator == '||' and prev_exit_code == 0:
+                    # OR: skip if previous succeeded
+                    break
+            
+            # Determine if this element receives input (only for pipe operator)
+            has_input = False
+            if i > 0:
+                prev_operator = node.operators[i - 1]
+                has_input = (prev_operator == '|')
+            elif i == 0 and node.input_source is not None:
+                has_input = True
+            
+            # Execute element
+            if isinstance(element, CallNode):
+                if element.func_name == 'exec':
+                    # Execute command
+                    if not element.args or len(element.args) == 0:
+                        raise RuntimeErrorLyric(
+                            "exec() requires a command argument",
+                            node.line, node.column
+                        )
+                    
+                    command = self._evaluate_expression(element.args[0])
+                    if not isinstance(command, str):
+                        raise RuntimeErrorLyric(
+                            f"exec() expects a string command, got {type(command).__name__}",
+                            node.line, node.column
+                        )
+                    
+                    # Execute with optional input
+                    try:
+                        if has_input and current_output:
+                            result = subprocess.run(
+                                command,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                input=current_output,
+                                text=True
+                            )
+                        else:
+                            result = subprocess.run(
+                                command,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                text=True
+                            )
+                        
+                        exit_code = result.returncode
+                        current_output = result.stdout if result.stdout else ""
+                        
+                        # Track first non-zero return code
+                        if exit_code != 0 and first_nonzero_rc == 0:
+                            first_nonzero_rc = exit_code
+                        
+                    except Exception as e:
+                        raise RuntimeErrorLyric(
+                            f"Error executing command '{command}': {e}",
+                            node.line, node.column
+                        )
+                
+                elif element.func_name == 'print':
+                    # Print statement in chain
+                    if has_input and current_output:
+                        # Print the piped input
+                        print(current_output, end='')
+                    else:
+                        # Evaluate print arguments normally
+                        for arg in element.args:
+                            val = self._evaluate_expression(arg)
+                            print(val, end=' ')
+                        print()  # Newline after print
+                    
+                    # print doesn't produce output for next command
+                    current_output = ""
+                
+                else:
+                    # Other function call - evaluate normally but don't pipe
+                    self._evaluate_function_call(element)
+                    current_output = ""
+            
+            else:
+                raise RuntimeErrorLyric(
+                    f"Invalid element in exec chain: {type(element).__name__}",
+                    node.line, node.column
+                )
+        
+        # Handle optional output target (->)
+        if node.output_target:
+            if isinstance(node.output_target, IdentifierNode):
+                # Assign to variable
+                self.global_scope[node.output_target.name] = current_output
+            elif isinstance(node.output_target, DskObject):
+                # Append to file
+                output_obj = self._evaluate_expression(node.output_target)
+                if isinstance(output_obj, DskObject):
+                    output_obj.append(current_output)
+        
+        return first_nonzero_rc
+    
+    def _evaluate_exec_chain_with_file_io(self, file_op_node: FileOpNode) -> None:
+        """Evaluate an exec chain with file I/O redirection.
+        
+        Patterns:
+        - exec() | exec() -> var: Capture final output to variable
+        - exec() | exec() ->> file: Append final output to file
+        - exec() <- input | exec() -> output: Input + chaining + output
+        """
+        exec_chain = file_op_node.left  # This is an ExecChainNode
+        operator = file_op_node.operator
+        target = file_op_node.right
+        
+        # Set up the output_target on the exec chain
+        if operator == '->':
+            # Output to variable
+            exec_chain.output_target = target
+        elif operator == '->>':
+            # Append to file
+            exec_chain.output_target = target
+        elif operator == '<-':
+            # Input from source
+            exec_chain.input_source = target
+        
+        # Now evaluate the exec chain, which will handle the I/O
+        # We need to modify _evaluate_exec_chain to write output to file for ->>
+        # For now, let's execute the chain and handle output manually
+        import subprocess
+        
+        current_output = ""
+        first_nonzero_rc = 0
+        exit_code = 0
+        
+        # Handle optional input source (<-)
+        if exec_chain.input_source or operator == '<-':
+            input_source = exec_chain.input_source if exec_chain.input_source else target
+            input_val = self._evaluate_expression(input_source)
+            if isinstance(input_val, str):
+                current_output = input_val
+            elif isinstance(input_val, ArrObject):
+                current_output = '\n'.join(str(elem) for elem in input_val.elements)
+            elif isinstance(input_val, DskObject):
+                current_output = input_val.read()
+            else:
+                current_output = str(input_val)
+        
+        # Execute chain
+        for i, element in enumerate(exec_chain.elements):
+            # Short-circuit logic
+            if i > 0:
+                prev_operator = exec_chain.operators[i - 1]
+                prev_exit_code = exit_code
+                
+                if prev_operator == '&&' and prev_exit_code != 0:
+                    break
+                elif prev_operator == '||' and prev_exit_code == 0:
+                    break
+            
+            # Determine if this element receives input (only for pipe)
+            has_input = False
+            if i > 0:
+                prev_operator = exec_chain.operators[i - 1]
+                has_input = (prev_operator == '|')
+            elif operator == '<-':
+                has_input = True
+            
+            # Execute element
+            if isinstance(element, CallNode):
+                if element.func_name == 'exec':
+                    command = self._evaluate_expression(element.args[0])
+                    
+                    try:
+                        if has_input and current_output:
+                            result = subprocess.run(
+                                command,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                input=current_output,
+                                text=True
+                            )
+                        else:
+                            result = subprocess.run(
+                                command,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                text=True
+                            )
+                        
+                        exit_code = result.returncode
+                        current_output = result.stdout if result.stdout else ""
+                        
+                        if exit_code != 0 and first_nonzero_rc == 0:
+                            first_nonzero_rc = exit_code
+                    
+                    except Exception as e:
+                        raise RuntimeErrorLyric(
+                            f"Error executing command '{command}': {e}",
+                            file_op_node.line, file_op_node.column
+                        )
+        
+        # Handle output redirection
+        if operator in ('->', '->>'):
+            target_val = self._evaluate_expression(target)
+            
+            if operator == '->':
+                # Redirect to variable
+                if isinstance(target, IdentifierNode):
+                    self.global_scope[target.name] = current_output
+                else:
+                    raise RuntimeErrorLyric(
+                        f"Cannot redirect output to {type(target).__name__}",
+                        file_op_node.line, file_op_node.column
+                    )
+            elif operator == '->>':
+                # Append to file
+                if isinstance(target_val, DskObject):
+                    target_val.append(current_output)
+                else:
+                    raise RuntimeErrorLyric(
+                        f"File append operator (->) requires dsk type, got {type(target_val).__name__}",
+                        file_op_node.line, file_op_node.column
+                    )
         
         return None
     

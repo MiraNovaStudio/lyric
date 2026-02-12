@@ -9,7 +9,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, FileOpNode
+    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, FileOpNode, ExecChainNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -531,6 +531,9 @@ class Parser:
     
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""
+        # Note: Don't check for exec chain here, as they can be part of assignments
+        # They'll be parsed as expressions and handled by assignment logic
+        
         if self._check('IDENT', 'TYPE_OR_IDENT'):
             # Check for print statement syntax: print <expr>
             if (self._peek().value == 'print' and 
@@ -715,7 +718,45 @@ class Parser:
             line, col = self._get_position_from_token(self._previous())
             return UnaryOpNode(operator, right, line, col)
         
-        return self._parse_primary()
+        return self._parse_exec_chain_or_primary()
+    
+    def _parse_exec_chain_or_primary(self):
+        """Parse exec chains or primary expressions."""
+        # Parse the first element
+        expr = self._parse_primary()
+        
+        # Check if this is the start of an exec chain
+        if isinstance(expr, CallNode) and expr.func_name == 'exec':
+            # Check if followed by pipe operators
+            if self._check('PIPE', 'AND', 'OR'):
+                # This is an exec chain! Parse it as such
+                elements = [expr]
+                operators = []
+                
+                while self._check('PIPE', 'AND', 'OR'):
+                    op_token = self._advance()
+                    if op_token.type == 'PIPE':
+                        operators.append('|')
+                    elif op_token.type == 'AND':
+                        operators.append('&&')
+                    elif op_token.type == 'OR':
+                        operators.append('||')
+                    
+                    # Parse next element (should be exec() or print)
+                    next_elem = self._parse_exec_chain_element()
+                    elements.append(next_elem)
+                
+                # Create ExecChainNode
+                return ExecChainNode(
+                    elements=elements,
+                    operators=operators,
+                    input_source=None,
+                    output_target=None,
+                    line=expr.line,
+                    column=expr.column
+                )
+        
+        return expr
     
     def _parse_primary(self):
         """Parse primary expressions."""
@@ -1269,7 +1310,8 @@ class Parser:
         try:
             # Skip the first token (it will be an expression)
             # Look for file operators in the next few tokens
-            for i in range(5):  # Look ahead up to 5 tokens
+            # Increased range to handle exec chains: exec() | exec() ->> file
+            for i in range(30):  # Look ahead up to 30 tokens for exec chains
                 if self.current + i >= len(self.tokens):
                     return False
                 tok = self.tokens[self.current + i]
@@ -1311,6 +1353,161 @@ class Parser:
         right = self._parse_expression()
         
         return FileOpNode(operator=operator, left=left, right=right, line=line, column=column)
+    
+    def _is_exec_chain_ahead(self) -> bool:
+        """Check if there's an exec chain pattern ahead (exec/print followed by |, &&, ||)."""
+        saved_pos = self.current
+        try:
+            # Check if current token starts an exec chain
+            curr = self._peek()
+            
+            # Must start with exec() call or print statement
+            if curr.type == 'IDENT':
+                if curr.value == 'exec':
+                    # Look for opening paren
+                    if self._peek_next().type == 'LPAREN':
+                        # Scan ahead to find closing paren, then check for pipe operators
+                        paren_depth = 1  # Start at 1 since we know there's an opening paren
+                        for i in range(2, 20):  # Start at 2 (after the LPAREN)
+                            if self.current + i >= len(self.tokens):
+                                return False
+                            tok = self.tokens[self.current + i]
+                            if tok.type == 'LPAREN':
+                                paren_depth += 1
+                            elif tok.type == 'RPAREN':
+                                paren_depth -= 1
+                                if paren_depth == 0:
+                                    # Found matching closing paren, check next token
+                                    if self.current + i + 1 < len(self.tokens):
+                                        next_tok = self.tokens[self.current + i + 1]
+                                        return next_tok.type in ('PIPE', 'AND', 'OR')
+                                    return False
+                        return False
+                elif curr.value == 'print':
+                    # print statement - check if followed by pipe
+                    for i in range(1, 10):
+                        if self.current + i >= len(self.tokens):
+                            return False
+                        tok = self.tokens[self.current + i]
+                        if tok.type == 'PIPE':
+                            return True
+                        if tok.type in ('NEWLINE', 'EOF', 'RBRACE'):
+                            return False
+                    return False
+            return False
+        finally:
+            self.current = saved_pos
+    
+    def _parse_exec_chain_stmt(self):
+        """Parse exec chain statement with pipes and short-circuit operators.
+        
+        Patterns:
+            exec('cmd') | exec('cmd2')
+            exec('cmd') | print
+            print "text" | exec('cmd')
+            exec('cmd1') && exec('cmd2')
+            exec('cmd1') || exec('cmd2')
+            exec('cmd') <- input | exec('cmd2') -> output
+        """
+        line = self._peek().line
+        column = self._peek().col
+        
+        elements = []
+        operators = []
+        input_source = None
+        output_target = None
+        
+        # Check for optional input source at the beginning
+        # Pattern: exec('cmd') <- input | ...
+        # We need to look ahead to see if there's a <- before the first pipe
+        
+        # Parse first element (exec() or print)
+        first_elem = self._parse_exec_chain_element()
+        
+        # Check if first element is followed by <-
+        if self._check('FILE_READ'):
+            self._advance()  # consume <-
+            input_source = self._parse_expression()
+            # After <- input, there should be a pipe operator
+            if not self._check('PIPE', 'AND', 'OR'):
+                # This is just exec() <- input without chaining, treat as file op
+                return FileOpNode(operator='<-', left=first_elem, right=input_source, line=line, column=column)
+        
+        elements.append(first_elem)
+        
+        # Parse chain operators and subsequent elements
+        while self._check('PIPE', 'AND', 'OR'):
+            op_token = self._advance()
+            if op_token.type == 'PIPE':
+                operators.append('|')
+            elif op_token.type == 'AND':
+                operators.append('&&')
+            elif op_token.type == 'OR':
+                operators.append('||')
+            
+            # Parse next element
+            elem = self._parse_exec_chain_element()
+            elements.append(elem)
+        
+        # Check for optional output target at the end
+        # Pattern: ... | exec('cmd') -> output
+        if self._check('FILE_WRITE', 'FILE_APPEND'):
+            op_token = self._advance()
+            output_target = self._parse_expression()
+        
+        # If we only have one element and no operators, this might not be a chain
+        if len(elements) == 1 and len(operators) == 0:
+            # Not really a chain, return as regular statement
+            # This shouldn't happen due to _is_exec_chain_ahead check
+            return elements[0]
+        
+        return ExecChainNode(
+            elements=elements,
+            operators=operators,
+            input_source=input_source,
+            output_target=output_target,
+            line=line,
+            column=column
+        )
+    
+    def _parse_exec_chain_element(self):
+        """Parse a single element in an exec chain (exec() call or print statement)."""
+        curr = self._peek()
+        
+        if curr.type == 'IDENT' and curr.value == 'exec':
+            # Parse exec() function call using primary parser
+            return self._parse_primary()
+        elif curr.type == 'IDENT' and curr.value == 'print':
+            print_token = self._advance()
+            
+            # Check if it's print(...) or print expr or just print (for piped input)
+            if self._check('LPAREN'):
+                # Back up and parse as primary
+                self.current -= 1
+                return self._parse_primary()
+            elif self._check('PIPE', 'AND', 'OR', 'NEWLINE', 'EOF', 'RBRACE'):
+                # Just 'print' by itself - will print piped input
+                # Create CallNode with no arguments
+                return CallNode('print', [], print_token.line, print_token.col)
+            else:
+                # print expr statement
+                args = []
+                
+                # Parse expression argument (but not beyond pipe operators)
+                # We need to parse carefully to not consume the pipe
+                saved_pos = self.current
+                try:
+                    expr = self._parse_comparison()  # Lower precedence to stop at pipe
+                    args.append(expr)
+                except:
+                    self.current = saved_pos
+                    expr = self._parse_term()
+                    args.append(expr)
+                
+                # Create CallNode for print
+                return CallNode('print', args, print_token.line, print_token.col)
+        else:
+            raise ParseError(f"Expected exec() or print in chain at line {curr.line}, column {curr.col}")
 
 
 def parse(source: str, interactive: bool = False) -> ProgramNode:

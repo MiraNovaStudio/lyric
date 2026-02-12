@@ -57,7 +57,7 @@ class Lexer:
     
     # Multi-character operators
     MULTI_CHARS = {
-        '==', '!=', '<', '<=', '>', '>=', '+++', '->>', '->', '<-'
+        '==', '!=', '<', '<=', '>', '>=', '+++', '->>', '->', '<-', '&&', '||'
     }
     
     def __init__(self, source: str):
@@ -151,7 +151,7 @@ class Lexer:
             return
         
         # Handle multi-character operators
-        if char in '<>=!+-':
+        if char in '<>=!+-&|':
             self._scan_multi_char_operator(char)
             return
         
@@ -294,6 +294,17 @@ class Lexer:
             # Handle <- (file read operator)
             self._advance()  # consume -
             self.tokens.append(Token('FILE_READ', '<-', start_line, start_col))
+        elif first_char == '&' and self._peek() == '&':
+            # Handle && (logical AND / exec chain operator)
+            self._advance()  # consume second &
+            self.tokens.append(Token('AND', '&&', start_line, start_col))
+        elif first_char == '|' and self._peek() == '|':
+            # Handle || (logical OR / exec chain operator)
+            self._advance()  # consume second |
+            self.tokens.append(Token('OR', '||', start_line, start_col))
+        elif first_char == '|':
+            # Handle | (pipe operator)
+            self.tokens.append(Token('PIPE', '|', start_line, start_col))
         elif first_char in '<>=!' and self._peek() == '=':
             # Handle <=, >=, ==, !=
             operator = first_char + self._advance()

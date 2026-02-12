@@ -585,10 +585,43 @@ class FileOpNode(ASTNode):
         }
 
 
+@dataclass
+class ExecChainNode(ASTNode):
+    """Represents a chain of exec() calls with pipe operators.
+    
+    Examples:
+        exec('ls') | exec('grep test')
+        exec('cmd') | print
+        exec('cmd1') && exec('cmd2')
+        print "text" | exec('grep x')
+    """
+    elements: List['ASTNode']  # List of CallNode (exec/print) or PrintNode
+    operators: List[str]  # List of '|', '&&', '||' operators between elements
+    input_source: Optional['ASTNode'] = None  # Optional <- input source
+    output_target: Optional['ASTNode'] = None  # Optional -> output target
+    line: int = 0
+    column: int = 0
+    
+    def __repr__(self):
+        ops_str = ' '.join(self.operators)
+        return f"ExecChainNode(elements={len(self.elements)}, ops=[{ops_str}])"
+    
+    def to_dict(self):
+        return {
+            'type': 'ExecChainNode',
+            'elements': [e.to_dict() if hasattr(e, 'to_dict') else str(e) for e in self.elements],
+            'operators': self.operators,
+            'input_source': self.input_source.to_dict() if self.input_source and hasattr(self.input_source, 'to_dict') else None,
+            'output_target': self.output_target.to_dict() if self.output_target and hasattr(self.output_target, 'to_dict') else None,
+            'line': self.line,
+            'column': self.column
+        }
+
+
 # Type alias for all AST nodes
 ASTNode = Union[
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
     ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, PrintNode,
-    TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode, FileOpNode
+    TryNode, CatchClauseNode, RaiseNode, ImportPyNode, RexNode, FileOpNode, ExecChainNode
 ]
