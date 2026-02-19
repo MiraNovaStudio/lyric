@@ -1,0 +1,23 @@
+
+## TODO LIST ##
+
+0. Continue development on 0.8.x
+
+1. Implement the module blacklist
+
+2. Implement the module whitelist, every white list module should have its own 
+unit test suite in tests/ directory.
+
+3. Add an unsafe option that will allow importpy of modules not in the white
+list and not in the blackli
+
+
+
+
+
+## BackLog ##
+
+1. Add built-in threading support
+
+2. Update the VSCode extension to version 0.8.4
+

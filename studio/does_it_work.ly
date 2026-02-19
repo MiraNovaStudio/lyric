@@ -104,5 +104,6 @@ def main() {
     int hidden = get_secret()
     print hidden
         
+    # Test file i/o operator
     print("All constructs exercised. ✅")
 }
