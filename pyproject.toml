@@ -3,18 +3,18 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lyric"
+name = "lyric-lang"
 version = "0.8.4"
 description = "A minimal programming language implementation - Starting Fresh"
 authors = [
-    {name = "Lyric Team", email = "team@lyric.dev"}
+    {name = "MiraNova Studios", email = "aeonath@miranova.studio"}
 ]
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -31,6 +31,9 @@ dev = [
 
 [project.scripts]
 lyric = "lyric.cli:main"
+
+[project.urls]
+Homepage = "https://lyric-lang.org"
 
 [tool.setuptools.packages.find]
 where = ["."]

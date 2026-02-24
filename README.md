@@ -386,6 +386,12 @@ pip install pytest flake8 setuptools
 - **Advanced Type System**: Generic types and type inference
 - **Standard Library**: Extended built-in functions and utilities
 
+### Module System
+
+Lyric's upcoming module system is designed around two complementary import mechanisms. Native Lyric modules — written in `.ly` files — will be resolved and cached by a `ModuleLoader` at runtime, keeping programs fully self-contained with no Python dependency. These modules will form the basis of a growing standard library covering areas such as math, I/O, string handling, and JSON. The import syntax is clean and familiar: `import mathutils` loads a native module, and the runtime searches a configurable module path before falling back to built-ins.
+
+For interoperability with the broader Python ecosystem, Lyric retains its existing `importpy` bridge, which uses Python's `importlib` to load packages like `numpy` or `requests` and wraps their return values into Lyric types. This is intentionally kept as a secondary mechanism — users are aware when they cross the Python boundary, and the long-term goal is for native Lyric modules to replace most such dependencies. The full hybrid module system is targeted for stabilization in version 1.0.0.
+
 ## Development Process
 
 This project follows a structured sprint-based development approach:
@@ -400,7 +406,7 @@ This project follows a structured sprint-based development approach:
 
 The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
 
-Licensed under the GNU General Public License v3 or later.
+Licensed under the MiraNova Software License. See the `LICENSE` file for full terms. All rights reserved — © 2025–2026 MiraNova Studios.
 
 ## Contributing
 
