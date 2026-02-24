@@ -35,5 +35,7 @@ Bug reports and feedback are welcome.  Please report bugs to [MiraNova Studios](
 ---
 
 © 2025–2026 MiraNova Studios. All rights reserved.
+
 Licensed under the MiraNova Software License.
+
 Source availability and licensing may be revisited in the future.
