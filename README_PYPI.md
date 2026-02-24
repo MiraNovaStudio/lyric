@@ -1,6 +1,6 @@
 # Lyric
 
-Lyric is a statically-typed, interpreted programming language developed by MiraNova Studios.
+Lyric is an experimental interpreted programming language developed by MiraNova Studios.
 
 ## Installation
 

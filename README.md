@@ -1,6 +1,6 @@
 # Lyric
 
-Lyric is a statically-typed, interpreted programming language built in Python, designed for clarity and expressive syntax. It is developed and maintained by **MiraNova Studios**.
+Lyric is a gradually typed, interpreted programming language built in Python, designed for clarity and expressive syntax. Type declarations are optional and enforced at runtime — variables declared with a type (`int`, `str`, `flt`, etc.) are strongly checked on assignment, while `var` opts into dynamic typing. It is developed and maintained by **MiraNova Studios**.
 
 **Current version:** 0.8.4 (Pre-Alpha)
 **Website:** [lyric-lang.org](https://lyric-lang.org)
@@ -55,7 +55,7 @@ The interpreter walks the AST directly. Scope is managed via a linked chain of e
 
 ### Type System
 
-Lyric uses explicit type declarations enforced at assignment. The core types are:
+Lyric uses optional type declarations enforced at runtime. Variables declared with a specific type are strongly checked on every assignment and function call; `var` disables enforcement for that binding. The core types are:
 
 | Type  | Description |
 |-------|-------------|
