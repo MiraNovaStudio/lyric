@@ -47,3 +47,9 @@ If a stdlib module relies on CPython bytecode, frames, object identity, or inter
 
 Create unit test as usual in the proper tests/ directory for the sprint.  
 
+## Task 2 - redirect and append stderr to stdout for command output operators and command pipelines
+
+When dealing with command output, the entirety of stdout and stderr will be considered the output of the program.  So if we have exec(mycmd) -> myvar, then both stdout and stderr are captured into the variable.  The same is true for our command pipelines exec(mycmd) | exec(mycmd2)
+
+
+

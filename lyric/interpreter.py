@@ -2514,11 +2514,14 @@ class Interpreter:
     
     def _evaluate_exec_with_io(self, node: FileOpNode) -> None:
         """Handle exec() calls with I/O redirection operators.
-        
-        Supports:
-        - exec("cmd") -> var: Capture stdout to variable
-        - exec("cmd") <- var: Pipe variable content as stdin  
-        - exec("cmd") <- input -> output: Both (requires chained parsing)
+
+        stderr is always merged with stdout (stderr=subprocess.STDOUT) so the
+        entirety of a command's output — both stdout and stderr — is considered
+        the output of the command in all of the following forms:
+
+        - exec("cmd") -> var: Capture stdout and stderr to variable
+        - exec("cmd") ->> file: Append stdout and stderr to dsk file
+        - exec("cmd") <- var: Pipe variable content as stdin (output to terminal)
         """
         import subprocess
         
@@ -2545,7 +2548,7 @@ class Interpreter:
         
         # Determine operation based on operator
         if node.operator == '->':
-            # exec("cmd") -> output: Capture stdout to variable
+            # exec("cmd") -> output: Capture stdout and stderr to variable
             capture_output = True
             if not isinstance(node.right, IdentifierNode):
                 raise RuntimeErrorLyric(
@@ -2624,12 +2627,16 @@ class Interpreter:
     
     def _evaluate_exec_chain(self, node: ExecChainNode) -> int:
         """Evaluate an exec chain with pipe operators (|, &&, ||).
-        
+
+        stderr is merged with stdout for every command in the chain
+        (stderr=subprocess.STDOUT), so the entirety of each command's output —
+        both stdout and stderr — is used as the data flowing through the chain.
+
         Behaviors:
-        - | (pipe): Pass output to next command, always continue
+        - | (pipe): Pass stdout+stderr to next command's stdin, always continue
         - && (and): Short-circuit on failure (non-zero exit code)
         - || (or): Short-circuit on success (zero exit code)
-        
+
         Returns: First non-zero exit code, or 0 if all succeed
         """
         import subprocess

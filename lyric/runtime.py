@@ -393,10 +393,13 @@ def exit_builtin(code: int = 0) -> None:
 
 def exec_builtin(command: str) -> int:
     """Built-in exec function that executes a shell command.
-    
+
+    stderr is merged with stdout (stderr=subprocess.STDOUT) so the entirety of
+    the command's output is captured together.
+
     Args:
         command: Shell command to execute
-        
+
     Returns:
         Exit code of the command (0 for success)
     """
