@@ -7,13 +7,56 @@
 from typing import Any
 from lyric.errors import RuntimeErrorLyric
 
+# Modules that rely on CPython bytecode, frames, object identity, or interpreter
+# internals are blacklisted and cannot be imported via importpy in Lyric.
+BLACKLISTED_MODULES = frozenset([
+    'pdb',
+    'trace',
+    'traceback',
+    'faulthandler',
+    'inspect',
+    'dis',
+    'marshal',
+    'pickle',
+    'pickletools',
+    'copyreg',
+    'code',
+    'codeop',
+    'compile',
+    'eval',
+    'exec',
+    'types',
+    'importlib._bootstrap',
+    'importlib._bootstrap_external',
+    'zipimport',
+    'runpy',
+    'modulefinder',
+    'gc',
+    'weakref',
+    'sys',
+    'ctypes',
+    'cffi',
+    '_ctypes',
+    'mmap',
+])
+
+_BLACKLIST_REASON = (
+    "This module relies on CPython bytecode, frames, object identity, or "
+    "interpreter internals and does not work with Lyric."
+)
+
 
 class PyModuleProxy:
     """Proxy object that forwards attribute access to Python modules."""
-    
+
     def __init__(self, module_name: str):
         """Initialize the proxy with a Python module name."""
         self._module_name = module_name
+        if module_name in BLACKLISTED_MODULES:
+            raise RuntimeErrorLyric(
+                f"ImportError: Python module '{module_name}' is blacklisted in Lyric. "
+                f"{_BLACKLIST_REASON}"
+            )
         try:
             self._module = __import__(module_name)
         except ImportError as e:
