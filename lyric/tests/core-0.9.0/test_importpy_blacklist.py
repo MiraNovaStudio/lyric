@@ -8,7 +8,7 @@ import pytest
 from lyric.parser import parse
 from lyric.interpreter import evaluate
 from lyric.errors import RuntimeErrorLyric
-from lyric.pyproxy import BLACKLISTED_MODULES
+from lyric.pyproxy import BLACKLISTED_MODULES, BLACKLISTED_ATTRIBUTES
 
 
 # ---------------------------------------------------------------------------
@@ -46,8 +46,15 @@ def test_blacklist_contains_dis():
 def test_blacklist_contains_gc():
     assert 'gc' in BLACKLISTED_MODULES
 
-def test_blacklist_contains_sys():
-    assert 'sys' in BLACKLISTED_MODULES
+def test_sys_not_in_module_blacklist():
+    """sys is allowed as a module; only specific attributes are blocked."""
+    assert 'sys' not in BLACKLISTED_MODULES
+
+def test_sys_settrace_in_attribute_blacklist():
+    assert 'settrace' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
+
+def test_sys_setprofile_in_attribute_blacklist():
+    assert 'setprofile' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
 
 def test_blacklist_contains_ctypes():
     assert 'ctypes' in BLACKLISTED_MODULES
@@ -117,8 +124,25 @@ def test_importpy_dis_raises_blacklist_error():
 def test_importpy_gc_raises_blacklist_error():
     assert_blacklisted('gc')
 
-def test_importpy_sys_raises_blacklist_error():
-    assert_blacklisted('sys')
+def test_importpy_sys_works():
+    """sys itself must import successfully."""
+    run("importpy sys")
+
+def test_importpy_sys_settrace_raises_blacklist_error():
+    """sys.settrace must raise a blacklist error."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        run("importpy sys\nvar f = sys.settrace")
+    msg = str(exc_info.value)
+    assert "'sys.settrace' is blacklisted in Lyric" in msg
+    assert "CPython bytecode, frames, object identity, or interpreter internals" in msg
+
+def test_importpy_sys_setprofile_raises_blacklist_error():
+    """sys.setprofile must raise a blacklist error."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        run("importpy sys\nvar f = sys.setprofile")
+    msg = str(exc_info.value)
+    assert "'sys.setprofile' is blacklisted in Lyric" in msg
+    assert "CPython bytecode, frames, object identity, or interpreter internals" in msg
 
 def test_importpy_ctypes_raises_blacklist_error():
     assert_blacklisted('ctypes')
@@ -166,6 +190,19 @@ def test_blacklist_error_says_blacklisted():
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         run("importpy dis")
     assert "blacklisted" in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# sys attribute blacklist — allowed attributes still work
+# ---------------------------------------------------------------------------
+
+def test_importpy_sys_version_accessible():
+    """sys.version must remain accessible (not blacklisted)."""
+    run("importpy sys\nvar v = sys.version")
+
+def test_importpy_sys_platform_accessible():
+    """sys.platform must remain accessible (not blacklisted)."""
+    run("importpy sys\nvar p = sys.platform")
 
 
 # ---------------------------------------------------------------------------

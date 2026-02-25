@@ -33,12 +33,16 @@ BLACKLISTED_MODULES = frozenset([
     'modulefinder',
     'gc',
     'weakref',
-    'sys',
     'ctypes',
     'cffi',
     '_ctypes',
     'mmap',
 ])
+
+# Specific attributes that are blacklisted on otherwise-allowed modules.
+BLACKLISTED_ATTRIBUTES = {
+    'sys': frozenset(['settrace', 'setprofile']),
+}
 
 _BLACKLIST_REASON = (
     "This module relies on CPython bytecode, frames, object identity, or "
@@ -64,6 +68,12 @@ class PyModuleProxy:
     
     def __getattr__(self, name: str) -> Any:
         """Forward attribute access to the underlying Python module."""
+        blocked = BLACKLISTED_ATTRIBUTES.get(self._module_name)
+        if blocked and name in blocked:
+            raise RuntimeErrorLyric(
+                f"AttributeError: '{self._module_name}.{name}' is blacklisted in Lyric. "
+                f"{_BLACKLIST_REASON}"
+            )
         try:
             attr = getattr(self._module, name)
             # Only wrap functions, not classes
