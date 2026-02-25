@@ -56,6 +56,27 @@ def test_sys_settrace_in_attribute_blacklist():
 def test_sys_setprofile_in_attribute_blacklist():
     assert 'setprofile' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
 
+def test_sys_gettrace_in_attribute_blacklist():
+    assert 'gettrace' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
+
+def test_sys_getprofile_in_attribute_blacklist():
+    assert 'getprofile' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
+
+def test_sys_getframe_in_attribute_blacklist():
+    assert '_getframe' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
+
+def test_sys_current_frames_in_attribute_blacklist():
+    assert '_current_frames' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
+
+def test_sys_getrefcount_in_attribute_blacklist():
+    assert 'getrefcount' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
+
+def test_sys_addaudithook_in_attribute_blacklist():
+    assert 'addaudithook' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
+
+def test_sys_exc_info_in_attribute_blacklist():
+    assert 'exc_info' in BLACKLISTED_ATTRIBUTES.get('sys', frozenset())
+
 def test_blacklist_contains_ctypes():
     assert 'ctypes' in BLACKLISTED_MODULES
 
@@ -143,6 +164,55 @@ def test_importpy_sys_setprofile_raises_blacklist_error():
     msg = str(exc_info.value)
     assert "'sys.setprofile' is blacklisted in Lyric" in msg
     assert "CPython bytecode, frames, object identity, or interpreter internals" in msg
+
+def test_importpy_sys_gettrace_raises_blacklist_error():
+    """sys.gettrace must raise a blacklist error."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        run("importpy sys\nvar f = sys.gettrace")
+    msg = str(exc_info.value)
+    assert "'sys.gettrace' is blacklisted in Lyric" in msg
+
+def test_importpy_sys_getprofile_raises_blacklist_error():
+    """sys.getprofile must raise a blacklist error."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        run("importpy sys\nvar f = sys.getprofile")
+    msg = str(exc_info.value)
+    assert "'sys.getprofile' is blacklisted in Lyric" in msg
+
+def test_importpy_sys_getframe_raises_blacklist_error():
+    """sys._getframe must raise a blacklist error."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        run("importpy sys\nvar f = sys._getframe")
+    msg = str(exc_info.value)
+    assert "'sys._getframe' is blacklisted in Lyric" in msg
+
+def test_importpy_sys_current_frames_raises_blacklist_error():
+    """sys._current_frames must raise a blacklist error."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        run("importpy sys\nvar f = sys._current_frames")
+    msg = str(exc_info.value)
+    assert "'sys._current_frames' is blacklisted in Lyric" in msg
+
+def test_importpy_sys_getrefcount_raises_blacklist_error():
+    """sys.getrefcount must raise a blacklist error."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        run("importpy sys\nvar f = sys.getrefcount")
+    msg = str(exc_info.value)
+    assert "'sys.getrefcount' is blacklisted in Lyric" in msg
+
+def test_importpy_sys_addaudithook_raises_blacklist_error():
+    """sys.addaudithook must raise a blacklist error."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        run("importpy sys\nvar f = sys.addaudithook")
+    msg = str(exc_info.value)
+    assert "'sys.addaudithook' is blacklisted in Lyric" in msg
+
+def test_importpy_sys_exc_info_raises_blacklist_error():
+    """sys.exc_info must raise a blacklist error."""
+    with pytest.raises(RuntimeErrorLyric) as exc_info:
+        run("importpy sys\nvar f = sys.exc_info")
+    msg = str(exc_info.value)
+    assert "'sys.exc_info' is blacklisted in Lyric" in msg
 
 def test_importpy_ctypes_raises_blacklist_error():
     assert_blacklisted('ctypes')

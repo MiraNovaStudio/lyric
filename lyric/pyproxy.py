@@ -41,7 +41,17 @@ BLACKLISTED_MODULES = frozenset([
 
 # Specific attributes that are blacklisted on otherwise-allowed modules.
 BLACKLISTED_ATTRIBUTES = {
-    'sys': frozenset(['settrace', 'setprofile']),
+    'sys': frozenset([
+        'settrace',       # installs a CPython bytecode trace hook
+        'setprofile',     # installs a CPython call/return profile hook
+        'gettrace',       # reads back the installed trace hook
+        'getprofile',     # reads back the installed profile hook
+        '_getframe',      # returns a live CPython frame object
+        '_current_frames', # returns all live frames across all threads
+        'getrefcount',    # exposes CPython reference-counting internals
+        'addaudithook',   # installs a permanent process-wide audit hook
+        'exc_info',       # returns (type, value, traceback) with frame refs
+    ]),
 }
 
 _BLACKLIST_REASON = (

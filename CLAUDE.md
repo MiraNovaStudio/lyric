@@ -63,11 +63,11 @@ pip install pytest flake8 build twine
 ## Git Commit Format
 
 ```bash
-git add *
+git add .
 git commit -a -m "SprintX TaskY: brief description"
 ```
 
-- **`git add *`** is required first to stage any newly created files (changelog files, summaries, etc.).
+- **`git add .`** is required first to stage any newly created files (changelog files, summaries, etc.).
 - **`git commit -a -m`** stages and commits all modifications to tracked files.
 - Commit message must be **one line only**, concise. All details belong in the changelog file.
 - **Only one commit per user prompt — no exceptions.** Do NOT create a second commit to update the changelog hash.
