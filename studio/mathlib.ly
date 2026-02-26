@@ -1,6 +1,6 @@
 int secret = 100
 
-int def add(int a, int b) {
+int add(int a, int b) {
     return a + b
 }
 
@@ -18,6 +18,6 @@ class Calculator
     }
 +++
 
-int def get_secret() {
+int get_secret() {
     return secret
 }
