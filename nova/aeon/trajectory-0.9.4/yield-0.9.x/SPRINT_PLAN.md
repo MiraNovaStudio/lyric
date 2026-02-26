@@ -52,4 +52,22 @@ Create unit test as usual in the proper tests/ directory for the sprint.
 When dealing with command output, the entirety of stdout and stderr will be considered the output of the program.  So if we have exec(mycmd) -> myvar, then both stdout and stderr are captured into the variable.  The same is true for our command pipelines exec(mycmd) | exec(mycmd2)
 
 
+## Task 3 - update function definition syntax regarding return types
+
+Claude our current syntax requires return types for functions to be specifed as follows
+
+```
+int def add(int a, int b) {
+      return a + b
+  }
+```
+
+The int def here is redundant.  If a return type is specified, the function would be int add(), if no return type is specified the function would be def add().  There is no reason to have int def add().  
+
+Please udpate the code to recognize functions with return types in the form int myfunc(), str myfunc() etc. or simply def myfunc().
+
+Please update the unit tests to honor this new syntax.  int def add() should not parse chat.
+
+
+
 

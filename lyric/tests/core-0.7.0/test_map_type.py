@@ -216,7 +216,7 @@ print_keys(mydata)
     def test_map_in_function_return(self):
         """def main() {\n    Test returning map from function.\n}"""
         code = """
-map def get_dict() {
+map get_dict() {
     return {"status": "ok", "code": 200}
 }
 

@@ -244,7 +244,7 @@ process_list(mydata)
     def test_arr_in_function_return(self):
         """def main() {\n    Test returning arr from function.\n}"""
         code = """
-arr def get_list() {
+arr get_list() {
     return [1, 2, 3]
 }
 

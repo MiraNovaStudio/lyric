@@ -12,7 +12,7 @@ import pytest
 from lyric.lexer import tokenize
 from lyric.parser import Parser
 from lyric.interpreter import Interpreter
-from lyric.errors import RuntimeErrorLyric
+from lyric.errors import RuntimeErrorLyric, ParseError
 
 
 def parse(source: str, interactive: bool = False):
@@ -214,19 +214,15 @@ print result
         evaluate(ast)
         # Should print 120
 
-    def test_old_syntax_still_works(self):
-        """def main() {\n    Test that old syntax 'int def funcname()' still works for backward compatibility.\n}"""
+    def test_old_syntax_rejected(self):
+        """Test that old syntax 'int def funcname()' is rejected with a ParseError."""
         code = """
 int def add_old_style(int a, int b) {
     return a + b
 }
-
-int result = add_old_style(10, 20)
-print result
 """
-        ast = parse(code, interactive=True)
-        evaluate(ast)
-        # Should print 30
+        with pytest.raises(ParseError):
+            parse(code, interactive=True)
 
     def test_new_syntax_with_rex_return_type(self):
         """def main() {\n    Test new syntax with rex return type.\n}"""

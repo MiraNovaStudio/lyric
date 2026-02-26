@@ -149,9 +149,13 @@ class Parser:
         # Check for typed function declaration: TYPE funcname(
         if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'LPAREN':
             return self._parse_func_def()
-        # Check for old-style typed function: TYPE def funcname(
+        # Reject old-style 'TYPE def funcname()' syntax — no longer valid
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
-            return self._parse_func_def()
+            type_token = self._peek()
+            raise ParseError(
+                f"Invalid function syntax at line {type_token.line}: '{type_token.value} def' is not valid. "
+                f"Use '{type_token.value} funcname()' for a typed function or 'def funcname()' for an untyped function."
+            )
         # Check for untyped function: def funcname(
         elif self._check('DEF'):
             return self._parse_func_def()
@@ -238,13 +242,13 @@ class Parser:
             return_type = type_token.value.lower()
             name_token = self._advance()
             name = name_token.value
-        # Check for old-style typed function: TYPE def funcname(
+        # Reject old-style 'TYPE def funcname()' syntax — no longer valid
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
-            type_token = self._advance()
-            return_type = type_token.value.lower()
-            def_token = self._consume('DEF', "Expected 'def'")
-            name_token = self._consume('IDENT', "Expected function name")
-            name = name_token.value
+            type_token = self._peek()
+            raise ParseError(
+                f"Invalid function syntax at line {type_token.line}: '{type_token.value} def' is not valid. "
+                f"Use '{type_token.value} funcname()' for a typed function or 'def funcname()' for an untyped function."
+            )
         # Untyped function: def funcname(
         else:
             def_token = self._consume('DEF', "Expected 'def'")
