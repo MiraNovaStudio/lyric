@@ -31,9 +31,9 @@ class Lexer:
     
     # Single character operators and delimiters
     SINGLE_CHARS = {
-        '+', '-', '*', '/', '=', '(', ')', '{', '}', ':', ',', ';', '.', '[', ']'
+        '+', '-', '*', '/', '%', '=', '(', ')', '{', '}', ':', ',', ';', '.', '[', ']'
     }
-    
+
     # Operator type mappings
     OPERATOR_TYPES = {
         '>': 'GT',
@@ -43,6 +43,7 @@ class Lexer:
         '-': 'MINUS',
         '*': 'MULTIPLY',
         '/': 'DIVIDE',
+        '%': 'PERCENT',
         '(': 'LPAREN',
         ')': 'RPAREN',
         '{': 'LBRACE',

@@ -706,7 +706,7 @@ class Parser:
         """Parse multiplication and division."""
         expr = self._parse_unary()
         
-        while self._match('MULTIPLY', 'DIVIDE'):
+        while self._match('MULTIPLY', 'DIVIDE', 'PERCENT'):
             operator = self._previous().value
             right = self._parse_unary()
             line, col = self._get_position_from_token(self._previous())

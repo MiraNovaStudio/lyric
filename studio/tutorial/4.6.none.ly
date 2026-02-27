@@ -4,5 +4,5 @@ def do_nothing() {
 
 def main() {
     var result = do_nothing()
-    print(result)  # None
+    print("Return value of a function with no return statement:", result)
 }

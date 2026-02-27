@@ -2074,6 +2074,14 @@ class Interpreter:
                 if right == 0:
                     raise RuntimeErrorLyric("Division by zero: cannot divide by zero. Check your divisor value before performing division.", node.line, node.column)
                 return left / right
+            elif node.op == '%':
+                if not isinstance(left, int) or isinstance(left, bool):
+                    raise TypeErrorLyric(f"Modulus operator '%' requires int operands, got {type(left).__name__} on the left")
+                if not isinstance(right, int) or isinstance(right, bool):
+                    raise TypeErrorLyric(f"Modulus operator '%' requires int operands, got {type(right).__name__} on the right")
+                if right == 0:
+                    raise ZeroDivisionErrorLyric("Modulus by zero: cannot take modulus with zero divisor.")
+                return left % right
             elif node.op == '==':
                 return left == right
             elif node.op == '!=':

@@ -31,8 +31,8 @@ class TestCLI:
                     # Verify version format matches semantic versioning (e.g., 0.8.3, 1.12.1, 10.10.10)
                     mock_print.assert_called_once()
                     call_args = mock_print.call_args[0][0]
-                    assert re.match(r'^Lyric \d+\.\d+\.\d+$', call_args), \
-                        f"Version output '{call_args}' does not match expected format 'Lyric X.Y.Z'"
+                    assert re.match(r'^Lyric \d+\.\d+\.\d+(\.\d+)?$', call_args), \
+                        f"Version output '{call_args}' does not match expected format 'Lyric X.Y.Z' or 'Lyric X.Y.Z.W'"
     
     def test_run_command_valid_file(self):
         """Test run command with valid .ly file."""

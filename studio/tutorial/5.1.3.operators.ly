@@ -2,6 +2,6 @@ def main() {
     str word = "hello"
     str twice = word + " " + word
     str dashes = "-" * 20
-    print(twice)   # hello hello
-    print(dashes)  # --------------------
+    print("Joining a string with itself:", twice)
+    print("Repeating \"-\" 20 times:", dashes)
 }
