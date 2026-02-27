@@ -271,12 +271,21 @@ def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
 
 def type_builtin(obj: Any) -> str:
     """Built-in type function returning the object's class name or Python type."""
+    # Import here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
+
     # Handle Lyric class instances
     if isinstance(obj, dict) and '__instance_class__' in obj:
         return obj['__instance_class__']
-    
+
+    # Handle Lyric container types
+    if isinstance(obj, ArrObject):
+        return "arr"
+    elif isinstance(obj, MapObject):
+        return "map"
+
     # Handle Python built-in types (check bool first since it's a subclass of int)
-    if isinstance(obj, bool):
+    elif isinstance(obj, bool):
         return "god"  # Return "god" for boolean types (honoring Kurt Gödel)
     elif isinstance(obj, int):
         return "int"
