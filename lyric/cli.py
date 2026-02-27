@@ -12,7 +12,7 @@ from lyric.lexer import tokenize
 from lyric.interpreter import evaluate, Interpreter
 from lyric.runtime import set_command_line_options
 
-__version__ = "0.9.3"
+__version__ = "0.9.3.1"
 
 
 def _parse_options(args):
