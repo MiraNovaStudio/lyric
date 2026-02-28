@@ -2571,17 +2571,35 @@ class Interpreter:
     
     def _evaluate_importpy_statement(self, node: ImportPyNode) -> None:
         """Evaluate an importpy statement."""
-        from lyric.pyproxy import PyModuleProxy
+        from lyric.pyproxy import PyModuleProxy, PyCallableProxy
 
         proxy = PyModuleProxy(node.module_name)
 
-        # Bind to the last component of a dotted name so that Lyric code
-        # accesses it by a plain identifier.  Examples:
-        #   importpy math          -> math
-        #   importpy http.server   -> server
-        #   importpy os.path       -> path
-        binding_name = node.module_name.split('.')[-1]
-        self.global_scope[binding_name] = proxy
+        if node.names is not None:
+            # Selective import: importpy http.server; HTTPServer, SimpleHTTPRequestHandler
+            # Each named attribute is bound directly into scope, wrapped in
+            # PyCallableProxy so Lyric-to-Python arg conversion still happens.
+            for name in node.names:
+                try:
+                    attr = getattr(proxy, name)
+                except RuntimeErrorLyric:
+                    raise
+                except AttributeError:
+                    raise RuntimeErrorLyric(
+                        f"ImportError: cannot import '{name}' from '{node.module_name}'"
+                    )
+                # getattr(proxy) wraps plain functions in PyCallableProxy already;
+                # classes (types) come back raw — wrap those too so arg conversion works.
+                if callable(attr) and not isinstance(attr, PyCallableProxy):
+                    attr = PyCallableProxy(attr, f"{node.module_name}.{name}")
+                self.global_scope[name] = attr
+        else:
+            # Whole-module import: bind proxy to last dotted component.
+            #   importpy math          -> math
+            #   importpy http.server   -> server
+            #   importpy os.path       -> path
+            binding_name = node.module_name.split('.')[-1]
+            self.global_scope[binding_name] = proxy
 
         return None
     

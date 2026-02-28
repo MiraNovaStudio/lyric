@@ -1320,12 +1320,14 @@ class Parser:
         return ImportNode(module_token.value, symbols, import_token.line, import_token.col)
     
     def _parse_importpy_stmt(self) -> ImportPyNode:
-        """Parse importpy statement: importpy IDENT(.IDENT)*
+        """Parse importpy statement: importpy IDENT(.IDENT)* [; Name1, Name2, ...]
 
-        Supports dotted module names such as `importpy http.server` or
-        `importpy os.path`.  The full dotted string is stored in the node;
-        the interpreter binds it to the last component (e.g. `server`,
-        `path`) so Lyric code accesses it by that short name.
+        Without semicolon list, the whole module proxy is bound to the last
+        component of the dotted name (e.g. `importpy http.server` → `server.*`).
+
+        With a semicolon list, each named attribute is bound directly into scope:
+            importpy http.server; HTTPServer, SimpleHTTPRequestHandler
+            importpy functools; partial
         """
         importpy_token = self._consume('IMPORTPY', "Expected 'importpy'")
         module_token = self._consume('IDENT', "Expected module name after 'importpy'")
@@ -1337,7 +1339,22 @@ class Parser:
             part_token = self._consume('IDENT', "Expected module name component after '.'")
             module_name += '.' + part_token.value
 
-        return ImportPyNode(module_name, importpy_token.line, importpy_token.col)
+        # Optional selective import list: ; Name1, Name2, ...
+        names = None
+        if self._match('SEMICOLON'):
+            names = []
+            while True:
+                if self._check('IDENT') or self._check('TYPE_OR_IDENT'):
+                    name_token = self._advance()
+                    names.append(name_token.value)
+                else:
+                    raise ParseError(
+                        f"Expected identifier in importpy name list at line {self._peek().line}, column {self._peek().col}"
+                    )
+                if not self._match('COMMA'):
+                    break
+
+        return ImportPyNode(module_name, importpy_token.line, importpy_token.col, names)
     
     def _is_file_operator_ahead(self) -> bool:
         """Check if there's a file operator ahead in the token stream."""

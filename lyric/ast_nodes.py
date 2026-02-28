@@ -499,15 +499,18 @@ class ImportPyNode(ASTNode):
     module_name: str
     line: int = 0
     column: int = 0
-    
+    names: list = None  # None = whole module; [...] = selective names (importpy mod; A, B)
+
     def __repr__(self):
+        if self.names:
+            return f"ImportPyNode(module='{self.module_name}', names={self.names})"
         return f"ImportPyNode(module='{self.module_name}')"
-    
+
     def to_dict(self):
-        return {
-            'type': 'ImportPyNode',
-            'module_name': self.module_name
-        }
+        d = {'type': 'ImportPyNode', 'module_name': self.module_name}
+        if self.names:
+            d['names'] = self.names
+        return d
 
 
 @dataclass
