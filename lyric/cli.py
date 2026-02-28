@@ -65,12 +65,30 @@ def main():
     
     if command == "--version":
         print(f"Lyric {__version__}")
+    elif command == "--blacklist":
+        from lyric.pyproxy import BLACKLISTED_MODULES
+        print("Importpy Blacklist — modules that cannot be imported even with --unsafe:")
+        print("(These rely on CPython bytecode, frames, object identity, or interpreter internals.)")
+        print()
+        for mod in sorted(BLACKLISTED_MODULES):
+            print(f"  {mod}")
+        sys.exit(0)
+    elif command == "--whitelist":
+        from lyric.pyproxy import WHITELISTED_MODULES
+        print("Importpy Whitelist — modules approved for importpy use in Lyric:")
+        print("(Use --unsafe to allow non-whitelisted, non-blacklisted modules.)")
+        print()
+        for mod in sorted(WHITELISTED_MODULES):
+            print(f"  {mod}")
+        sys.exit(0)
     elif command == "--help":
         print("Lyric Language Interpreter")
         print("")
         print("Usage:")
         print("  lyric --version                    Show version information")
         print("  lyric --help                       Show this help message")
+        print("  lyric --blacklist                  Print the importpy module blacklist")
+        print("  lyric --whitelist                  Print the importpy module whitelist")
         print("  lyric run <file.ly> [options] [args]  Run a Lyric source file with options and arguments")
         print("  lyric <file.ly> [options] [args]      Run a Lyric source file (shorthand)")
         print("  lyric -i [code]                   Interactive mode (REPL) or execute immediate code")
@@ -79,6 +97,8 @@ def main():
         print("  -a, -b, -c, etc.                  Short options (single character)")
         print("  --verbose, --debug, etc.          Long options (multiple characters)")
         print("  --file=myfile                     Long option with value")
+        print("  --unsafe                          Allow importpy of non-whitelisted modules")
+        print("                                    (blacklisted modules are still blocked)")
         print("")
         print("Arguments:")
         print("  Arguments are passed after options and available via main(argc, argv)")
@@ -116,19 +136,29 @@ def main():
         
         # Set command-line options for getopts()
         set_command_line_options(options)
-        
+
+        # Activate unsafe importpy mode if --unsafe flag is present
+        if 'unsafe' in options:
+            from lyric.pyproxy import set_unsafe_mode
+            set_unsafe_mode(True)
+
         _execute_file(file_path, arguments)
     elif command.endswith('.ly'):
         # Treat as shorthand for "lyric run <file.ly>"
         # Parse options from remaining args
         options, remaining = _parse_options(sys.argv[2:])
-        
+
         file_path = command
         arguments = remaining  # All remaining args are arguments
-        
+
         # Set command-line options for getopts()
         set_command_line_options(options)
-        
+
+        # Activate unsafe importpy mode if --unsafe flag is present
+        if 'unsafe' in options:
+            from lyric.pyproxy import set_unsafe_mode
+            set_unsafe_mode(True)
+
         _execute_file(file_path, arguments)
     else:
         print(f"Unknown command: {command}")

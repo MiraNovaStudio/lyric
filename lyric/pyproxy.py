@@ -59,6 +59,34 @@ _BLACKLIST_REASON = (
     "interpreter internals and does not work with Lyric."
 )
 
+# Modules explicitly approved for importpy use in Lyric.
+WHITELISTED_MODULES = frozenset([
+    'math',
+    'time',
+    'datetime',
+    'os',
+    'sys',
+])
+
+_WHITELIST_REASON = (
+    "Module is not in the Lyric importpy whitelist. "
+    "Use 'lyric run --unsafe <file.ly>' to allow non-whitelisted, non-blacklisted modules."
+)
+
+# Global unsafe-mode flag — set to True when --unsafe CLI flag is present.
+_unsafe_mode = False
+
+
+def set_unsafe_mode(enabled: bool) -> None:
+    """Enable or disable unsafe importpy mode."""
+    global _unsafe_mode
+    _unsafe_mode = enabled
+
+
+def is_unsafe_mode() -> bool:
+    """Return True if unsafe importpy mode is currently enabled."""
+    return _unsafe_mode
+
 
 class PyModuleProxy:
     """Proxy object that forwards attribute access to Python modules."""
@@ -70,6 +98,11 @@ class PyModuleProxy:
             raise RuntimeErrorLyric(
                 f"ImportError: Python module '{module_name}' is blacklisted in Lyric. "
                 f"{_BLACKLIST_REASON}"
+            )
+        if module_name not in WHITELISTED_MODULES and not _unsafe_mode:
+            raise RuntimeErrorLyric(
+                f"ImportError: Python module '{module_name}' is not whitelisted in Lyric. "
+                f"{_WHITELIST_REASON}"
             )
         try:
             self._module = __import__(module_name)

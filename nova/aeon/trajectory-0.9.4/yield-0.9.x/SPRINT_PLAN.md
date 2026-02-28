@@ -69,5 +69,7 @@ Please udpate the code to recognize functions with return types in the form int 
 Please update the unit tests to honor this new syntax.  int def add() should not parse chat.
 
 
+## Task 4 - add a module whitelist for importpy
 
+Hi Claude, we need to add a module whitelist for importpy.  This is modules that we know are safe.  Initially add modules we are using in our unit tests to the whitelist along with math, time, and datetime.  We will be writing separate unit tests for each module in the whitelist in a subsequent task.  Add a --unsafe flag which will allow importpy of modules that are not in the whitelist and not in the blacklist.  Blacklist modules can never be imported even with --unsafe.  Also add a --blacklist flag and --whitelist flag that will print out the current blacklist and whitelist reqpectiveley.
 

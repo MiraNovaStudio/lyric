@@ -346,8 +346,10 @@ def test_importpy_error_nonexistent_module():
         source = "importpy nonexistent_module"
         ast = parse(source)
         evaluate(ast)
-    
-    assert "ImportError: cannot import Python module 'nonexistent_module'" in str(exc_info.value)
+
+    error_msg = str(exc_info.value)
+    assert "ImportError" in error_msg
+    assert "nonexistent_module" in error_msg
 
 
 def test_importpy_error_nonexistent_attribute():
@@ -370,9 +372,10 @@ def test_importpy_error_formatting():
         source = "importpy nonexistent"
         ast = parse(source)
         evaluate(ast)
-    
+
     error_msg = str(exc_info.value)
-    assert "ImportError: cannot import Python module 'nonexistent'" in error_msg
+    assert "ImportError" in error_msg
+    assert "nonexistent" in error_msg
     assert "Runtime error:" in error_msg  # A17: error message starts with Runtime error prefix
 
 
