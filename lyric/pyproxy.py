@@ -106,6 +106,8 @@ def _lyric_to_python(val: Any) -> Any:
         return [_lyric_to_python(e) for e in val.elements]
     if cls == 'MapObject':
         return {k: _lyric_to_python(v) for k, v in val.elements.items()}
+    if cls == 'TupObject':
+        return tuple(_lyric_to_python(e) for e in val.elements)
     return val
 
 

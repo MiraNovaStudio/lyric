@@ -317,6 +317,23 @@ class ListLiteralNode(ASTNode):
 
 
 @dataclass
+class TupleLiteralNode(ASTNode):
+    """Represents a tuple literal: (elem1, elem2, ...)"""
+    elements: List['ASTNode']
+    line: int = 0
+    column: int = 0
+
+    def __repr__(self):
+        return f"TupleLiteralNode(elements={len(self.elements)})"
+
+    def to_dict(self):
+        return {
+            'type': 'TupleLiteralNode',
+            'elements': [elem.to_dict() if hasattr(elem, 'to_dict') else str(elem) for elem in self.elements]
+        }
+
+
+@dataclass
 class DictLiteralNode(ASTNode):
     """Represents a dictionary literal."""
     pairs: List[tuple['ASTNode', 'ASTNode']]  # List of (key, value) pairs

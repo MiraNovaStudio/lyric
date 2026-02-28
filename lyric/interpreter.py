@@ -9,7 +9,7 @@ import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode, FileOpNode, ExecChainNode
+    ListLiteralNode, TupleLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode, FileOpNode, ExecChainNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
@@ -341,6 +341,103 @@ class MapObject:
     def __iter__(self):
         """Support iteration (yields keys in insertion order)."""
         return iter(self.elements)
+
+
+class TupObject:
+    """Represents an immutable tup (tuple) object with read-only methods."""
+
+    def __init__(self, elements: list = None):
+        """Initialize TupObject with a list of elements (stored immutably)."""
+        self._elements = tuple(elements) if elements is not None else ()
+
+    @property
+    def elements(self):
+        return self._elements
+
+    def count(self, value: Any) -> int:
+        """Return number of occurrences of value."""
+        return self._elements.count(value)
+
+    def index(self, value: Any, start: int = 0, end: int = None) -> int:
+        """Return index of first occurrence; raise ValueError if not found."""
+        try:
+            if end is None:
+                return self._elements.index(value, start)
+            else:
+                return self._elements.index(value, start, end)
+        except ValueError:
+            raise ValueErrorLyric(f"'{value}' is not in tup")
+
+    def len(self) -> int:
+        """Return number of elements in the tuple."""
+        return len(self._elements)
+
+    def max(self) -> Any:
+        """Return largest element; error if tuple is empty."""
+        if not self._elements:
+            raise ValueErrorLyric("max() arg is an empty tup")
+        try:
+            return max(self._elements)
+        except TypeError as e:
+            raise TypeErrorLyric(f"max() error: {e}")
+
+    def min(self) -> Any:
+        """Return smallest element; error if tuple is empty."""
+        if not self._elements:
+            raise ValueErrorLyric("min() arg is an empty tup")
+        try:
+            return min(self._elements)
+        except TypeError as e:
+            raise TypeErrorLyric(f"min() error: {e}")
+
+    def sum(self) -> Any:
+        """Return sum of numeric elements."""
+        if not self._elements:
+            return 0
+        try:
+            return sum(self._elements)
+        except TypeError:
+            for i, elem in enumerate(self._elements):
+                if not isinstance(elem, (int, float)):
+                    raise TypeErrorLyric(f"sum() does not support non-numeric types: element at index {i} is {type(elem).__name__}")
+            raise TypeErrorLyric("sum() error with tup elements")
+
+    def __repr__(self):
+        if len(self._elements) == 1:
+            return f"({self._elements[0]!r},)"
+        return repr(self._elements)
+
+    def __str__(self):
+        if len(self._elements) == 1:
+            return f"({self._elements[0]!r},)"
+        return str(self._elements)
+
+    def __len__(self):
+        return len(self._elements)
+
+    def __getitem__(self, key):
+        """Support indexing and slicing."""
+        if isinstance(key, slice):
+            return TupObject(list(self._elements[key]))
+        return self._elements[key]
+
+    def __iter__(self):
+        """Support iteration."""
+        return iter(self._elements)
+
+    def __contains__(self, item):
+        """Support 'in' operator."""
+        return item in self._elements
+
+    def __eq__(self, other):
+        if isinstance(other, TupObject):
+            return self._elements == other._elements
+        if isinstance(other, tuple):
+            return self._elements == other
+        return False
+
+    def __hash__(self):
+        return hash(self._elements)
 
 
 class DskObject:
@@ -811,9 +908,11 @@ class Interpreter:
             return isinstance(value, list)  # arr maps to Python list
         elif expected_type == 'map':
             return isinstance(value, dict)  # map maps to Python dict
-        
+        elif expected_type == 'tup':
+            return isinstance(value, (tuple, TupObject))
+
         return False
-    
+
     def evaluate(self, ast: ProgramNode) -> Any:
         """Evaluate a ProgramNode and return the result."""
         try:
@@ -1386,6 +1485,8 @@ class Interpreter:
             return isinstance(value, (list, ArrObject))  # arr maps to ArrObject or Python list
         elif expected_type == 'map':
             return isinstance(value, (dict, MapObject))  # map maps to MapObject or Python dict
+        elif expected_type == 'tup':
+            return isinstance(value, (tuple, TupObject))  # tup maps to TupObject or Python tuple
         elif expected_type == 'dsk':
             return isinstance(value, DskObject)  # dsk maps to DskObject
         elif expected_type == 'obj':
@@ -1405,6 +1506,8 @@ class Interpreter:
             return [self._lyric_to_python(e) for e in val.elements]
         if isinstance(val, MapObject):
             return {k: self._lyric_to_python(v) for k, v in val.elements.items()}
+        if isinstance(val, TupObject):
+            return tuple(self._lyric_to_python(e) for e in val.elements)
         return val
 
     def _evaluate_return_statement(self, node: ReturnNode) -> ReturnValue:
@@ -1417,7 +1520,12 @@ class Interpreter:
         """Evaluate a list literal."""
         elements = [self._evaluate_expression(elem) for elem in node.elements]
         return ArrObject(elements)
-    
+
+    def _evaluate_tuple_literal(self, node: 'TupleLiteralNode') -> 'TupObject':
+        """Evaluate a tuple literal."""
+        elements = [self._evaluate_expression(elem) for elem in node.elements]
+        return TupObject(elements)
+
     def _evaluate_dict_literal(self, node: DictLiteralNode) -> 'MapObject':
         """Evaluate a dictionary literal."""
         result = {}
@@ -1432,12 +1540,14 @@ class Interpreter:
         obj = self._evaluate_expression(node.obj)
         index = self._evaluate_expression(node.index)
         
-        if isinstance(obj, (list, tuple, ArrObject)):
+        if isinstance(obj, (list, tuple, ArrObject, TupObject)):
             if not isinstance(index, int):
                 raise TypeErrorLyric(f"Invalid list index: expected integer, but got {type(index).__name__}. List indices must be integers (0, 1, 2, ...)")
-            if isinstance(obj, ArrObject):
-                if index < 0 or index >= len(obj.elements):
-                    raise IndexErrorLyric(f"Index out of range: tried to access index {index} in arr of length {len(obj.elements)}. Valid indices are 0 to {len(obj.elements)-1}")
+            if isinstance(obj, (ArrObject, TupObject)):
+                elems = obj.elements
+                if index < 0 or index >= len(elems):
+                    type_label = 'arr' if isinstance(obj, ArrObject) else 'tup'
+                    raise IndexErrorLyric(f"Index out of range: tried to access index {index} in {type_label} of length {len(elems)}. Valid indices are 0 to {len(elems)-1}")
                 return obj[index]
             else:
                 if index < 0 or index >= len(obj):
@@ -1654,7 +1764,7 @@ class Interpreter:
             # Generic iterator (simplified)
             iterator_var = node.iterator_var or 'item'
             iterable = self._evaluate_expression(node.condition_or_iter)
-            if isinstance(iterable, (list, tuple, ArrObject)):
+            if isinstance(iterable, (list, tuple, ArrObject, TupObject)):
                 for item in iterable:
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = item
@@ -1817,6 +1927,17 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: ArrObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, TupObject):
+                    # Handle TupObject methods (read-only)
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: TupObject has no attribute '{method_name}'")
                 elif isinstance(current_obj, MapObject):
                     # Handle MapObject methods
                     if hasattr(current_obj, method_name):
@@ -2007,6 +2128,8 @@ class Interpreter:
             return self._evaluate_function_call(expr)
         elif isinstance(expr, ListLiteralNode):
             return self._evaluate_list_literal(expr)
+        elif isinstance(expr, TupleLiteralNode):
+            return self._evaluate_tuple_literal(expr)
         elif isinstance(expr, DictLiteralNode):
             return self._evaluate_dict_literal(expr)
         elif isinstance(expr, IndexNode):
@@ -2135,10 +2258,10 @@ class Interpreter:
                 # Membership check: key in dict, item in list, char in string
                 if isinstance(right, MapObject):
                     return left in right  # MapObject implements __contains__
-                elif isinstance(right, (dict, list, str, tuple, ArrObject)):
+                elif isinstance(right, (dict, list, str, tuple, ArrObject, TupObject)):
                     return left in right
                 else:
-                    raise TypeErrorLyric(f"'in' requires a container (map, arr, str), got {type(right).__name__}")
+                    raise TypeErrorLyric(f"'in' requires a container (map, arr, tup, str), got {type(right).__name__}")
             else:
                 raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}", node.line, node.column)
         except TypeError as e:

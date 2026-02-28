@@ -9,7 +9,7 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, FileOpNode, ExecChainNode
+    ListLiteralNode, TupleLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, FileOpNode, ExecChainNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
@@ -820,11 +820,31 @@ class Parser:
         
         if self._match('LPAREN'):
             lparen_token = self._previous()
-            expr = self._parse_expression()
-            self._consume('RPAREN', "Expected ')' after expression")
-            # Use the position of the opening parenthesis
-            expr.line, expr.column = lparen_token.line, lparen_token.col
-            return self._parse_indexing_chain(expr)
+            # Empty tuple: ()
+            if self._check('RPAREN'):
+                self._advance()
+                return self._parse_indexing_chain(TupleLiteralNode([], lparen_token.line, lparen_token.col))
+            first_expr = self._parse_expression()
+            if self._match('COMMA'):
+                # Tuple literal: (expr, ...) or single-element (expr,)
+                elements = [first_expr]
+                while not self._check('RPAREN') and not self._check('EOF'):
+                    while self._match('NEWLINE'):
+                        pass
+                    if self._check('RPAREN'):
+                        break  # trailing comma allowed
+                    elements.append(self._parse_expression())
+                    if not self._match('COMMA'):
+                        break
+                while self._match('NEWLINE'):
+                    pass
+                self._consume('RPAREN', "Expected ')' after tuple elements")
+                return self._parse_indexing_chain(TupleLiteralNode(elements, lparen_token.line, lparen_token.col))
+            else:
+                # Grouping expression: (expr)
+                self._consume('RPAREN', "Expected ')' after expression")
+                first_expr.line, first_expr.column = lparen_token.line, lparen_token.col
+                return self._parse_indexing_chain(first_expr)
         
         if self._match('LBRACKET'):
             # List literal: [ expression* ]
@@ -1150,7 +1170,7 @@ class Parser:
             raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
         
         # Validate that the type is a known type
-        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'tup'}
         if type_name not in valid_types:
             raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
         
@@ -1181,7 +1201,7 @@ class Parser:
                 raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
             
             # Validate that the type is a known type
-            valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
+            valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'tup'}
             if type_name not in valid_types:
                 raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
             
@@ -1211,7 +1231,7 @@ class Parser:
             raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
         
         # Validate that the type is a known type
-        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'tup'}
         if type_name not in valid_types:
             raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
         
@@ -1244,7 +1264,7 @@ class Parser:
                 raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
             
             # Validate that the type is a known type
-            valid_types = {'int', 'str', 'flt', 'var', 'god', 'bin', 'arr', 'map', 'obj'}
+            valid_types = {'int', 'str', 'flt', 'var', 'god', 'bin', 'arr', 'map', 'obj', 'tup'}
             if type_name not in valid_types:
                 raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
             
