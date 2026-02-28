@@ -4,6 +4,7 @@
 
 """Python module proxy for importpy functionality."""
 
+import importlib
 from typing import Any
 from lyric.errors import RuntimeErrorLyric
 
@@ -67,6 +68,7 @@ WHITELISTED_MODULES = frozenset([
     'os',
     'sys',
     'random',
+    'http.server',
 ])
 
 _WHITELIST_REASON = (
@@ -89,6 +91,24 @@ def is_unsafe_mode() -> bool:
     return _unsafe_mode
 
 
+def _lyric_to_python(val: Any) -> Any:
+    """Convert Lyric runtime collection types to Python-native equivalents.
+
+    Called before passing arguments to Python callables so that Python code
+    receives standard Python lists/dicts rather than ArrObject/MapObject
+    wrappers that it knows nothing about.
+
+    Uses class-name duck-typing to avoid a circular import with interpreter.py.
+    Recurses into nested collections.
+    """
+    cls = type(val).__name__
+    if cls == 'ArrObject':
+        return [_lyric_to_python(e) for e in val.elements]
+    if cls == 'MapObject':
+        return {k: _lyric_to_python(v) for k, v in val.elements.items()}
+    return val
+
+
 class PyModuleProxy:
     """Proxy object that forwards attribute access to Python modules."""
 
@@ -106,8 +126,12 @@ class PyModuleProxy:
                 f"{_WHITELIST_REASON}"
             )
         try:
-            self._module = __import__(module_name)
-        except ImportError as e:
+            # importlib.import_module handles dotted names correctly:
+            # __import__('http.server') returns `http` (top-level package),
+            # but importlib.import_module('http.server') returns the
+            # http.server submodule itself, which is what we want.
+            self._module = importlib.import_module(module_name)
+        except ImportError:
             raise RuntimeErrorLyric(f"ImportError: cannot import Python module '{module_name}'")
     
     def __getattr__(self, name: str) -> Any:
@@ -142,8 +166,9 @@ class PyCallableProxy:
     
     def __call__(self, *args, **kwargs) -> Any:
         """Call the underlying callable object."""
+        converted = [_lyric_to_python(a) for a in args]
         try:
-            return self._callable(*args, **kwargs)
+            return self._callable(*converted, **kwargs)
         except Exception as e:
             raise RuntimeErrorLyric(f"Error calling '{self._name}': {str(e)}")
     

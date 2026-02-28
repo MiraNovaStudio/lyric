@@ -1394,6 +1394,19 @@ class Interpreter:
         else:
             return False
     
+    def _lyric_to_python(self, val: Any) -> Any:
+        """Convert Lyric collection wrappers to Python-native types.
+
+        Applied before passing arguments to external Python callables so that
+        Python code receives plain lists/dicts rather than ArrObject/MapObject.
+        Recurses into nested collections.
+        """
+        if isinstance(val, ArrObject):
+            return [self._lyric_to_python(e) for e in val.elements]
+        if isinstance(val, MapObject):
+            return {k: self._lyric_to_python(v) for k, v in val.elements.items()}
+        return val
+
     def _evaluate_return_statement(self, node: ReturnNode) -> ReturnValue:
         """Evaluate a return statement."""
         if node.value:
@@ -1764,7 +1777,7 @@ class Interpreter:
                     # Handle PyModuleProxy and similar objects
                     try:
                         method = getattr(current_obj, method_name)
-                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        args = [self._lyric_to_python(self._evaluate_expression(arg)) for arg in node.args]
                         if callable(method):
                             return method(*args)
                         else:
@@ -1827,10 +1840,11 @@ class Interpreter:
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: DskObject has no attribute '{method_name}'")
                 elif hasattr(current_obj, method_name):
-                    # Handle arbitrary Python instances (e.g., datetime, time objects)
+                    # Handle arbitrary Python instances (e.g., datetime, time objects,
+                    # and any Python object returned from importpy)
                     try:
                         method = getattr(current_obj, method_name)
-                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        args = [self._lyric_to_python(self._evaluate_expression(arg)) for arg in node.args]
                         if callable(method):
                             return method(*args)
                         else:
@@ -1843,7 +1857,7 @@ class Interpreter:
                     # Handle classes and callable objects
                     try:
                         method = getattr(current_obj, method_name)
-                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        args = [self._lyric_to_python(self._evaluate_expression(arg)) for arg in node.args]
                         if callable(method):
                             return method(*args)
                         else:
@@ -2435,11 +2449,17 @@ class Interpreter:
     def _evaluate_importpy_statement(self, node: ImportPyNode) -> None:
         """Evaluate an importpy statement."""
         from lyric.pyproxy import PyModuleProxy
-        
-        # Create the module proxy and bind it to the global scope
+
         proxy = PyModuleProxy(node.module_name)
-        self.global_scope[node.module_name] = proxy
-        
+
+        # Bind to the last component of a dotted name so that Lyric code
+        # accesses it by a plain identifier.  Examples:
+        #   importpy math          -> math
+        #   importpy http.server   -> server
+        #   importpy os.path       -> path
+        binding_name = node.module_name.split('.')[-1]
+        self.global_scope[binding_name] = proxy
+
         return None
     
     def _evaluate_file_op(self, node: FileOpNode) -> None:

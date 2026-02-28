@@ -1300,11 +1300,24 @@ class Parser:
         return ImportNode(module_token.value, symbols, import_token.line, import_token.col)
     
     def _parse_importpy_stmt(self) -> ImportPyNode:
-        """Parse importpy statement: importpy IDENT"""
+        """Parse importpy statement: importpy IDENT(.IDENT)*
+
+        Supports dotted module names such as `importpy http.server` or
+        `importpy os.path`.  The full dotted string is stored in the node;
+        the interpreter binds it to the last component (e.g. `server`,
+        `path`) so Lyric code accesses it by that short name.
+        """
         importpy_token = self._consume('IMPORTPY', "Expected 'importpy'")
         module_token = self._consume('IDENT', "Expected module name after 'importpy'")
-        
-        return ImportPyNode(module_token.value, importpy_token.line, importpy_token.col)
+        module_name = module_token.value
+
+        # Consume additional dotted components: http.server, os.path, etc.
+        while self._check('DOT') and self._peek_next().type == 'IDENT':
+            self._advance()  # consume the DOT
+            part_token = self._consume('IDENT', "Expected module name component after '.'")
+            module_name += '.' + part_token.value
+
+        return ImportPyNode(module_name, importpy_token.line, importpy_token.col)
     
     def _is_file_operator_ahead(self) -> bool:
         """Check if there's a file operator ahead in the token stream."""

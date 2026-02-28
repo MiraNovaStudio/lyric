@@ -73,6 +73,27 @@ def str_builtin(value: Any) -> str:
     return str(value)
 
 
+def tup_builtin(value: Any) -> tuple:
+    """Built-in tup() — convert an arr to a Python tuple.
+
+    Use this when a Python API specifically requires a tuple rather than a
+    list (rare; most Python APIs accept any sequence).
+
+    Examples
+    --------
+    tup([1, 2, 3])          # -> (1, 2, 3)
+    tup(["0.0.0.0", 8000])  # -> ("0.0.0.0", 8000)
+    """
+    from lyric.interpreter import ArrObject
+    if isinstance(value, ArrObject):
+        return tuple(value.elements)
+    if isinstance(value, (list, tuple)):
+        return tuple(value)
+    raise RuntimeErrorLyric(
+        f"TypeError: tup() expects an arr, got {type(value).__name__}"
+    )
+
+
 def bin_builtin(value: Any) -> bool:
     """Built-in bin (boolean) conversion function.
     
@@ -458,6 +479,7 @@ def register_builtins(env: dict) -> None:
     env['int'] = int_builtin
     env['flt'] = flt_builtin
     env['str'] = str_builtin
+    env['tup'] = tup_builtin
     env['bin'] = bin_builtin
     env['god'] = god_builtin
     env['arr'] = arr_builtin
