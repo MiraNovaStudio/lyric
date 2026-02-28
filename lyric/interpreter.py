@@ -1713,6 +1713,12 @@ class Interpreter:
                             current_obj = getattr(current_obj, member_name)
                         except AttributeError:
                             raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{member_name}'")
+                    elif hasattr(current_obj, member_name):
+                        # Handle arbitrary Python instances (e.g., datetime objects)
+                        try:
+                            current_obj = getattr(current_obj, member_name)
+                        except AttributeError:
+                            raise RuntimeErrorLyric(f"AttributeError: '{type(current_obj).__name__}' has no attribute '{member_name}'")
                     else:
                         available_members = list(current_obj.keys()) if isinstance(current_obj, dict) else []
                         if available_members:
@@ -1820,6 +1826,19 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: DskObject has no attribute '{method_name}'")
+                elif hasattr(current_obj, method_name):
+                    # Handle arbitrary Python instances (e.g., datetime, time objects)
+                    try:
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    except RuntimeErrorLyric:
+                        raise
+                    except Exception as e:
+                        raise RuntimeErrorLyric(f"Error calling '{method_name}' on {type(current_obj).__name__}: {str(e)}")
                 elif callable(current_obj):
                     # Handle classes and callable objects
                     try:
@@ -2126,7 +2145,9 @@ class Interpreter:
         """Evaluate a try/catch/finally statement with typed exception binding."""
         result = None
         exception_occurred = None
-        
+
+        # Each try body gets its own scope so sequential try blocks can reuse variable names
+        self._push_scope()
         try:
             # Execute try body
             for statement in node.try_body:
@@ -2151,50 +2172,61 @@ class Interpreter:
                 e = ZeroDivisionErrorLyric(str(e))
             # Catch any exception that occurs
             exception_occurred = e
-        
+        finally:
+            self._pop_scope()
+
         # If an exception occurred, try to match it with catch clauses
         if exception_occurred and node.catch_clauses:
             matched_clause = None
-            
+
             # Find the first matching catch clause
             for catch_clause in node.catch_clauses:
                 if self._exception_matches_clause(exception_occurred, catch_clause):
                     matched_clause = catch_clause
                     break
-            
+
             # Execute the matching catch clause
             if matched_clause:
                 # Bind exception to variable if specified
                 if matched_clause.variable_name:
                     self.global_scope[matched_clause.variable_name] = exception_occurred
-                
-                # Execute catch body
-                for statement in matched_clause.body:
-                    result = self._evaluate_statement(statement)
-                    if isinstance(result, ReturnValue):
-                        # Store result but don't return yet - finally must execute
-                        result = result
-                        break
-                
+
+                # Each catch body gets its own scope
+                self._push_scope()
+                try:
+                    # Execute catch body
+                    for statement in matched_clause.body:
+                        result = self._evaluate_statement(statement)
+                        if isinstance(result, ReturnValue):
+                            # Store result but don't return yet - finally must execute
+                            result = result
+                            break
+                finally:
+                    self._pop_scope()
+
                 # Clear the exception since it was caught
                 exception_occurred = None
-        
+
         # Execute finally block if it exists (always executes)
         if node.finally_body:
-            for statement in node.finally_body:
-                finally_result = self._evaluate_statement(statement)
-                if isinstance(finally_result, ReturnValue):
-                    # Finally block return takes precedence
-                    result = finally_result
-        
+            self._push_scope()
+            try:
+                for statement in node.finally_body:
+                    finally_result = self._evaluate_statement(statement)
+                    if isinstance(finally_result, ReturnValue):
+                        # Finally block return takes precedence
+                        result = finally_result
+            finally:
+                self._pop_scope()
+
         # If exception was not caught, re-raise it
         if exception_occurred:
             raise exception_occurred
-        
+
         # Return the result (could be from try, catch, or finally)
         if isinstance(result, ReturnValue):
             return result
-        
+
         return None
     
     def _exception_matches_clause(self, exception: Exception, catch_clause: CatchClauseNode) -> bool:
