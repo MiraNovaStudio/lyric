@@ -1,6 +1,0 @@
- Great claude now I need you to do a heavy refactor of the examples
- like we did for 4.1.  Assume no prior programming experience, make sure
- the output describes what is going on with the example. You may update
- all of the examples, I will be verifying them one by one tonight, just
- try to make the output more meaningful than something like print(age)
- that doesn't really show what is going on
