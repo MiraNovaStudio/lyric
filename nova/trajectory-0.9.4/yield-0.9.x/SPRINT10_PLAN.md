@@ -73,3 +73,22 @@ Please update the unit tests to honor this new syntax.  int def add() should not
 
 Hi Claude, we need to add a module whitelist for importpy.  This is modules that we know are safe.  Initially add modules we are using in our unit tests to the whitelist along with math, time, and datetime.  We will be writing separate unit tests for each module in the whitelist in a subsequent task.  Add a --unsafe flag which will allow importpy of modules that are not in the whitelist and not in the blacklist.  Blacklist modules can never be imported even with --unsafe.  Also add a --blacklist flag and --whitelist flag that will print out the current blacklist and whitelist reqpectiveley.
 
+
+## Taks 5 - add the obj type
+
+Currently when instantating classes in Lyric we need to use the var type, for example
+
+var account = BankAccount()
+
+where BankAccount is a class in lyric.  We need to add the object type (obj) to the language so
+we can do 
+
+obj account = BankAccount()
+
+This should be a primitive type in lyric like int str and arr etc.  
+
+Do not update the old unit tests to use obj, var should still work as normal (it is dynamic and can be any type)
+
+Write the new unit tests to test that obj type works correctly.
+
+
