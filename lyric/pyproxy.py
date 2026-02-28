@@ -66,6 +66,7 @@ WHITELISTED_MODULES = frozenset([
     'datetime',
     'os',
     'sys',
+    'random',
 ])
 
 _WHITELIST_REASON = (

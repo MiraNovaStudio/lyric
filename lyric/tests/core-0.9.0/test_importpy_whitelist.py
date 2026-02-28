@@ -44,6 +44,9 @@ def test_whitelist_contains_os():
 def test_whitelist_contains_sys():
     assert 'sys' in WHITELISTED_MODULES
 
+def test_whitelist_contains_random():
+    assert 'random' in WHITELISTED_MODULES
+
 def test_whitelist_is_frozenset():
     assert isinstance(WHITELISTED_MODULES, frozenset)
 
@@ -72,20 +75,23 @@ def test_importpy_os_whitelisted():
 def test_importpy_sys_whitelisted():
     run("importpy sys")
 
+def test_importpy_random_whitelisted():
+    run("importpy random")
+
 
 # ---------------------------------------------------------------------------
 # Non-whitelisted, non-blacklisted module blocked without --unsafe
 # ---------------------------------------------------------------------------
 
-def test_importpy_random_blocked_without_unsafe():
+def test_importpy_itertools_blocked_without_unsafe():
     """A non-whitelisted module must raise a whitelist error without --unsafe."""
     set_unsafe_mode(False)
     try:
         with pytest.raises(RuntimeErrorLyric) as exc_info:
-            run("importpy random")
+            run("importpy itertools")
         msg = str(exc_info.value)
         assert "ImportError" in msg
-        assert "random" in msg
+        assert "itertools" in msg
         assert "not whitelisted" in msg
     finally:
         set_unsafe_mode(False)
@@ -205,7 +211,7 @@ def test_unsafe_mode_off_by_default():
     set_unsafe_mode(True)
     set_unsafe_mode(False)
     with pytest.raises(RuntimeErrorLyric):
-        run("importpy random")
+        run("importpy json")
 
 
 # ---------------------------------------------------------------------------
