@@ -27,6 +27,7 @@ def parse_html(str url): {
     var links = link_pattern.findall(r.text)
     
     print "Found " + str(len(links)) + " links:"
+    var link
     given link in links:
         print "  " + link[1] + " -> " + link[0]
     done
@@ -47,6 +48,7 @@ def parse_html(str url): {
     var headings = heading_pattern.findall(r.text)
     
     print "Found " + str(len(headings)) + " headings:"
+    var heading
     given heading in headings:
         print "  H" + heading[0] + ": " + heading[1]
     done

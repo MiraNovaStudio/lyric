@@ -149,6 +149,7 @@ def main() {
         self._create_module("lists", """
 int sum_list(arr data) {
     int total = 0
+    var item
     for item in data:
         total = total + item
     done

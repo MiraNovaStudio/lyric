@@ -1,6 +1,7 @@
 def main() {
     # Find the first even number greater than 5
     print("Searching for the first even number greater than 5:")
+    int i
     given i in range(20)
         if i <= 5
             continue   # skip anything 5 or under

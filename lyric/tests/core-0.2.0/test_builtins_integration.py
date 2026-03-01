@@ -57,7 +57,7 @@ class TestBuiltinsIntegration:
     
     def test_range_builtin_available(self):
         """Test that range built-in is available in interpreter."""
-        ast = parse('def main() { given i in range(3): print(i) done }')
+        ast = parse('def main() { int i given i in range(3): print(i) done }')
         interpreter = evaluate(ast)
         # If we get here without error, range is working
         assert True

@@ -108,6 +108,7 @@ end
     def test_given_loop_colonless_syntax(self):
         """Test that given loops work without colons."""
         source = '''def main() {
+int i
 given i in range(3)
 print("iteration")
 done
@@ -219,6 +220,7 @@ end
     def test_given_loop_with_colon_works_without_warning(self):
         """Test that given loops with colons work without deprecation warnings."""
         source = '''def main() {
+int i
 given i in range(2):
 print("iteration")
 done

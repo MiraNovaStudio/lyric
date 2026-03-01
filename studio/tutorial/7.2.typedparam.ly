@@ -3,6 +3,7 @@ def square(int n) {
 }
 
 def greet_user(str name, int times) {
+    int i
     given i in range(times)
         print("Hello,", name)
     done

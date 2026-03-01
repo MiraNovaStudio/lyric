@@ -16,6 +16,8 @@ def main() {
     
     # Test nested loops
     print("\nTesting nested loops:")
+    int i
+    int j
     given i in range(2):
         print("Outer loop:", i)
         given j in range(2):

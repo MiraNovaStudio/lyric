@@ -503,6 +503,7 @@ class TestConstructorIntegration:
             }
             
             def count_to_max() {
+                int i
                 for i in range(self.max_count):
                     self.count = self.count + 1
                     print("Count:", self.count)

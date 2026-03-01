@@ -85,6 +85,7 @@ def main() {
 
     arr numbers = [10, 20, 30, 40, 50]
     int sum = 0
+    int num
     for num in numbers:
         sum = sum + num
     done

@@ -35,6 +35,7 @@ class TestForKeyword:
         """Test that `for` keyword works for basic iteration."""
         source = """
         def main() {
+            int i
             for i in range(3):
                 print(i)
             done
@@ -62,6 +63,7 @@ class TestForKeyword:
         source = """
         def main() {
             var sum = 0
+            int i
             for i in range(5):
                 sum = sum + i
             done
@@ -81,6 +83,8 @@ class TestForKeyword:
         """Test nested `for` loops."""
         source = """
         def main() {
+            int i
+            int j
             for i in range(2):
                 for j in range(2):
                     print(i, j)
@@ -109,6 +113,7 @@ class TestForKeyword:
         """Test `for` keyword with conditional statements."""
         source = """
         def main() {
+            int i
             for i in range(5):
                 if i > 2:
                     print("greater")
@@ -139,6 +144,7 @@ class TestForKeyword:
         source_for = """
         def test_for() {
             var sum = 0
+            int i
             for i in range(5):
                 sum = sum + i
             done
@@ -149,6 +155,7 @@ class TestForKeyword:
         source_given = """
         def test_given() {
             var sum = 0
+            int i
             given i in range(5):
                 sum = sum + i
             done
@@ -193,6 +200,7 @@ class TestForKeyword:
         # If not yet implemented, this test will be skipped
         source = """
         def main() {
+            int i
             for i in range(10):
                 if i == 5:
                     break
@@ -228,8 +236,9 @@ class TestForKeyword:
         def double(int n) {
             return n * 2
         }
-        
+
         def main() {
+            int i
             for i in range(3):
                 print(double(i))
             done

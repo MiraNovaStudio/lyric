@@ -199,6 +199,7 @@ def test_arguments_with_run_command():
     code = """
 def main(int argc, arr argv) {
     print("Arguments:", argc)
+    var arg
     for arg in argv
         print("  -", arg)
     done
@@ -237,6 +238,7 @@ def main(int argc, arr argv) {
     print("  file =", file)
     print("  verbose =", verbose)
     print("Arguments:", argc)
+    var arg
     for arg in argv
         print("  arg:", arg)
     done

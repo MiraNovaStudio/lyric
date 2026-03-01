@@ -59,6 +59,7 @@ end
 def test_evaluate_loop_statement():
     """Test evaluating loop statement: given i in range(3) print(i) done"""
     source = '''def main() {
+int i
 given i in range(3)
 print("iteration")
 done
@@ -422,6 +423,7 @@ def test_evaluate_if_demo_example():
 def test_evaluate_loop_example():
     """Test evaluating the loop.ly example."""
     source = """def main() {
+    int i
     given i in range(3):
         print(i)
     done
@@ -487,7 +489,9 @@ def test_evaluate_nested_control_flow():
     else:
         print("x is not positive")
     end
-    
+
+    int i
+    int j
     given i in range(2):
         print("Outer:", i)
         given j in range(2):

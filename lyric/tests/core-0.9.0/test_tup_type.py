@@ -163,6 +163,7 @@ print 99 in t
         """for loop iterates over tup elements."""
         code = """
 tup t = (1, 2, 3)
+var item
 for item in t
     print item
 done

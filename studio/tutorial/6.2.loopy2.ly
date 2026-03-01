@@ -1,4 +1,5 @@
 def main() {
+    int i
     print("range(1, 6) — from 1 up to (but not including) 6:")
     given i in range(1, 6)
         print(" ", i)

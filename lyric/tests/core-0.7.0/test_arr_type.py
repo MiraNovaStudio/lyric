@@ -139,6 +139,7 @@ print letters[2:]
         """def main() {\n    Test iterating over arr using for loop.\n}"""
         code = """
 arr colors = ["red", "green", "blue"]
+var color
 for color in colors:
     print color
 done
@@ -150,6 +151,7 @@ done
         """def main() {\n    Test iterating over arr using given loop.\n}"""
         code = """
 arr numbers = [10, 20, 30]
+var num
 given num in numbers:
     print num
 done
@@ -209,6 +211,7 @@ arr mylist = "not a list"
         """def main() {\n    Test iterating over empty arr.\n}"""
         code = """
 arr empty = []
+var item
 for item in empty:
     print item
 done
@@ -230,6 +233,7 @@ print items.len()
         """def main() {\n    Test passing arr as function parameter.\n}"""
         code = """
 def process_list(arr data) {
+    var item
     for item in data:
         print item
     done

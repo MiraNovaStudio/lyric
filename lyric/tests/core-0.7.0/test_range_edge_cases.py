@@ -20,6 +20,7 @@ class TestRangeNegativeStep:
         """def main() {\n    Test range countdown from 5 to 1.\n}"""
         code = """
 var count = 0
+int i
 given i in range(5, 0, -1):
     count = count + 1
 done
@@ -34,6 +35,7 @@ done
         """def main() {\n    Test range with negative start/stop and negative step.\n}"""
         code = """
 var items = []
+int i
 given i in range(-1, -6, -1):
     items = items + [i]
 done
@@ -51,6 +53,7 @@ done
         """def main() {\n    Test range with negative step of -2.\n}"""
         code = """
 var items = []
+int i
 given i in range(10, 0, -2):
     items = items + [i]
 done
@@ -72,6 +75,7 @@ class TestRangeZeroStep:
         """def main() {\n    Test that range with step=0 raises a ValueError.\n}"""
         code = """
 var items = []
+int i
 given i in range(0, 5, 0):
     items = items + [i]
 done
@@ -91,6 +95,7 @@ class TestRangeNegativeValues:
         """def main() {\n    Test range from negative to positive.\n}"""
         code = """
 var items = []
+int i
 given i in range(-5, 5):
     items = items + [i]
 done
@@ -108,6 +113,7 @@ done
         """def main() {\n    Test range starting from negative number.\n}"""
         code = """
 var items = []
+int i
 given i in range(-3, 2):
     items = items + [i]
 done
@@ -125,6 +131,7 @@ done
         """def main() {\n    Test range with both negative start and stop.\n}"""
         code = """
 var items = []
+int i
 given i in range(-10, -5):
     items = items + [i]
 done
@@ -142,6 +149,7 @@ done
         """def main() {\n    Test range with negative start and positive step.\n}"""
         code = """
 var items = []
+int i
 given i in range(-10, 0, 2):
     items = items + [i]
 done
@@ -163,6 +171,7 @@ class TestRangeEmptyRanges:
         """def main() {\n    Test range where start equals stop.\n}"""
         code = """
 var count = 0
+int i
 given i in range(5, 5):
     count = count + 1
 done
@@ -177,6 +186,7 @@ done
         """def main() {\n    Test range where start > stop with positive step.\n}"""
         code = """
 var count = 0
+int i
 given i in range(10, 5, 1):
     count = count + 1
 done
@@ -191,6 +201,7 @@ done
         """def main() {\n    Test range where start < stop with negative step.\n}"""
         code = """
 var count = 0
+int i
 given i in range(5, 10, -1):
     count = count + 1
 done
@@ -205,6 +216,7 @@ done
         """def main() {\n    Test range(0) produces empty sequence.\n}"""
         code = """
 var count = 0
+int i
 given i in range(0):
     count = count + 1
 done
@@ -219,6 +231,7 @@ done
         """def main() {\n    Test range with negative single argument produces empty sequence.\n}"""
         code = """
 var count = 0
+int i
 given i in range(-5):
     count = count + 1
 done
@@ -237,6 +250,7 @@ class TestRangeTypeValidation:
         """def main() {\n    Test that range rejects float arguments.\n}"""
         code = """
 var items = []
+int i
 given i in range(5.5):
     items = items + [i]
 done
@@ -252,6 +266,7 @@ done
         """def main() {\n    Test that range rejects string arguments.\n}"""
         code = """
 var items = []
+int i
 given i in range("5"):
     items = items + [i]
 done

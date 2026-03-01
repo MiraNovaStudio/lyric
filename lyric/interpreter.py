@@ -1813,14 +1813,27 @@ class Interpreter:
         if isinstance(node.condition_or_iter, CallNode) and node.condition_or_iter.func_name == "range":
             # Get the iterator variable name from the loop node
             iterator_var = node.iterator_var or 'i'
-            
+
+            # Check that the loop variable is declared
+            if not self._is_variable_declared_in_any_scope(iterator_var):
+                raise RuntimeErrorLyric(
+                    f"Loop variable '{iterator_var}' must be declared before use in a 'given' loop. "
+                    f"Declare it first, e.g.: var {iterator_var}, int {iterator_var}"
+                )
+            declared_type = self._get_variable_type(iterator_var)
+
             # Evaluate range arguments
             args = [self._evaluate_expression(arg) for arg in node.condition_or_iter.args]
-            
+
             if len(args) == 1:
                 # range(n) -> 0 to n-1
                 end = args[0]
                 for i in range(end):
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, i):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(i).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
@@ -1835,6 +1848,11 @@ class Interpreter:
                 # range(start, end)
                 start, end = args
                 for i in range(start, end):
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, i):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(i).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
@@ -1849,6 +1867,11 @@ class Interpreter:
                 # range(start, end, step)
                 start, end, step = args
                 for i in range(start, end, step):
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, i):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(i).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
@@ -1862,9 +1885,26 @@ class Interpreter:
         else:
             # Generic iterator (simplified)
             iterator_var = node.iterator_var or 'item'
+
+            # Check that the loop variable is declared
+            if not self._is_variable_declared_in_any_scope(iterator_var):
+                raise RuntimeErrorLyric(
+                    f"Loop variable '{iterator_var}' must be declared before use in a 'given' loop. "
+                    f"Declare it first, e.g.: var {iterator_var}, arr {iterator_var}"
+                )
+            declared_type = self._get_variable_type(iterator_var)
+
             iterable = self._evaluate_expression(node.condition_or_iter)
             if isinstance(iterable, (list, tuple, ArrObject, TupObject)):
                 for item in iterable:
+                    # Convert tuple to list for arr-declared variables
+                    if declared_type == 'arr' and isinstance(item, tuple):
+                        item = list(item)
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, item):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(item).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = item
                     try:
@@ -1878,6 +1918,11 @@ class Interpreter:
                 # Iterate over keys in insertion order
                 keys = iterable.keys() if isinstance(iterable, MapObject) else list(iterable.keys())
                 for key in keys:
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, key):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(key).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = key
                     try:
@@ -1887,7 +1932,7 @@ class Interpreter:
                         break  # Exit loop
                     except ContinueSignal:
                         continue  # Skip to next iteration
-        
+
         return None
     
     def _evaluate_while_loop(self, node: LoopNode) -> Any:

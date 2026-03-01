@@ -102,6 +102,7 @@ end
 def test_parse_loop_statement():
     """Test parsing loop statement: given i in range(3): print(i) done"""
     source = '''def main() {
+int i
 given i in range(3):
 print(i)
 done
@@ -116,10 +117,10 @@ done
     func = ast.statements[0]
     assert isinstance(func, FunctionNode)
     assert func.name == "main"
-    assert len(func.body_statements) == 1
-    
-    # Check loop statement
-    loop = func.body_statements[0]
+    assert len(func.body_statements) == 2
+
+    # Check loop statement (second statement after int i declaration)
+    loop = func.body_statements[1]
     assert isinstance(loop, LoopNode)
     assert loop.loop_kind == "iterator"  # Should detect range() call
     
@@ -438,6 +439,7 @@ def test_parse_if_demo_example():
 def test_parse_loop_example():
     """Test parsing the loop.ly example."""
     source = """def main() {
+    int i
     given i in range(3):
         print(i)
     done
@@ -451,9 +453,9 @@ def test_parse_loop_example():
     assert isinstance(func, FunctionNode)
     assert func.name == "main"
     
-    # Should have one statement in main body
-    assert len(func.body_statements) == 1
-    loop_stmt = func.body_statements[0]
+    # Should have two statements: int i declaration + loop
+    assert len(func.body_statements) == 2
+    loop_stmt = func.body_statements[1]
     assert isinstance(loop_stmt, LoopNode)
     assert loop_stmt.loop_kind == "iterator"
     assert loop_stmt.iterator_var == "i"

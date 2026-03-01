@@ -6,6 +6,8 @@ def main() {
     print("Element at row 1, column 2:", matrix[1][2])
 
     print("All values one by one:")
+    var row
+    var val
     given row in matrix
         given val in row
             print(" ", val)
