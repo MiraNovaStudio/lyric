@@ -714,6 +714,29 @@ class Interpreter:
         register_builtins(self.global_scope)
         self.functions = {}
         self.classes = {}
+        # Override isinstance to support inheritance chain walking
+        _orig_isinstance = self.global_scope['isinstance']
+        _classes_ref = self.classes
+        def _isinstance_with_inheritance(obj, class_or_type):
+            if isinstance(obj, dict) and '__instance_class__' in obj:
+                target_name = None
+                if isinstance(class_or_type, dict) and '__class_name__' in class_or_type:
+                    target_name = class_or_type['__class_name__']
+                elif isinstance(class_or_type, str):
+                    target_name = class_or_type
+                if target_name is not None:
+                    current = obj.get('__instance_class__')
+                    while current:
+                        if current == target_name:
+                            return True
+                        cd = _classes_ref.get(current)
+                        if cd:
+                            current = cd.get('__base_class__')
+                        else:
+                            break
+                    return False
+            return _orig_isinstance(obj, class_or_type)
+        self.global_scope['isinstance'] = _isinstance_with_inheritance
         # Track the source file path for relative imports
         self.source_file = source_file
         # Track the current instance context for access control
