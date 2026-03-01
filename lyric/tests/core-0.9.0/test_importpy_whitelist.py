@@ -96,12 +96,12 @@ def test_importpy_itertools_blocked_without_unsafe():
     finally:
         set_unsafe_mode(False)
 
-def test_importpy_json_blocked_without_unsafe():
-    """json is not in the initial whitelist and must be blocked without --unsafe."""
+def test_importpy_csv_blocked_without_unsafe():
+    """csv is not in the whitelist and must be blocked without --unsafe."""
     set_unsafe_mode(False)
     try:
         with pytest.raises(RuntimeErrorLyric) as exc_info:
-            run("importpy json")
+            run("importpy csv")
         msg = str(exc_info.value)
         assert "not whitelisted" in msg
     finally:
@@ -211,7 +211,7 @@ def test_unsafe_mode_off_by_default():
     set_unsafe_mode(True)
     set_unsafe_mode(False)
     with pytest.raises(RuntimeErrorLyric):
-        run("importpy json")
+        run("importpy csv")
 
 
 # ---------------------------------------------------------------------------

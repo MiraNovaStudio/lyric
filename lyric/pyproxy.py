@@ -65,6 +65,7 @@ WHITELISTED_MODULES = frozenset([
     'math',
     'time',
     'datetime',
+    'json',
     'os',
     'sys',
     'random',

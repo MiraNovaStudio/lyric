@@ -15,7 +15,7 @@ class BankAccount:
 +++
 
 def main() {
-    var account = BankAccount()
+    obj account = BankAccount()
     account.deposit(100.0)
     print(account.get_balance())   # 100.0
 }
