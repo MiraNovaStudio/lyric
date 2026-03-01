@@ -11,8 +11,7 @@ from lyric.parser import parse, Parser
 from lyric.lexer import tokenize
 from lyric.interpreter import evaluate, Interpreter
 from lyric.runtime import set_command_line_options
-
-__version__ = "0.9.6"
+from lyric import __version__
 
 
 def _parse_options(args):
