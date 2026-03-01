@@ -71,17 +71,17 @@ class TestImportStatement:
 
     def test_import_simple_function(self):
         """def main() {\n    Test importing a module with a simple function.\n}"""
-        self._create_module("mathutils", """def main() {\n    
+        self._create_module("mathutils", """
 int add(int a, int b) {
     return a + b
 }
-\n}""")
-        
+""")
+
         code = """
 import mathutils
 
 def main() {
-    int result = add(5, 3)
+    int result = mathutils.add(5, 3)
     print(result)
 }
 """
@@ -103,7 +103,7 @@ def main() {
 
     def test_import_function_with_return_value(self):
         """def main() {\n    Test importing function that returns a value.\n}"""
-        self._create_module("calculator", """def main() {\n    
+        self._create_module("calculator", """
 int multiply(int a, int b) {
     return a * b
 }
@@ -111,13 +111,13 @@ int multiply(int a, int b) {
 int square(int n) {
     return multiply(n, n)
 }
-\n}""")
-        
+""")
+
         code = """
 import calculator
 
 def main() {
-    int result = square(7)
+    int result = calculator.square(7)
     print(result)
 }
 """
@@ -133,12 +133,12 @@ int get_local() {
     return local_var
 }
 """)
-        
+
         code = """
 import scoped
 
 def main() {
-    print(get_local())
+    print(scoped.get_local())
 }
 """
         result, output = self._run_code(code)
@@ -155,13 +155,13 @@ int sum_list(arr data) {
     return total
 }
 """)
-        
+
         code = """
 import lists
 
 def main() {
     arr test_data = [10, 20, 30]
-    print(sum_list(test_data))
+    print(lists.sum_list(test_data))
 }
 """
         result, output = self._run_code(code)
@@ -169,18 +169,18 @@ def main() {
 
     def test_import_function_with_map(self):
         """def main() {\n    Test that functions work with map types.\n}"""
-        self._create_module("dicts", """def main() {\n    
+        self._create_module("dicts", """
 str get_name(map p) {
     return p["name"]
 }
-\n}""")
-        
+""")
+
         code = """
 import dicts
 
 def main() {
     map test_person = {"name": "Bob"}
-    print(get_name(test_person))
+    print(dicts.get_name(test_person))
 }
 """
         result, output = self._run_code(code)
@@ -201,7 +201,7 @@ def main() {
         assert "imported" in output
 
     def test_import_module_level_variables(self):
-        """def main() {\n    Test that module-level variables can be imported.\n}"""
+        """def main() {\n    Test that module-level variables can be accessed via namespace.\n}"""
         # Create a module with variables
         self._create_module("vars_module", """
 int MODULE_CONSTANT = 42
@@ -212,16 +212,16 @@ int get_constant() {
     return MODULE_CONSTANT
 }
 """)
-        
-        # Import and use the variables
+
+        # Import and use via namespace
         code = """
 import vars_module
 
 def main() {
-    print(MODULE_CONSTANT)
-    print(MODULE_NAME)
-    print(MODULE_LIST[0])
-    print(get_constant())
+    print(vars_module.MODULE_CONSTANT)
+    print(vars_module.MODULE_NAME)
+    print(vars_module.MODULE_LIST[0])
+    print(vars_module.get_constant())
 }
 """
         result, output = self._run_code(code)
@@ -258,7 +258,7 @@ def main() {
         assert "30" in output  # 10 + 20
 
     def test_import_all_includes_variables(self):
-        """def main() {\n    Test that import all includes module-level variables.\n}"""
+        """def main() {\n    Test that whole-module import creates a namespace.\n}"""
         # Create a module with functions, classes, and variables
         self._create_module("full_module", """
 int SETTING = 100
@@ -270,22 +270,22 @@ int helper() {
 
 class Config
     int value
-    
+
     def Config() {
         self.value = SETTING
     }
 +++
 """)
-        
-        # Import all
+
+        # Access everything via namespace
         code = """
 import full_module
 
 def main() {
-    print(SETTING)
-    print(NAME)
-    print(helper())
-    obj cfg = Config()
+    print(full_module.SETTING)
+    print(full_module.NAME)
+    print(full_module.helper())
+    obj cfg = full_module.Config()
     print(cfg.value)
 }
 """
@@ -295,28 +295,28 @@ def main() {
         assert "200" in output  # helper() returns SETTING * 2
 
     def test_import_class(self):
-        """def main() {\n    Test importing a class.\n}"""
+        """def main() {\n    Test importing a class via namespace.\n}"""
         self._create_module("classes", """
 class Person
     str name
     int age
-    
+
     def Person(str n, int a) {
         self.name = n
         self.age = a
     }
-    
+
     str greet() {
         return "Hello, I'm " + self.name
     }
 +++
 """)
-        
+
         code = """
 import classes
 
 def main() {
-    obj p = Person("Alice", 30)
+    obj p = classes.Person("Alice", 30)
     print(p.name)
     print(p.age)
     print(p.greet())

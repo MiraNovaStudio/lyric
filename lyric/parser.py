@@ -808,11 +808,12 @@ class Parser:
                     args = []
                     if not self._check('RPAREN'):
                         args = self._parse_argument_list()
-                    
+
                     self._consume('RPAREN', "Expected ')' after arguments")
-                    return CallNode(full_name, args, name_token.line, name_token.col)
-                
-                return IdentifierNode(full_name, name_token.line, name_token.col)
+                    return self._parse_indexing_chain(CallNode(full_name, args, name_token.line, name_token.col))
+
+                # Support indexing on member access: module.arr_var[0]
+                return self._parse_indexing_chain(IdentifierNode(full_name, name_token.line, name_token.col))
             
             # Start with identifier and check for indexing
             expr = IdentifierNode(name, name_token.line, name_token.col)

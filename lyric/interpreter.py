@@ -440,6 +440,46 @@ class TupObject:
         return hash(self._elements)
 
 
+class LyricModuleNamespace:
+    """Represents a Lyric module imported as a namespace.
+
+    Bound to the module name so that `module.func()` and `module.var`
+    work without dumping all names into the calling scope:
+        import mymodule          -> mymodule.helper()  mymodule.CONST
+        import mymodule; helper  -> helper()  (selective, existing behaviour)
+    """
+
+    def __init__(self, module_name: str, functions: dict, classes: dict, scope: dict):
+        self._module_name = module_name
+        self._functions = functions  # name → func_def dict (module_scope attached)
+        self._classes = classes      # name → class_def dict
+        self._scope = scope          # name → non-callable variable values
+
+    def has_function(self, name: str) -> bool:
+        return name in self._functions
+
+    def has_class(self, name: str) -> bool:
+        return name in self._classes
+
+    def has_variable(self, name: str) -> bool:
+        return name in self._scope
+
+    def get_member(self, name: str) -> Any:
+        """Return the named member (value, func_def, or class_def) or raise."""
+        if name in self._scope:
+            return self._scope[name]
+        if name in self._functions:
+            return self._functions[name]
+        if name in self._classes:
+            return self._classes[name]
+        raise RuntimeErrorLyric(
+            f"AttributeError: module '{self._module_name}' has no member '{name}'"
+        )
+
+    def __repr__(self):
+        return f"<LyricModule '{self._module_name}'>"
+
+
 class DskObject:
     """Represents a dsk (disk/file) object with file operations."""
     
@@ -962,78 +1002,137 @@ class Interpreter:
                 raise ZeroDivisionErrorLyric(str(e))
             raise RuntimeErrorLyric(str(e))
     
+    def _call_func_def(self, func_def: dict, args: List[Any], func_name: str = '<anonymous>',
+                       module_functions: dict = None, module_classes: dict = None) -> Any:
+        """Execute a Lyric function definition with pre-evaluated argument values.
+
+        module_functions / module_classes, when provided, are temporarily
+        registered so that intra-module calls (e.g. square() calling multiply())
+        resolve correctly when called from a LyricModuleNamespace.
+        """
+        params = func_def['params']
+        param_types = func_def.get('param_types', [])
+        return_type = func_def.get('return_type', 'var')
+        body = func_def['body']
+        module_scope = func_def.get('module_scope', None)
+
+        local_scope = {}
+        for i, param in enumerate(params):
+            arg_value = args[i] if i < len(args) else None
+            if i < len(param_types) and param_types[i] != 'var':
+                if arg_value is None:
+                    raise RuntimeErrorLyric(
+                        f"Type error: parameter '{param}' expects {param_types[i]}, got None"
+                    )
+                elif not self._is_type_compatible(param_types[i], arg_value):
+                    raise RuntimeErrorLyric(
+                        f"Type error: parameter '{param}' expects {param_types[i]}, got {type(arg_value).__name__}"
+                    )
+            local_scope[param] = arg_value
+
+        old_scope = self.global_scope.copy()
+        if module_scope is not None:
+            self.global_scope = module_scope.copy()
+        self.global_scope.update(local_scope)
+        self._push_scope()
+
+        # Temporarily register module functions/classes so intra-module calls resolve
+        saved_functions: dict = {}
+        saved_classes: dict = {}
+        if module_functions:
+            for name, mfunc in module_functions.items():
+                saved_functions[name] = self.functions.get(name)
+                self.functions[name] = mfunc
+        if module_classes:
+            for name, mcls in module_classes.items():
+                saved_classes[name] = self.classes.get(name)
+                self.classes[name] = mcls
+
+        try:
+            result = None
+            for statement in body:
+                result = self._evaluate_statement(statement)
+                if isinstance(result, ReturnValue):
+                    return_value = result.value
+                    if return_type != 'var' and not self._is_type_compatible(return_type, return_value):
+                        raise RuntimeErrorLyric(
+                            f"Type error: return value does not match declared type. "
+                            f"Expected {return_type}, but got {type(return_value).__name__}"
+                        )
+                    return return_value
+            if return_type != 'var' and return_type != 'None':
+                raise RuntimeErrorLyric(
+                    f"Type error: function '{func_name}' declared to return {return_type}, but returns None"
+                )
+            return None
+        finally:
+            self.global_scope = old_scope
+            self._pop_scope()
+            for name, old_val in saved_functions.items():
+                if old_val is None:
+                    self.functions.pop(name, None)
+                else:
+                    self.functions[name] = old_val
+            for name, old_val in saved_classes.items():
+                if old_val is None:
+                    self.classes.pop(name, None)
+                else:
+                    self.classes[name] = old_val
+
     def _call_function(self, func_name: str, args: List[Any]) -> Any:
         """Call a function by name with arguments."""
         if func_name in self.functions:
-            func_def = self.functions[func_name]
-            params = func_def['params']
-            param_types = func_def.get('param_types', [])
-            return_type = func_def.get('return_type', 'var')
-            body = func_def['body']
-            module_scope = func_def.get('module_scope', None)  # Get module scope if available
-            
-            # Create local scope
-            local_scope = {}
-            for i, param in enumerate(params):
-                if i < len(args):
-                    arg_value = args[i]
-                else:
-                    arg_value = None
-                
-                # Type enforcement for parameters
-                if i < len(param_types) and param_types[i] != 'var':
-                    if arg_value is None:
-                        raise RuntimeErrorLyric(
-                            f"Type error: parameter '{param}' expects {param_types[i]}, got None"
-                        )
-                    elif not self._is_type_compatible(param_types[i], arg_value):
-                        raise RuntimeErrorLyric(
-                            f"Type error: parameter '{param}' expects {param_types[i]}, got {type(arg_value).__name__}"
-                        )
-                
-                local_scope[param] = arg_value
-            
-            # Save current scope
-            old_scope = self.global_scope.copy()
-            
-            # If function has a module scope, use it as the base scope
-            if module_scope is not None:
-                self.global_scope = module_scope.copy()
-            
-            # Set local scope (parameters override module scope)
-            self.global_scope.update(local_scope)
-            
-            # Push function scope for variable types
-            self._push_scope()
-            
-            try:
-                # Execute function body
-                result = None
-                for statement in body:
-                    result = self._evaluate_statement(statement)
-                    if isinstance(result, ReturnValue):
-                        return_value = result.value
-                        # Validate return type
-                        if return_type != 'var' and not self._is_type_compatible(return_type, return_value):
-                            raise RuntimeErrorLyric(
-                                f"Type error: return value does not match declared type. "
-                                f"Expected {return_type}, but got {type(return_value).__name__}"
-                            )
-                        return return_value
-                
-                # If no explicit return, return None
-                if return_type != 'var' and return_type != 'None':
-                    raise RuntimeErrorLyric(
-                        f"Type error: function '{func_name}' declared to return {return_type}, but returns None"
-                    )
-                return None
-            finally:
-                # Restore scope
-                self.global_scope = old_scope
-                self._pop_scope()
+            return self._call_func_def(self.functions[func_name], args, func_name=func_name)
         else:
             raise RuntimeErrorLyric(f"Function '{func_name}' is not defined")
     
+    def _instantiate_class_by_name(self, class_name: str, arg_nodes: list) -> dict:
+        """Instantiate a class by name. class_name must already be in self.classes."""
+        class_def = self.classes[class_name]
+        instance = {}
+
+        def copy_from_inheritance_chain(cname):
+            if cname not in self.classes:
+                raise RuntimeErrorLyric(f"Class '{cname}' is not defined")
+            cd = self.classes[cname]
+            if '__base_class__' in cd:
+                copy_from_inheritance_chain(cd['__base_class__'])
+            for key, value in cd.items():
+                if not key.startswith('__') or key == '__constructor__' or key.startswith('__visibility_'):
+                    if key not in ('__class_name__', '__base_class__'):
+                        instance[key] = value
+
+        def collect_constructor_chain(cname):
+            ctors = []
+            if cname not in self.classes:
+                return ctors
+            cd = self.classes[cname]
+            if '__base_class__' in cd:
+                ctors.extend(collect_constructor_chain(cd['__base_class__']))
+            if '__constructor__' in cd:
+                ctors.append((cname, cd['__constructor__']))
+            return ctors
+
+        copy_from_inheritance_chain(class_name)
+        instance['__instance_class__'] = class_name
+        if '__base_class__' in class_def:
+            instance['__base_class__'] = class_def['__base_class__']
+
+        constructor_chain = collect_constructor_chain(class_name)
+        for cname, constructor_method in constructor_chain:
+            if cname == class_name:
+                self._call_method(instance, constructor_method, arg_nodes, class_context=cname)
+            else:
+                self._call_method(instance, constructor_method, [], class_context=cname)
+
+        if '__constructor__' in instance:
+            del instance['__constructor__']
+
+        if not constructor_chain and 'init' in instance and isinstance(instance['init'], dict):
+            self._call_method(instance, instance['init'], arg_nodes)
+
+        return instance
+
     def _is_derived_from(self, child_class: str, parent_class: str) -> bool:
         """Check if child_class is derived from parent_class."""
         if child_class not in self.classes:
@@ -1818,7 +1917,9 @@ class Interpreter:
                 # Navigate through the member path
                 current_obj = obj
                 for member_name in member_path:
-                    if isinstance(current_obj, dict) and member_name in current_obj:
+                    if isinstance(current_obj, LyricModuleNamespace):
+                        current_obj = current_obj.get_member(member_name)
+                    elif isinstance(current_obj, dict) and member_name in current_obj:
                         # Check if this is a class instance with access control
                         if '__instance_class__' in current_obj:
                             # Check attribute access
@@ -1938,6 +2039,44 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: TupObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, LyricModuleNamespace):
+                    # module.func() or module.Class() call
+                    if current_obj.has_function(method_name):
+                        func_def = current_obj._functions[method_name]
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        return self._call_func_def(
+                            func_def, args, func_name=method_name,
+                            module_functions=current_obj._functions,
+                            module_classes=current_obj._classes
+                        )
+                    elif current_obj.has_class(method_name):
+                        # Temporarily inject module context so constructors see module vars
+                        saved_cls = {n: self.classes.get(n) for n in current_obj._classes}
+                        saved_fns = {n: self.functions.get(n) for n in current_obj._functions}
+                        old_global = self.global_scope.copy()
+                        for n, c in current_obj._classes.items():
+                            self.classes[n] = c
+                        for n, f in current_obj._functions.items():
+                            self.functions[n] = f
+                        self.global_scope.update(current_obj._scope)
+                        try:
+                            return self._instantiate_class_by_name(method_name, node.args)
+                        finally:
+                            self.global_scope = old_global
+                            for n, old in saved_cls.items():
+                                if old is None:
+                                    self.classes.pop(n, None)
+                                else:
+                                    self.classes[n] = old
+                            for n, old in saved_fns.items():
+                                if old is None:
+                                    self.functions.pop(n, None)
+                                else:
+                                    self.functions[n] = old
+                    else:
+                        raise RuntimeErrorLyric(
+                            f"AttributeError: module '{current_obj._module_name}' has no callable member '{method_name}'"
+                        )
                 elif isinstance(current_obj, MapObject):
                     # Handle MapObject methods
                     if hasattr(current_obj, method_name):
@@ -2014,83 +2153,7 @@ class Interpreter:
                 raise RuntimeErrorLyric(f"Invalid range() arguments: range() takes 1-3 arguments (start, stop, step), but got {len(args)}. Usage: range(stop) or range(start, stop) or range(start, stop, step)")
         elif node.func_name in self.classes:
             # Class instantiation: ClassName()
-            class_def = self.classes[node.func_name]
-            
-            # Create instance by copying from entire inheritance chain
-            instance = {}
-            
-            # Helper function to recursively copy from inheritance chain
-            def copy_from_inheritance_chain(class_name):
-                """Recursively copy members from base classes up to root."""
-                if class_name not in self.classes:
-                    raise RuntimeErrorLyric(f"Class '{class_name}' is not defined")
-                
-                current_class_def = self.classes[class_name]
-                
-                # First, recursively copy from base class (if any)
-                if '__base_class__' in current_class_def:
-                    base_class_name = current_class_def['__base_class__']
-                    copy_from_inheritance_chain(base_class_name)
-                
-                # Then copy this class's members (overriding base class members)
-                for key, value in current_class_def.items():
-                    if not key.startswith('__') or key == '__constructor__' or key.startswith('__visibility_'):
-                        # Copy everything except __class_name__ and __base_class__
-                        if key not in ('__class_name__', '__base_class__'):
-                            instance[key] = value
-            
-            # Helper function to collect constructor chain from base to child
-            def collect_constructor_chain(class_name):
-                """Collect constructors in base→child order."""
-                constructors = []
-                
-                if class_name not in self.classes:
-                    return constructors
-                
-                current_class_def = self.classes[class_name]
-                
-                # First, recursively collect from base class (if any)
-                if '__base_class__' in current_class_def:
-                    base_class_name = current_class_def['__base_class__']
-                    constructors.extend(collect_constructor_chain(base_class_name))
-                
-                # Then add this class's constructor (if it exists)
-                if '__constructor__' in current_class_def:
-                    constructors.append((class_name, current_class_def['__constructor__']))
-                
-                return constructors
-            
-            # Copy entire inheritance chain
-            copy_from_inheritance_chain(node.func_name)
-            
-            # Add instance class name marker
-            instance['__instance_class__'] = node.func_name
-            
-            # Store base class chain for method resolution
-            if '__base_class__' in class_def:
-                instance['__base_class__'] = class_def['__base_class__']
-            
-            # Call constructors in base→child order (automatic chaining)
-            constructor_chain = collect_constructor_chain(node.func_name)
-            for class_name, constructor_method in constructor_chain:
-                # Only pass arguments to the most derived (child) constructor
-                if class_name == node.func_name:
-                    self._call_method(instance, constructor_method, node.args, class_context=class_name)
-                else:
-                    # Base class constructors are called with no arguments (automatic chaining)
-                    self._call_method(instance, constructor_method, [], class_context=class_name)
-            
-            # Remove constructor from instance after calling all constructors
-            if '__constructor__' in instance:
-                del instance['__constructor__']
-            
-            # Also check for legacy init() method for backward compatibility (if no constructor was called)
-            if not constructor_chain and 'init' in instance and isinstance(instance['init'], dict):
-                init_method = instance['init']
-                # Call the init method with the provided arguments
-                self._call_method(instance, init_method, node.args)
-            
-            return instance
+            return self._instantiate_class_by_name(node.func_name, node.args)
         elif node.func_name in self.global_scope and callable(self.global_scope[node.func_name]):
             # Built-in function from global scope
             args = [self._evaluate_expression(arg) for arg in node.args]
@@ -2157,7 +2220,9 @@ class Interpreter:
                 # Navigate through the member path
                 current_obj = obj
                 for member_name in member_path:
-                    if isinstance(current_obj, dict) and member_name in current_obj:
+                    if isinstance(current_obj, LyricModuleNamespace):
+                        current_obj = current_obj.get_member(member_name)
+                    elif isinstance(current_obj, dict) and member_name in current_obj:
                         # Check if this is a class instance with access control
                         if '__instance_class__' in current_obj:
                             # Check attribute access
@@ -2547,25 +2612,25 @@ class Interpreter:
                         node.column
                     )
         else:
-            # Import all functions, classes, and variables from the module
-            
-            # Import functions with their module scope
+            # Whole-module import: bind as a LyricModuleNamespace so callers use
+            # module.func() / module.VAR instead of dumping names into calling scope.
+            functions_with_scope = {}
             for name, func in module_interpreter.functions.items():
-                # Attach module scope to function so it can access module variables
                 func_with_scope = func.copy()
                 func_with_scope['module_scope'] = module_interpreter.global_scope
-                self.functions[name] = func_with_scope
-            
-            # Import classes
-            for name, cls in module_interpreter.classes.items():
-                self.classes[name] = cls
-            
-            # Import module-level variables
-            # We need to filter out built-in functions and only import user-defined variables
-            for name, value in module_interpreter.global_scope.items():
-                # Skip built-in functions (they are callables)
-                if not callable(value):
-                    self.global_scope[name] = value
+                functions_with_scope[name] = func_with_scope
+            scope_vars = {
+                name: val
+                for name, val in module_interpreter.global_scope.items()
+                if not callable(val)
+            }
+            namespace = LyricModuleNamespace(
+                module_name,
+                functions_with_scope,
+                dict(module_interpreter.classes),
+                scope_vars
+            )
+            self.global_scope[module_name] = namespace
         
         return None
     
