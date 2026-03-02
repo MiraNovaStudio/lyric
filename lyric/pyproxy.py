@@ -175,6 +175,13 @@ class PyCallableProxy:
         except Exception as e:
             raise RuntimeErrorLyric(f"Error calling '{self._name}': {str(e)}")
     
+    def __getattr__(self, name: str) -> Any:
+        """Forward attribute access to the underlying callable (e.g. class methods)."""
+        attr = getattr(self._callable, name)
+        if callable(attr) and not isinstance(attr, type):
+            return PyCallableProxy(attr, f"{self._name}.{name}")
+        return attr
+
     def __repr__(self) -> str:
         """Return a string representation of the proxy."""
         return f"<PyCallableProxy {self._name}>"
