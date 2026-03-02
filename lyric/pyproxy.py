@@ -70,6 +70,7 @@ WHITELISTED_MODULES = frozenset([
     'sys',
     'random',
     'http.server',
+    'requests',
 ])
 
 _WHITELIST_REASON = (

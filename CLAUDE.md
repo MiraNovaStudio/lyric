@@ -62,9 +62,11 @@ pip install pytest flake8 build twine
 
 ## Git Commit Format
 
+**Run `git add .` and `git commit` as separate commands — do NOT chain with `&&`.** Use `git -C /c/Work/lyric` instead of `cd` to set the working directory.
+
 ```bash
-git add .
-git commit -a -m "SprintX TaskY: brief description"
+git -C /c/Work/lyric add .
+git -C /c/Work/lyric commit -a -m "SprintX TaskY: brief description"
 ```
 
 - **`git add .`** is required first to stage any newly created files (changelog files, summaries, etc.).
