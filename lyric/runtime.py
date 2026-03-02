@@ -420,6 +420,25 @@ def exit_builtin(code: int = 0) -> None:
     sys.exit(code)
 
 
+def get_shell_args(command):
+    """Build the correct subprocess args for the caller's shell.
+
+    On Windows, subprocess.run(shell=True) always uses cmd.exe.  When Lyric
+    is launched from Git Bash (or another Unix-like shell), the SHELL env var
+    points to that shell.  We detect this and return args that invoke bash
+    directly with ``-c``, so flags like ``mkdir -p`` work as the user expects.
+
+    Returns:
+        dict of keyword arguments to pass to subprocess.run().
+    """
+    import os, sys
+    if sys.platform == 'win32':
+        shell = os.environ.get('SHELL')
+        if shell and os.path.isfile(shell):
+            return {'args': [shell, '-c', command], 'shell': False}
+    return {'args': command, 'shell': True}
+
+
 def exec_builtin(command: str) -> int:
     """Built-in exec function that executes a shell command.
 
@@ -433,17 +452,18 @@ def exec_builtin(command: str) -> int:
         Exit code of the command (0 for success)
     """
     import subprocess
-    
+
     if not isinstance(command, str):
         from lyric.errors import RuntimeErrorLyric
         raise RuntimeErrorLyric(f"exec() expects a string command, got {type(command).__name__}")
-    
+
     try:
         # Execute command and capture output
         # stderr is redirected to stdout as per requirements
+        sh = get_shell_args(command)
         result = subprocess.run(
-            command,
-            shell=True,
+            sh['args'],
+            shell=sh['shell'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # Merge stderr into stdout
             text=True

@@ -2915,12 +2915,14 @@ class Interpreter:
             output_target = right_val  # Store the file object directly
         
         # Execute the command
+        from lyric.runtime import get_shell_args
+        sh = get_shell_args(command)
         try:
             if stdin_data:
                 # When we have stdin data, use input= parameter directly
                 result = subprocess.run(
-                    command,
-                    shell=True,
+                    sh['args'],
+                    shell=sh['shell'],
                     stdout=subprocess.PIPE if capture_output else None,
                     stderr=subprocess.STDOUT,  # Always merge stderr to stdout
                     input=stdin_data,  # Pass stdin data directly as string
@@ -2929,8 +2931,8 @@ class Interpreter:
             else:
                 # No stdin data
                 result = subprocess.run(
-                    command,
-                    shell=True,
+                    sh['args'],
+                    shell=sh['shell'],
                     stdout=subprocess.PIPE if capture_output else None,
                     stderr=subprocess.STDOUT,
                     text=True
@@ -3032,11 +3034,13 @@ class Interpreter:
                         )
                     
                     # Execute with optional input
+                    from lyric.runtime import get_shell_args
+                    sh = get_shell_args(command)
                     try:
                         if has_input and current_output:
                             result = subprocess.run(
-                                command,
-                                shell=True,
+                                sh['args'],
+                                shell=sh['shell'],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 input=current_output,
@@ -3044,13 +3048,13 @@ class Interpreter:
                             )
                         else:
                             result = subprocess.run(
-                                command,
-                                shell=True,
+                                sh['args'],
+                                shell=sh['shell'],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 text=True
                             )
-                        
+
                         exit_code = result.returncode
                         current_output = result.stdout if result.stdout else ""
                         
@@ -3173,11 +3177,13 @@ class Interpreter:
                 if element.func_name == 'exec':
                     command = self._evaluate_expression(element.args[0])
                     
+                    from lyric.runtime import get_shell_args
+                    sh = get_shell_args(command)
                     try:
                         if has_input and current_output:
                             result = subprocess.run(
-                                command,
-                                shell=True,
+                                sh['args'],
+                                shell=sh['shell'],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 input=current_output,
@@ -3185,13 +3191,13 @@ class Interpreter:
                             )
                         else:
                             result = subprocess.run(
-                                command,
-                                shell=True,
+                                sh['args'],
+                                shell=sh['shell'],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 text=True
                             )
-                        
+
                         exit_code = result.returncode
                         current_output = result.stdout if result.stdout else ""
                         
