@@ -41,10 +41,15 @@ def _parse_options(args):
                 # Flag without value: --verbose
                 option_name = arg[2:]
                 options[option_name] = None  # Flag present, no value
-        elif arg.startswith('-') and len(arg) == 2 and arg[1].isalpha():
-            # Short option (e.g., -a)
-            option_name = arg[1]
-            options[option_name] = None
+        elif arg.startswith('-') and len(arg) >= 2 and arg[1].isalpha():
+            # Short option (e.g., -a or multi-char -hc)
+            if '=' in arg:
+                option_name = arg[1:].split('=', 1)[0]
+                option_value = arg.split('=', 1)[1]
+                options[option_name] = option_value
+            else:
+                option_name = arg[1:]
+                options[option_name] = None
         else:
             # Not an option, it's a regular argument
             arguments.append(arg)
@@ -190,33 +195,45 @@ def _check_for_auto_help(source: str, file_path: str):
     if 'h' not in options:
         return False
     
-    # Check if the program uses getopts("h") or getopts('h')
-    # Simple text search to see if program overrides -h
-    if 'getopts("h")' in source or "getopts('h')" in source:
+    # Check if the program handles -h itself via getopts.
+    # Matches getopts("h"), getopts('h'), getopts("h", "help"), etc.
+    import re
+    if re.search(r'''getopts\(\s*["']h["']''', source):
         # Program overrides -h, let it handle it
         return False
-    
+
     # Auto-generate help
     print(f"Usage: lyric {os.path.basename(file_path)} [options] [arguments]")
     print()
     print("Auto-generated help (use -h in your program to override)")
     print()
-    
-    # Scan for getopts calls to list available options
-    import re
-    getopts_pattern = r'getopts\(["\']([^"\']+)["\']\)'
-    matches = re.findall(getopts_pattern, source)
-    
-    if matches:
+
+    # Scan for getopts calls to list available options.
+    # Captures all string arguments inside each getopts() call.
+    getopts_calls = re.findall(r'getopts\(([^)]+)\)', source)
+
+    options_found = []
+    for call_args in getopts_calls:
+        # Extract all quoted strings from the call arguments
+        names = re.findall(r'''["']([^"']+)["']''', call_args)
+        if len(names) == 2:
+            # Short + long alias: show together
+            short, long = names
+            options_found.append(f"  -{short}, --{long}")
+        else:
+            for name in names:
+                if len(name) == 1:
+                    options_found.append(f"  -{name}")
+                else:
+                    options_found.append(f"  --{name}")
+
+    if options_found:
         print("Available options:")
-        for opt in sorted(set(matches)):
-            if len(opt) == 1:
-                print(f"  -{opt}")
-            else:
-                print(f"  --{opt}")
+        for opt in sorted(set(options_found)):
+            print(opt)
     else:
         print("No options defined in this program.")
-    
+
     print()
     print("Arguments:")
     # Check if main has argc/argv parameters
@@ -224,7 +241,7 @@ def _check_for_auto_help(source: str, file_path: str):
         print("  This program accepts command-line arguments via main(argc, argv)")
     else:
         print("  This program does not accept arguments")
-    
+
     return True
 
 

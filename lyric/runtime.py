@@ -362,28 +362,43 @@ def get_command_line_options() -> dict:
     return _command_line_options
 
 
-def getopts_builtin(option_name: str) -> Any:
+def getopts_builtin(*args) -> Any:
     """Built-in getopts function that retrieves command-line options.
-    
-    Args:
-        option_name: Name of the option to retrieve (without dashes)
-        
+
+    Supports two calling conventions:
+        getopts("verbose")          — single option name
+        getopts("v", "verbose")     — short option + long option alias
+
+    When two arguments are given the first is the short option (used with
+    a single dash, e.g. ``-v``) and the second is the long option (used
+    with double dashes, e.g. ``--verbose``).  The short option may be
+    multi-character (e.g. ``getopts("hc", "high-capacity")`` matches
+    ``-hc``).
+
     Returns:
-        - The option value if it was provided with a value (e.g., --file=myfile returns "myfile")
-        - True if the option was provided as a flag (e.g., -a or --verbose returns True)
+        - The option value if it was provided with a value
+        - True  if the option was provided as a flag
         - False if the option was not provided at all
     """
     global _command_line_options
-    
-    if option_name in _command_line_options:
-        value = _command_line_options[option_name]
-        # If value is None, it means the flag was present without a value
-        if value is None:
-            return True
-        return value
-    else:
-        # Option was not provided
-        return False
+
+    if not args:
+        from lyric.errors import RuntimeErrorLyric
+        raise RuntimeErrorLyric("getopts() requires at least one argument")
+
+    # Collect all names to check (in order)
+    names = list(args)
+
+    for name in names:
+        if name in _command_line_options:
+            value = _command_line_options[name]
+            # If value is None, it means the flag was present without a value
+            if value is None:
+                return True
+            return value
+
+    # None of the names matched
+    return False
 
 
 def disk_builtin(filepath: str) -> Any:

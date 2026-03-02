@@ -349,3 +349,168 @@ def main() {
     finally:
         os.unlink(temp_file)
 
+
+def test_getopts_short_long_alias_short_flag():
+    """Test getopts("h", "help") matches -h."""
+    code = """
+def main() {
+    god help = getopts("h", "help")
+    if help
+        print("help requested")
+    else
+        print("no help")
+    end
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file, '-h'],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "help requested" in result.stdout
+    finally:
+        os.unlink(temp_file)
+
+
+def test_getopts_short_long_alias_long_flag():
+    """Test getopts("h", "help") matches --help."""
+    code = """
+def main() {
+    god help = getopts("h", "help")
+    if help
+        print("help requested")
+    else
+        print("no help")
+    end
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file, '--help'],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "help requested" in result.stdout
+    finally:
+        os.unlink(temp_file)
+
+
+def test_getopts_short_long_alias_neither():
+    """Test getopts("h", "help") returns false when neither passed."""
+    code = """
+def main() {
+    god help = getopts("h", "help")
+    if help
+        print("help requested")
+    else
+        print("no help")
+    end
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "no help" in result.stdout
+    finally:
+        os.unlink(temp_file)
+
+
+def test_getopts_multichar_short_option():
+    """Test getopts("hc", "high-capacity") matches -hc."""
+    code = """
+def main() {
+    god hc = getopts("hc", "high-capacity")
+    if hc
+        print("high capacity mode")
+    else
+        print("normal mode")
+    end
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file, '-hc'],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "high capacity mode" in result.stdout
+
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file, '--high-capacity'],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "high capacity mode" in result.stdout
+
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "normal mode" in result.stdout
+    finally:
+        os.unlink(temp_file)
+
+
+def test_getopts_short_long_alias_with_value():
+    """Test getopts("o", "output") returns value from either form."""
+    code = """
+def main() {
+    var out = getopts("o", "output")
+    print("output:", out)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file, '-o=result.txt'],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "output: result.txt" in result.stdout
+
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file, '--output=result.txt'],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "output: result.txt" in result.stdout
+    finally:
+        os.unlink(temp_file)
+
