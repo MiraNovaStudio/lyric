@@ -306,6 +306,9 @@ def _execute_file(file_path: str, arguments: list = None):
         else:
             print(f"{e}")
         sys.exit(1)
+    except KeyboardInterrupt:
+        print()
+        sys.exit(0)
     except Exception as e:
         print(f"Unexpected error: {e}")
         sys.exit(1)
