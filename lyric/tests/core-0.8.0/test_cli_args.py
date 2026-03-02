@@ -67,9 +67,9 @@ def test_main_with_options_and_arguments():
     """Test that options and arguments are properly separated."""
     code = """
 def main(int argc, arr argv) {
-    god a = getopts("a")
-    god verbose = getopts("verbose")
-    
+    god a = getopts("a", None)
+    god verbose = getopts(None, "verbose")
+
     print("Option -a:", a)
     print("Option --verbose:", verbose)
     print("argc:", argc)
@@ -163,7 +163,7 @@ def test_spec_example():
     """Test the exact example from Sprint 9 Task 6 specification."""
     code = """
 def main(int argc, arr argv) {
-    god a = getopts("a")
+    god a = getopts("a", None)
     if argc == 2
         str var1 = argv[0]
         str var2 = argv[1]
@@ -229,9 +229,9 @@ def test_mixed_options_values_and_arguments():
     """Test complex mix of options with values and arguments."""
     code = """
 def main(int argc, arr argv) {
-    god a = getopts("a")
-    var file = getopts("file")
-    god verbose = getopts("verbose")
+    god a = getopts("a", None)
+    var file = getopts(None, "file")
+    god verbose = getopts(None, "verbose")
     
     print("Options:")
     print("  a =", a)

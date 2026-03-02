@@ -362,18 +362,17 @@ def get_command_line_options() -> dict:
     return _command_line_options
 
 
-def getopts_builtin(*args) -> Any:
+def getopts_builtin(short_option, long_option) -> Any:
     """Built-in getopts function that retrieves command-line options.
 
-    Supports two calling conventions:
-        getopts("verbose")          — single option name
-        getopts("v", "verbose")     — short option + long option alias
+    Always takes exactly two arguments:
+        getopts("v", "verbose")   — matches -v or --verbose
+        getopts(None, "verbose")  — long option only (--verbose)
+        getopts("v", None)        — short option only (-v)
 
-    When two arguments are given the first is the short option (used with
-    a single dash, e.g. ``-v``) and the second is the long option (used
-    with double dashes, e.g. ``--verbose``).  The short option may be
-    multi-character (e.g. ``getopts("hc", "high-capacity")`` matches
-    ``-hc``).
+    Args:
+        short_option: Short option name (without dash), or None to skip
+        long_option:  Long option name (without dashes), or None to skip
 
     Returns:
         - The option value if it was provided with a value
@@ -382,22 +381,13 @@ def getopts_builtin(*args) -> Any:
     """
     global _command_line_options
 
-    if not args:
-        from lyric.errors import RuntimeErrorLyric
-        raise RuntimeErrorLyric("getopts() requires at least one argument")
-
-    # Collect all names to check (in order)
-    names = list(args)
-
-    for name in names:
-        if name in _command_line_options:
+    for name in (short_option, long_option):
+        if name is not None and name in _command_line_options:
             value = _command_line_options[name]
-            # If value is None, it means the flag was present without a value
             if value is None:
                 return True
             return value
 
-    # None of the names matched
     return False
 
 

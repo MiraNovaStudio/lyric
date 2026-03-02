@@ -191,41 +191,50 @@ def _check_for_auto_help(source: str, file_path: str):
     
     options = get_command_line_options()
     
-    # Check if -h was passed
-    if 'h' not in options:
+    # Check if -h or --help was passed
+    if 'h' not in options and 'help' not in options:
         return False
-    
-    # Check if the program handles -h itself via getopts.
-    # Matches getopts("h"), getopts('h'), getopts("h", "help"), etc.
+
+    # Check if the program handles -h/--help itself via getopts.
+    # Matches getopts("h", ...) as the short arg, or getopts(..., "help") as the long arg.
     import re
     if re.search(r'''getopts\(\s*["']h["']''', source):
-        # Program overrides -h, let it handle it
+        return False
+    if re.search(r''',\s*["']help["']''', source):
         return False
 
     # Auto-generate help
     print(f"Usage: lyric {os.path.basename(file_path)} [options] [arguments]")
     print()
-    print("Auto-generated help (use -h in your program to override)")
+    print("Auto-generated help (use getopts(\"h\", \"help\") in your program to override)")
     print()
 
     # Scan for getopts calls to list available options.
-    # Captures all string arguments inside each getopts() call.
+    # getopts() always takes two args: getopts(short, long)
+    # Either arg can be None.
     getopts_calls = re.findall(r'getopts\(([^)]+)\)', source)
 
     options_found = []
     for call_args in getopts_calls:
-        # Extract all quoted strings from the call arguments
-        names = re.findall(r'''["']([^"']+)["']''', call_args)
-        if len(names) == 2:
-            # Short + long alias: show together
-            short, long = names
+        # Extract quoted strings and None tokens
+        parts = [p.strip() for p in call_args.split(',')]
+        short = None
+        long = None
+        if len(parts) >= 1:
+            m = re.search(r'''["']([^"']+)["']''', parts[0])
+            if m:
+                short = m.group(1)
+        if len(parts) >= 2:
+            m = re.search(r'''["']([^"']+)["']''', parts[1])
+            if m:
+                long = m.group(1)
+
+        if short and long:
             options_found.append(f"  -{short}, --{long}")
-        else:
-            for name in names:
-                if len(name) == 1:
-                    options_found.append(f"  -{name}")
-                else:
-                    options_found.append(f"  --{name}")
+        elif short:
+            options_found.append(f"  -{short}")
+        elif long:
+            options_found.append(f"  --{long}")
 
     if options_found:
         print("Available options:")
@@ -236,7 +245,6 @@ def _check_for_auto_help(source: str, file_path: str):
 
     print()
     print("Arguments:")
-    # Check if main has argc/argv parameters
     if 'def main(int argc, arr argv)' in source or 'def main(argc, argv)' in source:
         print("  This program accepts command-line arguments via main(argc, argv)")
     else:

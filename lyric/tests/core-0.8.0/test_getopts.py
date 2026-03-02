@@ -15,7 +15,7 @@ def test_getopts_short_flag():
     """Test getopts() with a short flag (-a)."""
     code = """
 def main() {
-    god a = getopts("a")
+    god a = getopts("a", None)
     if a
         print("Option -a was provided")
     else
@@ -27,9 +27,8 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
-        # Test with -a flag
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file, '-a'],
             capture_output=True,
@@ -37,8 +36,7 @@ def main() {
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         )
         assert "Option -a was provided" in result.stdout
-        
-        # Test without -a flag
+
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file],
             capture_output=True,
@@ -54,7 +52,7 @@ def test_getopts_long_flag():
     """Test getopts() with a long flag (--verbose)."""
     code = """
 def main() {
-    god verbose = getopts("verbose")
+    god verbose = getopts(None, "verbose")
     if verbose
         print("Verbose mode enabled")
     else
@@ -66,9 +64,8 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
-        # Test with --verbose flag
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file, '--verbose'],
             capture_output=True,
@@ -76,8 +73,7 @@ def main() {
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         )
         assert "Verbose mode enabled" in result.stdout
-        
-        # Test without --verbose flag
+
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file],
             capture_output=True,
@@ -93,7 +89,7 @@ def test_getopts_option_with_value():
     """Test getopts() with an option that has a value (--file=myfile)."""
     code = """
 def main() {
-    var filename = getopts("file")
+    var filename = getopts(None, "file")
     if filename != False
         print("File:", filename)
     else
@@ -105,9 +101,8 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
-        # Test with --file=myfile
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file, '--file=myfile.txt'],
             capture_output=True,
@@ -115,8 +110,7 @@ def main() {
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         )
         assert "File: myfile.txt" in result.stdout
-        
-        # Test without --file
+
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file],
             capture_output=True,
@@ -132,10 +126,10 @@ def test_getopts_multiple_options():
     """Test getopts() with multiple options."""
     code = """
 def main() {
-    god a = getopts("a")
-    god verbose = getopts("verbose")
-    var filename = getopts("file")
-    
+    god a = getopts("a", None)
+    god verbose = getopts(None, "verbose")
+    var filename = getopts(None, "file")
+
     print("a:", a)
     print("verbose:", verbose)
     print("file:", filename)
@@ -145,7 +139,7 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file, '-a', '--verbose', '--file=test.txt'],
@@ -164,10 +158,10 @@ def test_getopts_missing_option_returns_false():
     """Test that getopts() returns False for options that weren't provided."""
     code = """
 def main() {
-    god x = getopts("x")
-    god y = getopts("y")
-    god z = getopts("z")
-    
+    god x = getopts("x", None)
+    god y = getopts("y", None)
+    god z = getopts("z", None)
+
     print("x:", x)
     print("y:", y)
     print("z:", z)
@@ -177,7 +171,7 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file],
@@ -196,11 +190,11 @@ def test_getopts_example_from_spec():
     """Test the example from the Sprint 9 Plan specification."""
     code = """
 def main() {
-    god a = getopts("a")
-    god v = getopts("verbose")
-    var filename = getopts("file")
-    god x = getopts("x")
-    
+    god a = getopts("a", None)
+    god v = getopts(None, "verbose")
+    var filename = getopts(None, "file")
+    god x = getopts("x", None)
+
     print("a:", a)
     print("verbose:", v)
     print("file:", filename)
@@ -211,9 +205,8 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
-        # Test the exact example: lyric myProgram.ly -a --verbose --file=myfile
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file, '-a', '--verbose', '--file=myfile'],
             capture_output=True,
@@ -223,7 +216,7 @@ def main() {
         assert "a: True" in result.stdout
         assert "verbose: True" in result.stdout
         assert "file: myfile" in result.stdout
-        assert "x: False" in result.stdout  # x was not passed
+        assert "x: False" in result.stdout
     finally:
         os.unlink(temp_file)
 
@@ -232,7 +225,7 @@ def test_getopts_with_run_command():
     """Test getopts() works with 'lyric run' command."""
     code = """
 def main() {
-    god debug = getopts("debug")
+    god debug = getopts(None, "debug")
     print("Debug mode:", debug)
 }
 """
@@ -240,7 +233,7 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', 'run', temp_file, '--debug'],
@@ -254,12 +247,12 @@ def main() {
 
 
 def test_getopts_long_option_requires_two_dashes():
-    """Test that options longer than one character require double dash."""
+    """Test that short and long options are distinct."""
     code = """
 def main() {
-    god v = getopts("v")
-    god verbose = getopts("verbose")
-    
+    god v = getopts("v", None)
+    god verbose = getopts(None, "verbose")
+
     print("v:", v)
     print("verbose:", verbose)
 }
@@ -268,9 +261,8 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
-        # Single dash with single char: -v
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file, '-v'],
             capture_output=True,
@@ -279,8 +271,7 @@ def main() {
         )
         assert "v: True" in result.stdout
         assert "verbose: False" in result.stdout
-        
-        # Double dash with multi char: --verbose
+
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file, '--verbose'],
             capture_output=True,
@@ -297,12 +288,12 @@ def test_getopts_mixed_options_and_values():
     """Test getopts() with a mix of flags and options with values."""
     code = """
 def main() {
-    god a = getopts("a")
-    god b = getopts("b")
-    var input = getopts("input")
-    var output = getopts("output")
-    god verbose = getopts("verbose")
-    
+    god a = getopts("a", None)
+    god b = getopts("b", None)
+    var input = getopts(None, "input")
+    var output = getopts(None, "output")
+    god verbose = getopts(None, "verbose")
+
     print("Flags: a=", a, "b=", b, "verbose=", verbose)
     print("Files: input=", input, "output=", output)
 }
@@ -311,7 +302,7 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file, '-a', '--input=in.txt', '-b', '--output=out.txt', '--verbose'],
@@ -329,7 +320,7 @@ def test_getopts_empty_value():
     """Test getopts() with an option that has an empty value."""
     code = """
 def main() {
-    var value = getopts("value")
+    var value = getopts(None, "value")
     print("value:", value)
 }
 """
@@ -337,7 +328,7 @@ def main() {
         f.write(code)
         f.flush()
         temp_file = f.name
-    
+
     try:
         result = subprocess.run(
             [sys.executable, '-m', 'lyric.cli', temp_file, '--value='],
@@ -345,7 +336,7 @@ def main() {
             text=True,
             cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         )
-        assert "value:" in result.stdout  # Empty string value
+        assert "value:" in result.stdout
     finally:
         os.unlink(temp_file)
 
@@ -514,3 +505,52 @@ def main() {
     finally:
         os.unlink(temp_file)
 
+
+def test_getopts_none_short_option():
+    """Test getopts(None, "verbose") — long-only option."""
+    code = """
+def main() {
+    god v = getopts(None, "verbose")
+    print("verbose:", v)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file, '--verbose'],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "verbose: True" in result.stdout
+    finally:
+        os.unlink(temp_file)
+
+
+def test_getopts_none_long_option():
+    """Test getopts("v", None) — short-only option."""
+    code = """
+def main() {
+    god v = getopts("v", None)
+    print("v:", v)
+}
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
+        f.write(code)
+        f.flush()
+        temp_file = f.name
+
+    try:
+        result = subprocess.run(
+            [sys.executable, '-m', 'lyric.cli', temp_file, '-v'],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        assert "v: True" in result.stdout
+    finally:
+        os.unlink(temp_file)
