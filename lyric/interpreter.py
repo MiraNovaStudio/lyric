@@ -2744,6 +2744,22 @@ class Interpreter:
         - exec("cmd") <- var: Pipe variable as stdin
         - exec("cmd") <- input -> output: Both redirections
         """
+        # Check if left side is a print statement redirected to file: print "text" ->> file
+        if isinstance(node.left, CallNode) and node.left.func_name == 'print':
+            args = [self._evaluate_expression(arg) for arg in node.left.args]
+            content = ' '.join(str(a) for a in args) + '\n'
+            right_val = self._evaluate_expression(node.right)
+            if not isinstance(right_val, DskObject):
+                raise RuntimeErrorLyric(
+                    f"File write operators ({node.operator}) require dsk type on right side, got {type(right_val).__name__}",
+                    node.line, node.column
+                )
+            if node.operator == '->>':
+                right_val.append(content)
+            elif node.operator == '->':
+                right_val.overwrite(content)
+            return None
+
         # Check if left side is an exec() call or exec chain for special I/O redirection handling
         if isinstance(node.left, CallNode) and node.left.func_name == 'exec':
             return self._evaluate_exec_with_io(node)

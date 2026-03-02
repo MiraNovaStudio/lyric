@@ -215,7 +215,8 @@ class Parser:
                     return self._parse_file_operator_stmt()
                 raise SyntaxErrorLyric(f"Only variable declarations, functions, and classes are allowed at module level. Execution starts in main().", token.line, token.col)
             # Check for file operator statements: expr ->> expr, expr -> expr, expr <- expr
-            if self._is_file_operator_ahead():
+            # Let print statements handle their own file ops (print "text" ->> file)
+            if self._is_file_operator_ahead() and not (self._check('IDENT') and self._peek().value == 'print'):
                 return self._parse_file_operator_stmt()
             return self._parse_assignment_or_expr_stmt()
     
@@ -557,6 +558,20 @@ class Parser:
                     expr = self._parse_expression()
                     args.append(expr)
                 
+                # Check if a file operator follows: print "text" ->> file
+                if self._check('FILE_APPEND', 'FILE_WRITE', 'FILE_READ'):
+                    if self._check('FILE_APPEND'):
+                        self._advance()
+                        operator = '->>'
+                    elif self._check('FILE_WRITE'):
+                        self._advance()
+                        operator = '->'
+                    else:
+                        self._advance()
+                        operator = '<-'
+                    right = self._parse_expression()
+                    return FileOpNode(operator=operator, left=CallNode('print', args, print_token.line, print_token.col), right=right, line=print_token.line, column=print_token.col)
+
                 # Create CallNode with arguments to match print(<expr>) AST
                 return CallNode('print', args, print_token.line, print_token.col)
             
