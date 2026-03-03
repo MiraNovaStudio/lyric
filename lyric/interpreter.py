@@ -2564,7 +2564,17 @@ class Interpreter:
         from lyric.parser import Parser
         
         module_name = node.module_name
-        
+
+        # Reserved module names for future standard library (planned for 1.2.0)
+        RESERVED_IMPORTS = {'lyric', 'lyrical', 'ly'}
+        if module_name in RESERVED_IMPORTS or module_name.startswith('ly.'):
+            raise RuntimeErrorLyric(
+                f"ImportError: '{module_name}' is a reserved module name for the Lyric standard library (planned for 1.2.0). "
+                f"Please choose a different name for your module.",
+                node.line,
+                node.column
+            )
+
         # Search for the module in the following order:
         # 1. Current working directory
         # 2. Directory of the script being executed (if known)
