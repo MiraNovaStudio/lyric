@@ -1579,12 +1579,7 @@ class Interpreter:
     
     def _evaluate_type_declaration(self, node: TypeDeclarationNode) -> Any:
         """Evaluate a type declaration statement."""
-        # Check for redeclaration in current scope only
-        if node.name in self._get_current_scope():
-            raise CompileErrorLyric(
-                f"Variable '{node.name}' already declared",
-                node.line, node.column
-            )
+        # Redeclaration in the same scope acts as reassignment
         
         value = self._evaluate_expression(node.expr)
         
@@ -1607,13 +1602,7 @@ class Interpreter:
     
     def _evaluate_multi_declaration(self, node: MultiDeclarationNode) -> Any:
         """Evaluate a multi-variable declaration statement."""
-        # Check for redeclarations in current scope first
-        for type_name, var_name in node.declarations:
-            if var_name in self._get_current_scope():
-                raise CompileErrorLyric(
-                    f"Variable '{var_name}' already declared",
-                    node.line, node.column
-                )
+        # Redeclaration in the same scope acts as reassignment
         
         # Declare all variables as uninitialized in current scope
         for type_name, var_name in node.declarations:
