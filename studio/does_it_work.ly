@@ -1,5 +1,5 @@
 # does_it_work.ly
-import mathlib
+import mathlib; Calculator, get_secret
 
 # ——— Python interop (importpy) ———
 importpy datetime
@@ -99,7 +99,7 @@ def main() {
 
     int result = add(5, 7)
     print result
-    Calculator calc = Calculator(10)
+    obj calc = Calculator(10)
     calc.add(5)
     print calc.value
     int hidden = get_secret()
