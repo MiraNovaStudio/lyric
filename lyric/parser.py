@@ -700,7 +700,7 @@ class Parser:
                 self._advance()  # consume '='
                 
                 # Create the indexed assignment
-                index_expr = LiteralNode(index_token.value)
+                index_expr = LiteralNode(index_token.value) if index_token.type != 'IDENT' else IdentifierNode(index_token.value, index_token.line, index_token.col)
                 indexed_expr = IndexNode(IdentifierNode(obj_name), index_expr)
                 expr = self._parse_expression()
                 
@@ -718,7 +718,7 @@ class Parser:
                 op_token = self._advance()  # consume compound operator
                 op = self.COMPOUND_ASSIGN_OPS[op_token.type]
 
-                index_expr = LiteralNode(index_token.value)
+                index_expr = LiteralNode(index_token.value) if index_token.type != 'IDENT' else IdentifierNode(index_token.value, index_token.line, index_token.col)
                 indexed_expr = IndexNode(IdentifierNode(obj_name), index_expr)
                 expr = self._parse_expression()
                 desugared = BinaryOpNode(op, indexed_expr, expr, obj_token.line, obj_token.col)
