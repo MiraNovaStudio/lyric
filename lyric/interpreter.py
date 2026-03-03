@@ -1537,26 +1537,35 @@ class Interpreter:
             
             if obj_name in self.global_scope:
                 obj = self.global_scope[obj_name]
+
+                # Resolve index — check if it's a variable name
+                resolved_index = index_str
+                try:
+                    resolved_index = int(index_str)
+                except ValueError:
+                    if index_str in self.global_scope:
+                        resolved_index = self.global_scope[index_str]
+
                 if isinstance(obj, (dict, MapObject, Mapping)):
                     # For dictionaries, MapObject, and Python Mapping types, the index is a key
-                    obj[index_str] = value
+                    obj[resolved_index] = value
                 elif isinstance(obj, (list, ArrObject)):
                     # For lists and ArrObject, the index should be an integer
                     try:
-                        index = int(index_str)
+                        idx = int(resolved_index)
                         obj_len = len(obj.elements) if isinstance(obj, ArrObject) else len(obj)
-                        if index < 0 or index >= obj_len:
-                            raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
-                        obj[index] = value
-                    except ValueError:
-                        raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
+                        if idx < 0 or idx >= obj_len:
+                            raise IndexErrorLyric(f"Index out of range: tried to access index {idx} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
+                        obj[idx] = value
+                    except (ValueError, TypeError):
+                        raise RuntimeErrorLyric(f"Invalid list index: '{resolved_index}' is not a valid integer. List indices must be integers.", node.line, node.column)
                 elif isinstance(obj, Sequence):
                     # For Python Sequence types (deque, etc.), the index should be an integer
                     try:
-                        index = int(index_str)
-                        obj[index] = value
-                    except ValueError:
-                        raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
+                        idx = int(resolved_index)
+                        obj[idx] = value
+                    except (ValueError, TypeError):
+                        raise RuntimeErrorLyric(f"Invalid list index: '{resolved_index}' is not a valid integer. List indices must be integers.", node.line, node.column)
                 else:
                     raise RuntimeErrorLyric(f"Cannot assign to indexed expression: '{obj_name}' is of type {type(obj).__name__}, but only lists and dictionaries support indexed assignment", node.line, node.column)
             else:
