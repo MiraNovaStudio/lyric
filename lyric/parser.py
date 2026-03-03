@@ -502,12 +502,21 @@ class Parser:
     def _parse_loop_block(self) -> LoopNode:
         """Parse loop block: given expression [":"] statement* "done" """
         given_token = self._consume('GIVEN', "Expected 'given'")
-        
+
         iterator_var = None
-        
-        # Handle "i in range(3)" pattern
-        if self._check('IDENT') and self._peek_next().type == 'IN':
-            # Iterator pattern: given i in range(3):
+        iterator_type = None
+
+        # Handle "for int i in range(3)" pattern — typed inline declaration
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_at(2).type == 'IN':
+            type_token = self._advance()        # consume type (e.g., "int")
+            iterator_type = type_token.value
+            iterator_var = self._advance().value # consume identifier (e.g., "i")
+            self._consume('IN', "Expected 'in'")
+            iterable = self._parse_expression()
+            condition_or_iter = iterable
+            loop_kind = "iterator"
+        # Handle "for i in range(3)" pattern — bare identifier
+        elif self._check('IDENT') and self._peek_next().type == 'IN':
             iterator_var = self._advance().value  # consume identifier
             self._consume('IN', "Expected 'in'")
             iterable = self._parse_expression()
@@ -542,7 +551,7 @@ class Parser:
         
         self._consume('DONE', "Expected 'done' after loop body")
         
-        return LoopNode(condition_or_iter, loop_kind, body, iterator_var, given_token.line, given_token.col)
+        return LoopNode(condition_or_iter, loop_kind, body, iterator_var, iterator_type, given_token.line, given_token.col)
     
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""

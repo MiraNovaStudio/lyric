@@ -1890,13 +1890,18 @@ class Interpreter:
             # Get the iterator variable name from the loop node
             iterator_var = node.iterator_var or 'i'
 
-            # Check that the loop variable is declared
-            if not self._is_variable_declared_in_any_scope(iterator_var):
+            if node.iterator_type:
+                # Inline declaration: auto-declare the variable
+                self._set_variable_in_current_scope(iterator_var, node.iterator_type)
+                self.global_scope[iterator_var] = None
+                declared_type = node.iterator_type
+            elif not self._is_variable_declared_in_any_scope(iterator_var):
                 raise RuntimeErrorLyric(
                     f"Loop variable '{iterator_var}' must be declared before use in a 'given' loop. "
                     f"Declare it first, e.g.: var {iterator_var}, int {iterator_var}"
                 )
-            declared_type = self._get_variable_type(iterator_var)
+            else:
+                declared_type = self._get_variable_type(iterator_var)
 
             # Evaluate range arguments
             args = [self._evaluate_expression(arg) for arg in node.condition_or_iter.args]
@@ -1962,13 +1967,18 @@ class Interpreter:
             # Generic iterator (simplified)
             iterator_var = node.iterator_var or 'item'
 
-            # Check that the loop variable is declared
-            if not self._is_variable_declared_in_any_scope(iterator_var):
+            if node.iterator_type:
+                # Inline declaration: auto-declare the variable
+                self._set_variable_in_current_scope(iterator_var, node.iterator_type)
+                self.global_scope[iterator_var] = None
+                declared_type = node.iterator_type
+            elif not self._is_variable_declared_in_any_scope(iterator_var):
                 raise RuntimeErrorLyric(
                     f"Loop variable '{iterator_var}' must be declared before use in a 'given' loop. "
                     f"Declare it first, e.g.: var {iterator_var}, arr {iterator_var}"
                 )
-            declared_type = self._get_variable_type(iterator_var)
+            else:
+                declared_type = self._get_variable_type(iterator_var)
 
             iterable = self._evaluate_expression(node.condition_or_iter)
             if isinstance(iterable, (list, tuple, ArrObject, TupObject)):
