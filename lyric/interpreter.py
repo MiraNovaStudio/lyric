@@ -2635,23 +2635,29 @@ class Interpreter:
             parser = Parser(tokens)
             module_ast = parser.parse()
         except Exception as e:
+            # Preserve the original error's line info from the imported module
+            err_line = getattr(e, 'line', 0)
+            err_col = getattr(e, 'column', 0)
             raise RuntimeErrorLyric(
-                f"Error parsing module '{module_name}': {e}",
-                node.line,
-                node.column
+                f"Error parsing module '{module_name}' ({module_name}.ly line {err_line}): {e}",
+                err_line,
+                err_col
             )
-        
+
         # Create a new interpreter for the module with its own scope
         module_interpreter = Interpreter()
-        
+
         # Evaluate the module
         try:
             module_interpreter.evaluate(module_ast)
         except Exception as e:
+            # Preserve the original error's line info from the imported module
+            err_line = getattr(e, 'line', 0)
+            err_col = getattr(e, 'column', 0)
             raise RuntimeErrorLyric(
-                f"Error executing module '{module_name}': {e}",
-                node.line,
-                node.column
+                f"Error in module '{module_name}' ({module_name}.ly line {err_line}): {e}",
+                err_line,
+                err_col
             )
         
         # Import functions, classes, and module-level variables from the module
