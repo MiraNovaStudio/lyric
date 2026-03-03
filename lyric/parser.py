@@ -16,7 +16,17 @@ from lyric.errors import ParseError, SyntaxErrorLyric
 
 class Parser:
     """Recursive descent parser for Lyric language."""
-    
+
+    # Compound assignment operator token types and their binary op equivalents
+    COMPOUND_ASSIGN_TYPES = ('PLUS_ASSIGN', 'MINUS_ASSIGN', 'MULTIPLY_ASSIGN', 'DIVIDE_ASSIGN', 'PERCENT_ASSIGN')
+    COMPOUND_ASSIGN_OPS = {
+        'PLUS_ASSIGN': '+',
+        'MINUS_ASSIGN': '-',
+        'MULTIPLY_ASSIGN': '*',
+        'DIVIDE_ASSIGN': '/',
+        'PERCENT_ASSIGN': '%',
+    }
+
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.current = 0
@@ -585,8 +595,17 @@ class Parser:
                 expr = self._parse_expression()
                 
                 return AssignNode(name, expr, name_token.line, name_token.col)
-            elif (self._peek_next().type == 'DOT' and 
-                  self._peek_next_next().type == 'IDENT' and 
+            elif self._peek_next().type in self.COMPOUND_ASSIGN_TYPES:
+                # Compound assignment: x += expr → x = x + expr
+                name_token = self._advance()
+                name = name_token.value
+                op_token = self._advance()  # consume compound operator
+                op = self.COMPOUND_ASSIGN_OPS[op_token.type]
+                expr = self._parse_expression()
+                desugared = BinaryOpNode(op, IdentifierNode(name, name_token.line, name_token.col), expr, name_token.line, name_token.col)
+                return AssignNode(name, desugared, name_token.line, name_token.col)
+            elif (self._peek_next().type == 'DOT' and
+                  self._peek_next_next().type == 'IDENT' and
                   self._peek_next_next_next().type == 'ASSIGN'):
                 # Assignment to member: obj.attr = expression
                 obj_token = self._advance()
@@ -599,7 +618,23 @@ class Parser:
                 expr = self._parse_expression()
                 
                 return AssignNode(full_name, expr, obj_token.line, obj_token.col)
-            elif (self._peek_next().type == 'LBRACKET' and 
+            elif (self._peek_next().type == 'DOT' and
+                  self._peek_next_next().type == 'IDENT' and
+                  self._peek_next_next_next().type in self.COMPOUND_ASSIGN_TYPES):
+                # Compound member assignment: obj.attr += expr → obj.attr = obj.attr + expr
+                obj_token = self._advance()
+                obj_name = obj_token.value
+                self._advance()  # consume '.'
+                member_name = self._advance().value
+                op_token = self._advance()  # consume compound operator
+                op = self.COMPOUND_ASSIGN_OPS[op_token.type]
+
+                full_name = f"{obj_name}.{member_name}"
+                ident = IdentifierNode(full_name, obj_token.line, obj_token.col)
+                expr = self._parse_expression()
+                desugared = BinaryOpNode(op, ident, expr, obj_token.line, obj_token.col)
+                return AssignNode(full_name, desugared, obj_token.line, obj_token.col)
+            elif (self._peek_next().type == 'LBRACKET' and
                   self._peek_next_next().type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
                   self._peek_next_next_next().type == 'RBRACKET' and
                   self._peek_next_next_next_next().type == 'ASSIGN'):
@@ -617,6 +652,24 @@ class Parser:
                 expr = self._parse_expression()
                 
                 return AssignNode(f"{obj_name}[{index_token.value}]", expr, obj_token.line, obj_token.col)
+            elif (self._peek_next().type == 'LBRACKET' and
+                  self._peek_next_next().type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
+                  self._peek_next_next_next().type == 'RBRACKET' and
+                  self._peek_next_next_next_next().type in self.COMPOUND_ASSIGN_TYPES):
+                # Compound index assignment: arr[i] += expr → arr[i] = arr[i] + expr
+                obj_token = self._advance()
+                obj_name = obj_token.value
+                self._advance()  # consume '['
+                index_token = self._advance()
+                self._advance()  # consume ']'
+                op_token = self._advance()  # consume compound operator
+                op = self.COMPOUND_ASSIGN_OPS[op_token.type]
+
+                index_expr = LiteralNode(index_token.value)
+                indexed_expr = IndexNode(IdentifierNode(obj_name), index_expr)
+                expr = self._parse_expression()
+                desugared = BinaryOpNode(op, indexed_expr, expr, obj_token.line, obj_token.col)
+                return AssignNode(f"{obj_name}[{index_token.value}]", desugared, obj_token.line, obj_token.col)
             # Check for file operator statements
             elif self._peek_next().type in ('FILE_APPEND', 'FILE_WRITE', 'FILE_READ'):
                 return self._parse_file_operator_stmt()

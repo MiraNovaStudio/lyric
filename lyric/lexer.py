@@ -58,7 +58,8 @@ class Lexer:
     
     # Multi-character operators
     MULTI_CHARS = {
-        '==', '!=', '<', '<=', '>', '>=', '+++', '->>', '->', '<-', '&&', '||'
+        '==', '!=', '<', '<=', '>', '>=', '+++', '->>', '->', '<-', '&&', '||',
+        '+=', '-=', '*=', '/=', '%='
     }
     
     def __init__(self, source: str):
@@ -136,9 +137,13 @@ class Lexer:
             self._scan_string(char)
             return
         
-        # Handle division operator
+        # Handle division operator (and /= compound assignment)
         if char == '/':
-            self.tokens.append(Token('DIVIDE', char, self.line, self.start_col))
+            if self._peek() == '=':
+                self._advance()  # consume '='
+                self.tokens.append(Token('DIVIDE_ASSIGN', '/=', self.line, self.start_col))
+            else:
+                self.tokens.append(Token('DIVIDE', char, self.line, self.start_col))
             return
         
         # Handle numbers
@@ -156,6 +161,16 @@ class Lexer:
             self._scan_multi_char_operator(char)
             return
         
+        # Handle *= and %= compound assignment operators
+        if char == '*' and self._peek() == '=':
+            self._advance()  # consume '='
+            self.tokens.append(Token('MULTIPLY_ASSIGN', '*=', self.line, self.start_col))
+            return
+        if char == '%' and self._peek() == '=':
+            self._advance()  # consume '='
+            self.tokens.append(Token('PERCENT_ASSIGN', '%=', self.line, self.start_col))
+            return
+
         # Handle single character operators and delimiters
         if char in self.SINGLE_CHARS:
             token_type = self.OPERATOR_TYPES.get(char, char)
@@ -306,6 +321,14 @@ class Lexer:
         elif first_char == '|':
             # Handle | (pipe operator)
             self.tokens.append(Token('PIPE', '|', start_line, start_col))
+        elif first_char == '+' and self._peek() == '=':
+            # Handle += (compound addition assignment)
+            self._advance()  # consume '='
+            self.tokens.append(Token('PLUS_ASSIGN', '+=', start_line, start_col))
+        elif first_char == '-' and self._peek() == '=':
+            # Handle -= (compound subtraction assignment)
+            self._advance()  # consume '='
+            self.tokens.append(Token('MINUS_ASSIGN', '-=', start_line, start_col))
         elif first_char in '<>=!' and self._peek() == '=':
             # Handle <=, >=, ==, !=
             operator = first_char + self._advance()
