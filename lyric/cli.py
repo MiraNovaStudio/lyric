@@ -139,7 +139,7 @@ def main():
         arguments = remaining[1:]  # Everything after the filename
         
         # Set command-line options for getopts()
-        set_command_line_options(options)
+        set_command_line_options(options, sys.argv[2:])
 
         # Activate unsafe importpy mode if --unsafe flag is present
         if 'unsafe' in options:
@@ -156,7 +156,7 @@ def main():
         arguments = remaining  # All remaining args are arguments
 
         # Set command-line options for getopts()
-        set_command_line_options(options)
+        set_command_line_options(options, sys.argv[2:])
 
         # Activate unsafe importpy mode if --unsafe flag is present
         if 'unsafe' in options:

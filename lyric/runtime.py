@@ -348,12 +348,14 @@ def values_builtin(obj: Any) -> list:
 
 # Global storage for command-line options
 _command_line_options = {}
+_command_line_raw_args = []
 
 
-def set_command_line_options(options: dict) -> None:
+def set_command_line_options(options: dict, raw_args: list = None) -> None:
     """Set the command-line options to be accessed by getopts()."""
-    global _command_line_options
+    global _command_line_options, _command_line_raw_args
     _command_line_options = options
+    _command_line_raw_args = raw_args if raw_args is not None else []
 
 
 def get_command_line_options() -> dict:
@@ -369,24 +371,48 @@ def getopts_builtin(short_option, long_option) -> Any:
         getopts("v", "verbose")   — matches -v or --verbose
         getopts(None, "verbose")  — long option only (--verbose)
         getopts("v", None)        — short option only (-v)
+        getopts("f:", "file:")    — option expects a value (-f val or --file val)
+
+    A trailing colon ':' indicates the option expects a value argument,
+    supporting space-separated syntax: -f config.txt or --file config.txt
 
     Args:
-        short_option: Short option name (without dash), or None to skip
-        long_option:  Long option name (without dashes), or None to skip
+        short_option: Short option name (without dash), or None to skip.
+                      Append ':' to indicate the option expects a value.
+        long_option:  Long option name (without dashes), or None to skip.
+                      Append ':' to indicate the option expects a value.
 
     Returns:
         - The option value if it was provided with a value
         - True  if the option was provided as a flag
         - False if the option was not provided at all
     """
-    global _command_line_options
+    global _command_line_options, _command_line_raw_args
 
+    # Check for ':' suffix indicating value-expected options
+    expects_value = False
+    if short_option is not None and short_option.endswith(':'):
+        short_option = short_option[:-1]
+        expects_value = True
+    if long_option is not None and long_option.endswith(':'):
+        long_option = long_option[:-1]
+        expects_value = True
+
+    # First check parsed options (handles = syntax: -f=value, --file=value)
     for name in (short_option, long_option):
         if name is not None and name in _command_line_options:
             value = _command_line_options[name]
-            if value is None:
-                return True
-            return value
+            if value is not None:
+                return value
+            # Option was a flag (no = value) — if it expects a value,
+            # scan raw args for the next argument after the flag
+            if expects_value:
+                for i, arg in enumerate(_command_line_raw_args):
+                    if arg == f'-{short_option}' or arg == f'--{long_option}':
+                        if i + 1 < len(_command_line_raw_args):
+                            return _command_line_raw_args[i + 1]
+                return False
+            return True
 
     return False
 
