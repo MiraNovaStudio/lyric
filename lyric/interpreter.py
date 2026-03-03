@@ -2569,7 +2569,7 @@ class Interpreter:
         RESERVED_IMPORTS = {'lyric', 'lyrical', 'ly'}
         if module_name in RESERVED_IMPORTS or module_name.startswith('ly.'):
             raise RuntimeErrorLyric(
-                f"ImportError: '{module_name}' is a reserved module name for the Lyric standard library (planned for 1.2.0). "
+                f"ImportError: '{module_name}' is a reserved module name for the Lyric standard library. "
                 f"Please choose a different name for your module.",
                 node.line,
                 node.column

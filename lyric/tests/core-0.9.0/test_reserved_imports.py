@@ -50,8 +50,8 @@ class TestReservedImports:
             ast = parse(code)
             evaluate(ast)
 
-    def test_error_message_mentions_1_2_0(self):
+    def test_error_message_mentions_stdlib(self):
         code = 'import lyric'
-        with pytest.raises(RuntimeErrorLyric, match="1.2.0"):
+        with pytest.raises(RuntimeErrorLyric, match="standard library"):
             ast = parse(code)
             evaluate(ast)
