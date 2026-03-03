@@ -69,6 +69,7 @@ WHITELISTED_MODULES = frozenset([
     'os',
     'sys',
     'random',
+    'collections',
     'http.server',
     'requests',
 ])

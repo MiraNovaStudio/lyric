@@ -1,11 +1,9 @@
 # core_collections.ly
 # Lyric adhoc test -- exercises the public classes and functions of Python's collections module.
 #
-# Run with:  lyric run lyric/tests/python_modules/core_collections.ly --unsafe
+# Run with:  lyric run lyric/tests/python_modules/core_collections.ly
 # Output:    PASS: <desc>   for working features
 #            ERROR: <desc>  for failures or thrown exceptions
-#
-# NOTE: collections is not yet whitelisted, so --unsafe is required.
 
 importpy collections
 
