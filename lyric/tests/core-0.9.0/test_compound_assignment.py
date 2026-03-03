@@ -218,6 +218,74 @@ class TestIndexCompoundAssignment:
         assert output.strip() == "250"
 
 
+# --- Member+index compound assignment ---
+
+class TestMemberIndexCompoundAssignment:
+    def test_member_index_plus_assign(self):
+        code = '''class Bag
+    def init() {
+        self.items = {"a": 1, "b": 2}
+    }
+    def bump(str key) {
+        self.items[key] += 10
+    }
+    def get(str key) {
+        return self.items[key]
+    }
++++
+
+var bag = Bag()
+bag.bump("a")
+print(bag.get("a"))'''
+        output = run_code_capture(code)
+        assert output.strip() == "11"
+
+    def test_member_index_assign(self):
+        code = '''class Store
+    def init() {
+        self.data = {}
+    }
+    def set(str key, int val) {
+        self.data[key] = val
+    }
+    def get(str key) {
+        return self.data[key]
+    }
++++
+
+var s = Store()
+s.set("x", 42)
+print(s.get("x"))'''
+        output = run_code_capture(code)
+        assert output.strip() == "42"
+
+    def test_member_index_word_counter(self):
+        code = '''class Counter
+    def init() {
+        self.counts = {}
+    }
+    def add(str word) {
+        if word in self.counts
+            self.counts[word] += 1
+        else
+            self.counts[word] = 1
+        end
+    }
+    def get(str word) {
+        return self.counts[word]
+    }
++++
+
+var wc = Counter()
+wc.add("hello")
+wc.add("world")
+wc.add("hello")
+print(wc.get("hello"))
+print(wc.get("world"))'''
+        output = run_code_capture(code)
+        assert output.strip() == "2\n1"
+
+
 # --- Loop usage ---
 
 class TestLoopCompoundAssignment:

@@ -1465,12 +1465,53 @@ class Interpreter:
         """Evaluate an assignment statement."""
         value = self._evaluate_expression(node.expr)
         
-        if '.' in node.name:
+        if '.' in node.name and '[' in node.name and ']' in node.name:
+            # Member+index assignment: obj.member[key] = value
+            dot_pos = node.name.find('.')
+            bracket_start = node.name.find('[')
+            bracket_end = node.name.find(']')
+            obj_name = node.name[:dot_pos]
+            member_name = node.name[dot_pos+1:bracket_start]
+            index_str = node.name[bracket_start+1:bracket_end]
+
+            # Resolve the object and member
+            if obj_name in self.global_scope:
+                obj = self.global_scope[obj_name]
+                if isinstance(obj, dict) and member_name in obj:
+                    member_obj = obj[member_name]
+                else:
+                    raise RuntimeErrorLyric(f"Cannot access member '{member_name}' of '{obj_name}'", node.line, node.column)
+            else:
+                raise RuntimeErrorLyric(f"Variable '{obj_name}' is not defined", node.line, node.column)
+
+            # Resolve index — check if it's a variable name
+            resolved_index = index_str
+            try:
+                resolved_index = int(index_str)
+            except ValueError:
+                # Not an integer — check if it's a variable
+                if index_str in self.global_scope:
+                    resolved_index = self.global_scope[index_str]
+
+            if isinstance(member_obj, (dict, MapObject)):
+                member_obj[resolved_index] = value
+            elif isinstance(member_obj, (list, ArrObject)):
+                try:
+                    idx = int(resolved_index)
+                    obj_len = len(member_obj.elements) if isinstance(member_obj, ArrObject) else len(member_obj)
+                    if idx < 0 or idx >= obj_len:
+                        raise IndexErrorLyric(f"Index out of range: tried to access index {idx} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
+                    member_obj[idx] = value
+                except (ValueError, TypeError):
+                    raise RuntimeErrorLyric(f"Invalid list index: '{resolved_index}' is not a valid integer.", node.line, node.column)
+            else:
+                raise RuntimeErrorLyric(f"Cannot assign to indexed expression on '{member_name}'", node.line, node.column)
+        elif '.' in node.name:
             # Assignment to member: self.attribute = value
             parts = node.name.split('.')
             obj_name = parts[0]
             member_name = parts[1]
-            
+
             if obj_name in self.global_scope:
                 obj = self.global_scope[obj_name]
                 if isinstance(obj, dict):

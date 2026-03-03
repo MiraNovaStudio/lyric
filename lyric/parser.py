@@ -634,6 +634,50 @@ class Parser:
                 expr = self._parse_expression()
                 desugared = BinaryOpNode(op, ident, expr, obj_token.line, obj_token.col)
                 return AssignNode(full_name, desugared, obj_token.line, obj_token.col)
+            elif (self._peek_next().type == 'DOT' and
+                  self._peek_next_next().type == 'IDENT' and
+                  self._peek_at(3).type == 'LBRACKET' and
+                  self._peek_at(4).type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
+                  self._peek_at(5).type == 'RBRACKET' and
+                  self._peek_at(6).type == 'ASSIGN'):
+                # Member+index assignment: obj.member[key] = expression
+                obj_token = self._advance()
+                obj_name = obj_token.value
+                self._advance()  # consume '.'
+                member_name = self._advance().value
+                self._advance()  # consume '['
+                index_token = self._advance()
+                self._advance()  # consume ']'
+                self._advance()  # consume '='
+
+                full_name = f"{obj_name}.{member_name}"
+                index_expr = LiteralNode(index_token.value) if index_token.type != 'IDENT' else IdentifierNode(index_token.value, index_token.line, index_token.col)
+                indexed_expr = IndexNode(IdentifierNode(full_name, obj_token.line, obj_token.col), index_expr)
+                expr = self._parse_expression()
+                return AssignNode(f"{full_name}[{index_token.value}]", expr, obj_token.line, obj_token.col)
+            elif (self._peek_next().type == 'DOT' and
+                  self._peek_next_next().type == 'IDENT' and
+                  self._peek_at(3).type == 'LBRACKET' and
+                  self._peek_at(4).type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
+                  self._peek_at(5).type == 'RBRACKET' and
+                  self._peek_at(6).type in self.COMPOUND_ASSIGN_TYPES):
+                # Compound member+index assignment: obj.member[key] += expr
+                obj_token = self._advance()
+                obj_name = obj_token.value
+                self._advance()  # consume '.'
+                member_name = self._advance().value
+                self._advance()  # consume '['
+                index_token = self._advance()
+                self._advance()  # consume ']'
+                op_token = self._advance()  # consume compound operator
+                op = self.COMPOUND_ASSIGN_OPS[op_token.type]
+
+                full_name = f"{obj_name}.{member_name}"
+                index_expr = LiteralNode(index_token.value) if index_token.type != 'IDENT' else IdentifierNode(index_token.value, index_token.line, index_token.col)
+                indexed_expr = IndexNode(IdentifierNode(full_name, obj_token.line, obj_token.col), index_expr)
+                expr = self._parse_expression()
+                desugared = BinaryOpNode(op, indexed_expr, expr, obj_token.line, obj_token.col)
+                return AssignNode(f"{full_name}[{index_token.value}]", desugared, obj_token.line, obj_token.col)
             elif (self._peek_next().type == 'LBRACKET' and
                   self._peek_next_next().type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
                   self._peek_next_next_next().type == 'RBRACKET' and
@@ -1096,6 +1140,12 @@ class Parser:
         if self.current + 4 >= len(self.tokens):
             return self.tokens[-1]  # Return EOF token
         return self.tokens[self.current + 4]
+
+    def _peek_at(self, offset: int) -> Token:
+        """Look at the token at the given offset from current without advancing."""
+        if self.current + offset >= len(self.tokens):
+            return self.tokens[-1]  # Return EOF token
+        return self.tokens[self.current + offset]
 
     def _parse_try_block(self) -> TryNode:
         """Parse try/catch/finally block: try [":"] ... catch [Type] [as var] [":"] ... finally [":"] ... fade"""
