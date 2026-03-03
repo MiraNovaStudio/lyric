@@ -2473,7 +2473,7 @@ class Interpreter:
                 elif isinstance(right, (dict, list, str, tuple, ArrObject, TupObject)):
                     return left in right
                 else:
-                    raise TypeErrorLyric(f"'in' requires a container (map, arr, tup, str), got {type(right).__name__}")
+                    raise TypeErrorLyric(f"'in' requires a container (map, arr, tup, str), got {type(right).__name__}", node.line, node.column)
             else:
                 raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}", node.line, node.column)
         except TypeError as e:
