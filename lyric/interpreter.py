@@ -2167,6 +2167,19 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: DskObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, str):
+                    # Handle string methods — adds .len() since Python uses len() not .len()
+                    if method_name == 'len':
+                        return len(current_obj)
+                    elif hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._lyric_to_python(self._evaluate_expression(arg)) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method on str.")
+                    else:
+                        raise RuntimeErrorLyric(f"Method not found: '{method_name}' is not a method of str")
                 elif hasattr(current_obj, method_name):
                     # Handle arbitrary Python instances (e.g., datetime, time objects,
                     # and any Python object returned from importpy)
