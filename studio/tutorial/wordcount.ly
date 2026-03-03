@@ -5,8 +5,9 @@ class WordCounter
     }
 
     def count_words() {
-        rex word_pattern = regex("/\w+/")
-        arr words = word_pattern.findall(self.text.lower())
+        #rex word_pattern = regex("/\w+/")
+        #arr words = word_pattern.findall(self.text.lower())
+        arr words = self.text.split()
         str word
 
         for word in words

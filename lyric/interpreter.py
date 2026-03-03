@@ -5,6 +5,7 @@
 """Interpreter module for executing Lyric AST nodes."""
 
 from typing import Any, List
+from collections.abc import Mapping, Sequence
 import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
@@ -1493,7 +1494,7 @@ class Interpreter:
                 if index_str in self.global_scope:
                     resolved_index = self.global_scope[index_str]
 
-            if isinstance(member_obj, (dict, MapObject)):
+            if isinstance(member_obj, (dict, MapObject, Mapping)):
                 member_obj[resolved_index] = value
             elif isinstance(member_obj, (list, ArrObject)):
                 try:
@@ -1501,6 +1502,12 @@ class Interpreter:
                     obj_len = len(member_obj.elements) if isinstance(member_obj, ArrObject) else len(member_obj)
                     if idx < 0 or idx >= obj_len:
                         raise IndexErrorLyric(f"Index out of range: tried to access index {idx} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
+                    member_obj[idx] = value
+                except (ValueError, TypeError):
+                    raise RuntimeErrorLyric(f"Invalid list index: '{resolved_index}' is not a valid integer.", node.line, node.column)
+            elif isinstance(member_obj, Sequence):
+                try:
+                    idx = int(resolved_index)
                     member_obj[idx] = value
                 except (ValueError, TypeError):
                     raise RuntimeErrorLyric(f"Invalid list index: '{resolved_index}' is not a valid integer.", node.line, node.column)
@@ -1530,8 +1537,8 @@ class Interpreter:
             
             if obj_name in self.global_scope:
                 obj = self.global_scope[obj_name]
-                if isinstance(obj, (dict, MapObject)):
-                    # For dictionaries and MapObject, the index is a key
+                if isinstance(obj, (dict, MapObject, Mapping)):
+                    # For dictionaries, MapObject, and Python Mapping types, the index is a key
                     obj[index_str] = value
                 elif isinstance(obj, (list, ArrObject)):
                     # For lists and ArrObject, the index should be an integer
@@ -1540,6 +1547,13 @@ class Interpreter:
                         obj_len = len(obj.elements) if isinstance(obj, ArrObject) else len(obj)
                         if index < 0 or index >= obj_len:
                             raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
+                        obj[index] = value
+                    except ValueError:
+                        raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
+                elif isinstance(obj, Sequence):
+                    # For Python Sequence types (deque, etc.), the index should be an integer
+                    try:
+                        index = int(index_str)
                         obj[index] = value
                     except ValueError:
                         raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
@@ -1710,7 +1724,10 @@ class Interpreter:
                 # MapObject handles KeyError in its __getitem__
                 return obj[index]
             else:
-                # Plain dict
+                # Dict or dict subclass (Counter, defaultdict, OrderedDict)
+                if hasattr(obj, '__missing__'):
+                    # Dict subclasses with __missing__ (Counter returns 0, defaultdict creates default)
+                    return obj[index]
                 if index not in obj:
                     available_keys = list(obj.keys())[:5]  # Show first 5 keys
                     keys_preview = ", ".join(repr(k) for k in available_keys)
@@ -1718,6 +1735,12 @@ class Interpreter:
                         keys_preview += f" (and {len(obj)-5} more)"
                     raise KeyErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
                 return obj[index]
+        elif isinstance(obj, Mapping):
+            # Python Mapping types (Counter, defaultdict, OrderedDict, ChainMap, etc.)
+            return obj[index]
+        elif isinstance(obj, Sequence):
+            # Python Sequence types (deque, etc.)
+            return obj[index]
         else:
             raise TypeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
     
@@ -2210,6 +2233,9 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method on str.")
                     else:
                         raise RuntimeErrorLyric(f"Method not found: '{method_name}' is not a method of str")
+                elif method_name == 'len' and hasattr(current_obj, '__len__'):
+                    # Generic .len() support for any Python object with __len__
+                    return len(current_obj)
                 elif hasattr(current_obj, method_name):
                     # Handle arbitrary Python instances (e.g., datetime, time objects,
                     # and any Python object returned from importpy)
