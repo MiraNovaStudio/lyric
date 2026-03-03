@@ -970,7 +970,29 @@ class Parser:
             self._consume('RBRACE', "Expected '}' after dictionary pairs")
             return self._parse_indexing_chain(DictLiteralNode(pairs, lbrace_token.line, lbrace_token.col))
         
-        raise SyntaxErrorLyric("Expected expression", self._peek().line, self._peek().col)
+        token = self._peek()
+        hints = {
+            'LBRACE': "Unexpected '{'. Classes use '+++' as the closing delimiter, not braces. Braces are only used for function/method bodies.",
+            'RBRACE': "Unexpected '}'. Check for mismatched braces in your function or method body.",
+            'CLASS_END': "Unexpected '+++'. This class terminator appears outside of a class definition.",
+            'END': "Unexpected 'end'. Check that your block structure is correct.",
+            'DONE': "Unexpected 'done'. This loop terminator appears outside of a loop.",
+            'FADE': "Unexpected 'fade'. This try/catch terminator appears outside of a try block.",
+            'PLUS_ASSIGN': "Unexpected '+='. Compound assignment can only be used as a statement, not inside an expression.",
+            'MINUS_ASSIGN': "Unexpected '-='. Compound assignment can only be used as a statement, not inside an expression.",
+            'MULTIPLY_ASSIGN': "Unexpected '*='. Compound assignment can only be used as a statement, not inside an expression.",
+            'DIVIDE_ASSIGN': "Unexpected '/='. Compound assignment can only be used as a statement, not inside an expression.",
+            'PERCENT_ASSIGN': "Unexpected '%='. Compound assignment can only be used as a statement, not inside an expression.",
+            'EOF': "Unexpected end of file. Check for unclosed blocks, missing 'end', 'done', 'fade', or '+++'.",
+            'ASSIGN': "Unexpected '='. Did you mean '==' for comparison?",
+        }
+        hint = hints.get(token.type)
+        if hint:
+            raise SyntaxErrorLyric(hint, token.line, token.col)
+        raise SyntaxErrorLyric(
+            f"Unexpected token '{token.value}' (type: {token.type}). Expected an expression (variable, literal, function call, etc.).",
+            token.line, token.col
+        )
     
     def _parse_indexing_chain(self, expr):
         """Parse chained indexing operations: expr[index][index]... or expr[start:end:step]..."""
