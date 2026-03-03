@@ -100,10 +100,10 @@ end
 
 
 def test_parse_loop_statement():
-    """Test parsing loop statement: given i in range(3): print(i) done"""
+    """Test parsing loop statement: for i in range(3): print(i) done"""
     source = '''def main() {
 int i
-given i in range(3):
+for i in range(3):
 print(i)
 done
 }'''
@@ -440,7 +440,7 @@ def test_parse_loop_example():
     """Test parsing the loop.ly example."""
     source = """def main() {
     int i
-    given i in range(3):
+    for i in range(3):
         print(i)
     done
 }"""

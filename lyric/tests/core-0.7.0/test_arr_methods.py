@@ -457,7 +457,7 @@ print matrix[0][1]
         code = """
 arr numbers = [1, 2, 3]
 var item
-given item in numbers:
+for item in numbers:
     print item
 done
 """

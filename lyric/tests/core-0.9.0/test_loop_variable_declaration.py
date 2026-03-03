@@ -5,7 +5,7 @@
 """
 Test suite for loop variable declaration requirement in Lyric.
 
-Tests that given/for iterator loops require the loop variable to be
+Tests that for...in iterator loops require the loop variable to be
 declared before use, and that type compatibility is enforced.
 """
 
@@ -48,9 +48,9 @@ def run_code_capture(code: str) -> str:
 
 # --- Test 1: Undeclared loop variable with range errors ---
 def test_undeclared_loop_var_range():
-    """given x in range(5) without declaring x should raise RuntimeErrorLyric."""
+    """for x in range(5) without declaring x should raise RuntimeErrorLyric."""
     code = """
-given x in range(5)
+for x in range(5)
     print(x)
 done
 """
@@ -61,10 +61,10 @@ done
 
 # --- Test 2: Undeclared loop variable with .items() errors ---
 def test_undeclared_loop_var_items():
-    """given pair in prices.items() without declaring pair should error."""
+    """for pair in prices.items() without declaring pair should error."""
     code = """
 map prices = {"apple": 1, "banana": 2}
-given pair in prices.items()
+for pair in prices.items()
     print(pair)
 done
 """
@@ -75,11 +75,11 @@ done
 
 # --- Test 3: Declared arr with .items() works ---
 def test_declared_arr_with_items():
-    """arr pair then given pair in prices.items() should succeed, pair is a list."""
+    """arr pair then for pair in prices.items() should succeed, pair is a list."""
     code = """
 map prices = {"apple": 1, "banana": 2}
 arr pair
-given pair in prices.items()
+for pair in prices.items()
     print(pair[0], "costs", pair[1])
 done
 """
@@ -90,11 +90,11 @@ done
 
 # --- Test 4: Declared var with .items() works ---
 def test_declared_var_with_items():
-    """var pair then iterate should succeed."""
+    """var pair then for pair in iterate should succeed."""
     code = """
 map prices = {"apple": 1, "banana": 2}
 var pair
-given pair in prices.items()
+for pair in prices.items()
     print(pair)
 done
 """
@@ -104,10 +104,10 @@ done
 
 # --- Test 5: Declared int with range works ---
 def test_declared_int_with_range():
-    """int i then given i in range(5) should succeed."""
+    """int i then for i in range(5) should succeed."""
     code = """
 int i
-given i in range(5)
+for i in range(5)
     print(i)
 done
 """
@@ -120,11 +120,11 @@ done
 
 # --- Test 6: Type mismatch int with .items() ---
 def test_type_mismatch_int_with_items():
-    """int x then given x in prices.items() should raise type mismatch."""
+    """int x then for x in prices.items() should raise type mismatch."""
     code = """
 map prices = {"apple": 1, "banana": 2}
 int x
-given x in prices.items()
+for x in prices.items()
     print(x)
 done
 """
@@ -135,10 +135,10 @@ done
 
 # --- Test 7: Type mismatch str with range ---
 def test_type_mismatch_str_with_range():
-    """str s then given s in range(5) should raise type mismatch."""
+    """str s then for s in range(5) should raise type mismatch."""
     code = """
 str s
-given s in range(5)
+for s in range(5)
     print(s)
 done
 """
@@ -149,10 +149,10 @@ done
 
 # --- Test 8: Declared var with range works ---
 def test_declared_var_with_range():
-    """var i then given i in range(3) should succeed."""
+    """var i then for i in range(3) should succeed."""
     code = """
 var i
-given i in range(3)
+for i in range(3)
     print(i)
 done
 """
@@ -169,7 +169,7 @@ def test_declared_arr_iterating_list_of_lists():
     code = """
 arr matrix = [[1, 2], [3, 4], [5, 6]]
 arr row
-given row in matrix
+for row in matrix
     print(row[0], row[1])
 done
 """
@@ -185,7 +185,7 @@ def test_declared_int_iterating_list_of_ints():
     code = """
 arr numbers = [10, 20, 30]
 int n
-given n in numbers
+for n in numbers
     print(n)
 done
 """

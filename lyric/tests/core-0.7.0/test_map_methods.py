@@ -284,7 +284,7 @@ end
 map data = {"a": 1, "b": 2, "c": 3}
 int count = 0
 var key
-given key in data:
+for key in data:
     count = count + 1
 done
 print count

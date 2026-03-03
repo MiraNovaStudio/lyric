@@ -21,7 +21,7 @@ class TestRangeNegativeStep:
         code = """
 var count = 0
 int i
-given i in range(5, 0, -1):
+for i in range(5, 0, -1):
     count = count + 1
 done
 """
@@ -36,7 +36,7 @@ done
         code = """
 var items = []
 int i
-given i in range(-1, -6, -1):
+for i in range(-1, -6, -1):
     items = items + [i]
 done
 """
@@ -54,7 +54,7 @@ done
         code = """
 var items = []
 int i
-given i in range(10, 0, -2):
+for i in range(10, 0, -2):
     items = items + [i]
 done
 """
@@ -76,7 +76,7 @@ class TestRangeZeroStep:
         code = """
 var items = []
 int i
-given i in range(0, 5, 0):
+for i in range(0, 5, 0):
     items = items + [i]
 done
 """
@@ -96,7 +96,7 @@ class TestRangeNegativeValues:
         code = """
 var items = []
 int i
-given i in range(-5, 5):
+for i in range(-5, 5):
     items = items + [i]
 done
 """
@@ -114,7 +114,7 @@ done
         code = """
 var items = []
 int i
-given i in range(-3, 2):
+for i in range(-3, 2):
     items = items + [i]
 done
 """
@@ -132,7 +132,7 @@ done
         code = """
 var items = []
 int i
-given i in range(-10, -5):
+for i in range(-10, -5):
     items = items + [i]
 done
 """
@@ -150,7 +150,7 @@ done
         code = """
 var items = []
 int i
-given i in range(-10, 0, 2):
+for i in range(-10, 0, 2):
     items = items + [i]
 done
 """
@@ -172,7 +172,7 @@ class TestRangeEmptyRanges:
         code = """
 var count = 0
 int i
-given i in range(5, 5):
+for i in range(5, 5):
     count = count + 1
 done
 """
@@ -187,7 +187,7 @@ done
         code = """
 var count = 0
 int i
-given i in range(10, 5, 1):
+for i in range(10, 5, 1):
     count = count + 1
 done
 """
@@ -202,7 +202,7 @@ done
         code = """
 var count = 0
 int i
-given i in range(5, 10, -1):
+for i in range(5, 10, -1):
     count = count + 1
 done
 """
@@ -217,7 +217,7 @@ done
         code = """
 var count = 0
 int i
-given i in range(0):
+for i in range(0):
     count = count + 1
 done
 """
@@ -232,7 +232,7 @@ done
         code = """
 var count = 0
 int i
-given i in range(-5):
+for i in range(-5):
     count = count + 1
 done
 """
@@ -251,7 +251,7 @@ class TestRangeTypeValidation:
         code = """
 var items = []
 int i
-given i in range(5.5):
+for i in range(5.5):
     items = items + [i]
 done
 """
@@ -267,7 +267,7 @@ done
         code = """
 var items = []
 int i
-given i in range("5"):
+for i in range("5"):
     items = items + [i]
 done
 """

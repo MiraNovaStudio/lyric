@@ -57,10 +57,10 @@ end
 
 
 def test_evaluate_loop_statement():
-    """Test evaluating loop statement: given i in range(3) print(i) done"""
+    """Test evaluating loop statement: for i in range(3) print(i) done"""
     source = '''def main() {
 int i
-given i in range(3)
+for i in range(3)
 print("iteration")
 done
 }'''
@@ -424,23 +424,23 @@ def test_evaluate_loop_example():
     """Test evaluating the loop.ly example."""
     source = """def main() {
     int i
-    given i in range(3):
+    for i in range(3):
         print(i)
     done
 }"""
-    
+
     ast = parse(source)
-    
+
     # Capture print output
     import io
     import sys
     old_stdout = sys.stdout
     sys.stdout = captured_output = io.StringIO()
-    
+
     try:
         result = evaluate(ast)
         assert result is None
-        
+
         # Check exact output
         output = captured_output.getvalue().strip()
         assert output == "0\n1\n2"
@@ -492,9 +492,9 @@ def test_evaluate_nested_control_flow():
 
     int i
     int j
-    given i in range(2):
+    for i in range(2):
         print("Outer:", i)
-        given j in range(2):
+        for j in range(2):
             print("  Inner:", j)
         done
     done

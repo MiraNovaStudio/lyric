@@ -147,12 +147,12 @@ done
         result = self._run_code(code)
         # Should print red, green, blue
 
-    def test_arr_iteration_given_loop(self):
-        """def main() {\n    Test iterating over arr using given loop.\n}"""
+    def test_arr_iteration_for_loop_alternate(self):
+        """def main() {\n    Test iterating over arr using for loop with different data.\n}"""
         code = """
 arr numbers = [10, 20, 30]
 var num
-given num in numbers:
+for num in numbers:
     print num
 done
 """

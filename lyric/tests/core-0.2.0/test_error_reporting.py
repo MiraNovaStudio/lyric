@@ -33,7 +33,7 @@ def test_syntax_error_missing_done():
     source = """
 def main() {
     int i
-    given i in range(3):
+    for i in range(3):
         print(i)
     # Missing 'done' here
 }"""

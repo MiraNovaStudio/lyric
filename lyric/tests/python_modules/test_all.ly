@@ -14,7 +14,7 @@ def main() {
     # collect only .ly scripts (skip ourselves), sorted
     arr scripts = []
     var f = ""
-    given i in range(n)
+    for i in range(n)
         f = files[i]
         if ".ly" in f
             if f != "test_all.ly"
@@ -45,7 +45,7 @@ def main() {
     int e = 0
     str tag   = ""
 
-    given s in scripts
+    for s in scripts
         cmd = "lyric run " + dir + "/" + s
         output = ""
         exec(cmd) -> output

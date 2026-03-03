@@ -165,7 +165,7 @@ def test_range_comparison():
     source = """
 def main() {
     int i
-    given i in range(3):
+    for i in range(3):
         if i == 0:
             print("First iteration")
         elif i == 1:

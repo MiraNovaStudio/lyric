@@ -27,7 +27,7 @@ def main() {
     end
 
     int i
-    given i in range(2):
+    for i in range(2):
         print("Outer loop:", i)
         if i == 0:
             print("  First iteration")
@@ -69,9 +69,9 @@ def main() {
         print("Starting nested loop test")
         int i
         int j
-        given i in range(2):
+        for i in range(2):
             print("Outer:", i)
-            given j in range(2):
+            for j in range(2):
                 print("  Inner:", j)
             done
         done
@@ -109,7 +109,7 @@ def test_nested_if_in_loop():
     source = """
 def main() {
     int i
-    given i in range(3):
+    for i in range(3):
         if i == 0:
             print("First iteration")
         elif i == 1:
@@ -152,7 +152,7 @@ def main() {
         if y > 1:
             print("y is greater than 1")
             int i
-            given i in range(2):
+            for i in range(2):
                 print("Loop iteration:", i)
                 if i == 0:
                     print("  First loop iteration")

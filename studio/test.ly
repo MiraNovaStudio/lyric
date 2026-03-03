@@ -1,5 +1,5 @@
 def main() {
-    str test = "test"
+    str test = None
 
-    print int(test)
+    print test
 }

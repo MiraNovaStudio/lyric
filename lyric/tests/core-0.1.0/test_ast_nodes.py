@@ -199,7 +199,7 @@ def test_if_node_with_elifs_and_else():
 def test_loop_node_iterator_and_while():
     """Test LoopNode with both iterator and while loop kinds."""
     
-    # Iterator loop: given i in range(3) print(i) done
+    # Iterator loop: for i in range(3) print(i) done
     range_call = CallNode("range", [LiteralNode(3)])
     i_id = IdentifierNode("i")
     print_call = CallNode("print", [i_id])
