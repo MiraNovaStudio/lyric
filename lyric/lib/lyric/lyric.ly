@@ -4,6 +4,7 @@
 importpy os
 importpy time
 importpy math
+importpy glob
 importpy random
 importpy datetime
 
@@ -33,8 +34,8 @@ var cd(str path) {
 }
 
 # list directory
-arr ls(str name) {
-    return os.listdir(name)
+arr ls(str glob) {
+    return glob.glob(glob)
 }
 
 # make directory
@@ -104,5 +105,24 @@ int now() {
     return math.floor(time.time())
 }
 
+# returns joined path
+str join(str path, str file) {
+    return os.path.join(path, file)
+}
+
+# returns full path
+str path(str file) {
+    return os.path.abspath(file)
+}
+
+# returns basename
+str base(str file) {
+    return os.path.basename(file)
+}
+
+# returns dirname
+str dir(str file) {
+    return os.path.dirname(file)
+}
 
 

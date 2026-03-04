@@ -2651,8 +2651,13 @@ class Interpreter:
             return candidate
         return None
 
-    def _load_module_file(self, module_file, module_name, node):
-        """Read, parse, and evaluate a .ly module file. Returns the module Interpreter."""
+    def _load_module_file(self, module_file, module_name, node, is_stdlib=False):
+        """Read, parse, and evaluate a .ly module file. Returns the module Interpreter.
+
+        When is_stdlib is True, stdlib mode is enabled in pyproxy so that
+        importpy statements inside stdlib .ly files bypass the whitelist
+        (but NOT the blacklist).
+        """
         from lyric.lexer import tokenize
         from lyric.parser import Parser
 
@@ -2677,6 +2682,10 @@ class Interpreter:
                 err_line, err_col
             )
 
+        if is_stdlib:
+            from lyric.pyproxy import set_stdlib_mode
+            set_stdlib_mode(True)
+
         module_interpreter = Interpreter()
         try:
             module_interpreter.evaluate(module_ast)
@@ -2687,6 +2696,9 @@ class Interpreter:
                 f"Error in module '{module_name}' ({module_name}.ly line {err_line}): {e}",
                 err_line, err_col
             )
+        finally:
+            if is_stdlib:
+                set_stdlib_mode(False)
 
         return module_interpreter
 
@@ -2785,7 +2797,7 @@ class Interpreter:
                 )
 
         # Load and evaluate the leaf module
-        module_interpreter = self._load_module_file(module_file, module_name, node)
+        module_interpreter = self._load_module_file(module_file, module_name, node, is_stdlib=is_reserved)
 
         if node.symbols:
             # Selective import: import lyric.math; sin, cos
@@ -2837,7 +2849,7 @@ class Interpreter:
                     # Load root module file (e.g. lib/lyric/lyric.ly)
                     root_file = self._find_module_file(base_dir, root_name, root_name)
                     if root_file:
-                        root_interp = self._load_module_file(root_file, root_name, node)
+                        root_interp = self._load_module_file(root_file, root_name, node, is_stdlib=is_reserved)
                         root_ns = self._make_module_namespace(root_name, root_interp)
                     else:
                         root_ns = LyricModuleNamespace(root_name, {}, {}, {})
@@ -2853,7 +2865,7 @@ class Interpreter:
                         inter_module_path = os.sep.join(parts[:i+1])
                         inter_file = self._find_module_file(base_dir, inter_module_path, part)
                         if inter_file:
-                            inter_interp = self._load_module_file(inter_file, '.'.join(parts[:i+1]), node)
+                            inter_interp = self._load_module_file(inter_file, '.'.join(parts[:i+1]), node, is_stdlib=is_reserved)
                             inter_ns = self._make_module_namespace('.'.join(parts[:i+1]), inter_interp)
                         else:
                             inter_ns = LyricModuleNamespace('.'.join(parts[:i+1]), {}, {}, {})

@@ -82,6 +82,11 @@ _WHITELIST_REASON = (
 # Global unsafe-mode flag — set to True when --unsafe CLI flag is present.
 _unsafe_mode = False
 
+# Stdlib-mode flag — set to True while loading stdlib .ly files.
+# Bypasses the whitelist (but NOT the blacklist) so the standard library
+# can import any non-blacklisted Python module without --unsafe.
+_stdlib_mode = False
+
 
 def set_unsafe_mode(enabled: bool) -> None:
     """Enable or disable unsafe importpy mode."""
@@ -92,6 +97,17 @@ def set_unsafe_mode(enabled: bool) -> None:
 def is_unsafe_mode() -> bool:
     """Return True if unsafe importpy mode is currently enabled."""
     return _unsafe_mode
+
+
+def set_stdlib_mode(enabled: bool) -> None:
+    """Enable or disable stdlib importpy mode."""
+    global _stdlib_mode
+    _stdlib_mode = enabled
+
+
+def is_stdlib_mode() -> bool:
+    """Return True if stdlib importpy mode is currently enabled."""
+    return _stdlib_mode
 
 
 def _lyric_to_python(val: Any) -> Any:
@@ -125,7 +141,7 @@ class PyModuleProxy:
                 f"ImportError: Python module '{module_name}' is blacklisted in Lyric. "
                 f"{_BLACKLIST_REASON}"
             )
-        if module_name not in WHITELISTED_MODULES and not _unsafe_mode:
+        if module_name not in WHITELISTED_MODULES and not _unsafe_mode and not _stdlib_mode:
             raise RuntimeErrorLyric(
                 f"ImportError: Python module '{module_name}' is not whitelisted in Lyric. "
                 f"{_WHITELIST_REASON}"
