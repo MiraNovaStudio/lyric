@@ -211,14 +211,12 @@ def main() {
     print("")
     print("--- set ---")
 
-    # NOTE: set() uses os.environ[name] = value which requires subscript
-    # assignment on a Python proxy object. This is a known limitation.
     try:
         lyric.set("LYRIC_TEST_VAR", "hello_lyric")
         var v = lyric.env("LYRIC_TEST_VAR")
         check("set() then env() returns the value", v == "hello_lyric")
     catch Error as e:
-        print("SKIP: set() not yet supported (os.environ[] assignment):", e)
+        print("ERROR: set()/env() threw exception:", e)
     fade
 
     try:
@@ -226,7 +224,7 @@ def main() {
         var v = lyric.env("LYRIC_TEST_VAR")
         check("set() overwrites existing var", v == "updated")
     catch Error as e:
-        print("SKIP: set() overwrite not yet supported:", e)
+        print("ERROR: set() overwrite threw exception:", e)
     fade
 
     # ================================================================

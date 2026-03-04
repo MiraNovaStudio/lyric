@@ -27,7 +27,11 @@ def main() {
 
     arr file = lyric.ls(".")
 
+
     print file
+
+    print "setting new test"
+    lyric.set("new_test", "value")
 
 
 

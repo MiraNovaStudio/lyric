@@ -1472,6 +1472,8 @@ class Interpreter:
                 obj = self.global_scope[obj_name]
                 if isinstance(obj, dict) and member_name in obj:
                     member_obj = obj[member_name]
+                elif hasattr(obj, member_name):
+                    member_obj = getattr(obj, member_name)
                 else:
                     raise RuntimeErrorLyric(f"Cannot access member '{member_name}' of '{obj_name}'", node.line, node.column)
             else:
