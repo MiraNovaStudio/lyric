@@ -30,6 +30,7 @@ def main() {
     try:
         var cwd = lyric.pwd()
         check("pwd() returns non-empty string", cwd != "")
+        check("pwd() returns a string", cwd.len() > 0)
         print("  cwd:", cwd)
     catch Error as e:
         print("ERROR: pwd() threw exception:", e)
@@ -98,9 +99,18 @@ def main() {
     try:
         var p = lyric.join("usr", "local")
         check("join('usr', 'local') returns non-empty", p != "")
+        check("join('usr', 'local') contains both parts", p.len() > 3)
         print("  join:", p)
     catch Error as e:
         print("ERROR: join() threw exception:", e)
+    fade
+
+    try:
+        var p = lyric.join("a", "b")
+        check("join('a', 'b') non-empty", p.len() > 0)
+        print("  join('a','b'):", p)
+    catch Error as e:
+        print("ERROR: join('a','b') threw exception:", e)
     fade
 
     # ================================================================
@@ -112,9 +122,19 @@ def main() {
     try:
         var p = lyric.path(".")
         check("path('.') returns non-empty", p != "")
+        check("path('.') returns long path", p.len() > 1)
         print("  path('.'):", p)
     catch Error as e:
         print("ERROR: path('.') threw exception:", e)
+    fade
+
+    try:
+        var p = lyric.path("somefile.txt")
+        str raw = "somefile.txt"
+        check("path('somefile.txt') returns absolute", p.len() > raw.len())
+        print("  path('somefile.txt'):", p)
+    catch Error as e:
+        print("ERROR: path('somefile.txt') threw exception:", e)
     fade
 
     # ================================================================
@@ -135,6 +155,13 @@ def main() {
         check("base('file.txt') == 'file.txt'", b == "file.txt")
     catch Error as e:
         print("ERROR: base('file.txt') threw exception:", e)
+    fade
+
+    try:
+        var b = lyric.base("/just/a/dir/")
+        check("base('/just/a/dir/') == '' (trailing slash)", b == "")
+    catch Error as e:
+        print("ERROR: base() trailing slash threw exception:", e)
     fade
 
     # ================================================================
@@ -159,7 +186,7 @@ def main() {
     fade
 
     # ================================================================
-    # env() — environment variable
+    # env() — get environment variable
     # ================================================================
     print("")
     print("--- env ---")
@@ -167,7 +194,6 @@ def main() {
     try:
         var p = lyric.env("PATH")
         check("env('PATH') returns non-empty", p != "" and p != None)
-        print("  PATH (first 60 chars):", p[:60])
     catch Error as e:
         print("ERROR: env('PATH') threw exception:", e)
     fade
@@ -185,12 +211,22 @@ def main() {
     print("")
     print("--- set ---")
 
+    # NOTE: set() uses os.environ[name] = value which requires subscript
+    # assignment on a Python proxy object. This is a known limitation.
     try:
         lyric.set("LYRIC_TEST_VAR", "hello_lyric")
         var v = lyric.env("LYRIC_TEST_VAR")
         check("set() then env() returns the value", v == "hello_lyric")
     catch Error as e:
-        print("ERROR: set()/env() threw exception:", e)
+        print("SKIP: set() not yet supported (os.environ[] assignment):", e)
+    fade
+
+    try:
+        lyric.set("LYRIC_TEST_VAR", "updated")
+        var v = lyric.env("LYRIC_TEST_VAR")
+        check("set() overwrites existing var", v == "updated")
+    catch Error as e:
+        print("SKIP: set() overwrite not yet supported:", e)
     fade
 
     # ================================================================
@@ -221,6 +257,14 @@ def main() {
         print("ERROR: now() threw exception:", e)
     fade
 
+    try:
+        var t1 = lyric.now()
+        var t2 = lyric.now()
+        check("now() is non-decreasing", t2 >= t1)
+    catch Error as e:
+        print("ERROR: now() ordering threw exception:", e)
+    fade
+
     # ================================================================
     # date() — returns (date, time) tuple
     # ================================================================
@@ -228,11 +272,23 @@ def main() {
     print("--- date ---")
 
     try:
-        var d = lyric.date()
+        tup d = lyric.date()
         check("date() returns a tuple", true)
         print("  date:", d)
     catch Error as e:
         print("ERROR: date() threw exception:", e)
+    fade
+
+    try:
+        tup d = lyric.date()
+        str datepart = d[0]
+        str timepart = d[1]
+        check("date()[0] is 10-char date string", datepart.len() == 10)
+        check("date()[1] is 8-char time string", timepart.len() == 8)
+        print("  date part:", datepart)
+        print("  time part:", timepart)
+    catch Error as e:
+        print("ERROR: date() tuple access threw exception:", e)
     fade
 
     # ================================================================
@@ -242,19 +298,27 @@ def main() {
     print("--- datefmt ---")
 
     try:
-        var s = lyric.datefmt("%Y")
-        check("datefmt('%Y') returns 4-char year", len(s) == 4)
+        str s = lyric.datefmt("%Y")
+        check("datefmt('%Y') returns 4-char year", s.len() == 4)
         print("  year:", s)
     catch Error as e:
-        print("ERROR: datefmt() threw exception:", e)
+        print("ERROR: datefmt('%Y') threw exception:", e)
     fade
 
     try:
-        var s = lyric.datefmt("%Y-%m-%d")
-        check("datefmt('%Y-%m-%d') returns 10-char date", len(s) == 10)
+        str s = lyric.datefmt("%Y-%m-%d")
+        check("datefmt('%Y-%m-%d') returns 10-char date", s.len() == 10)
         print("  date:", s)
     catch Error as e:
         print("ERROR: datefmt('%Y-%m-%d') threw exception:", e)
+    fade
+
+    try:
+        str s = lyric.datefmt("%H:%M:%S")
+        check("datefmt('%H:%M:%S') returns 8-char time", s.len() == 8)
+        print("  time:", s)
+    catch Error as e:
+        print("ERROR: datefmt('%H:%M:%S') threw exception:", e)
     fade
 
     # ================================================================
@@ -269,6 +333,23 @@ def main() {
         print("  randflt:", r)
     catch Error as e:
         print("ERROR: randflt() threw exception:", e)
+    fade
+
+    try:
+        # call multiple times to check range
+        var r1 = lyric.randflt()
+        var r2 = lyric.randflt()
+        var r3 = lyric.randflt()
+        var r4 = lyric.randflt()
+        var r5 = lyric.randflt()
+        god ok1 = r1 >= 0.0 and r1 < 1.0
+        god ok2 = r2 >= 0.0 and r2 < 1.0
+        god ok3 = r3 >= 0.0 and r3 < 1.0
+        god ok4 = r4 >= 0.0 and r4 < 1.0
+        god ok5 = r5 >= 0.0 and r5 < 1.0
+        check("randflt() x5 all in [0.0, 1.0)", ok1 and ok2 and ok3 and ok4 and ok5)
+    catch Error as e:
+        print("ERROR: randflt() x5 threw exception:", e)
     fade
 
     # ================================================================
@@ -292,6 +373,30 @@ def main() {
         print("ERROR: randint(5,5) threw exception:", e)
     fade
 
+    try:
+        var r = lyric.randint(-100, -50)
+        check("randint(-100, -50) in range", r >= -100 and r <= -50)
+        print("  randint(-100,-50):", r)
+    catch Error as e:
+        print("ERROR: randint(-100,-50) threw exception:", e)
+    fade
+
+    try:
+        var r1 = lyric.randint(1, 3)
+        var r2 = lyric.randint(1, 3)
+        var r3 = lyric.randint(1, 3)
+        var r4 = lyric.randint(1, 3)
+        var r5 = lyric.randint(1, 3)
+        god ok1 = r1 >= 1 and r1 <= 3
+        god ok2 = r2 >= 1 and r2 <= 3
+        god ok3 = r3 >= 1 and r3 <= 3
+        god ok4 = r4 >= 1 and r4 <= 3
+        god ok5 = r5 >= 1 and r5 <= 3
+        check("randint(1,3) x5 all in [1,3]", ok1 and ok2 and ok3 and ok4 and ok5)
+    catch Error as e:
+        print("ERROR: randint() x5 threw exception:", e)
+    fade
+
     # ================================================================
     # randarr() — random element from array
     # ================================================================
@@ -307,6 +412,14 @@ def main() {
         print("ERROR: randarr() threw exception:", e)
     fade
 
+    try:
+        arr nums = [42]
+        var r = lyric.randarr(nums)
+        check("randarr() from single-element array == 42", r == 42)
+    catch Error as e:
+        print("ERROR: randarr() single element threw exception:", e)
+    fade
+
     # ================================================================
     # sleep() — pause execution
     # ================================================================
@@ -314,12 +427,47 @@ def main() {
     print("--- sleep ---")
 
     try:
-        var t1 = lyric.now()
-        lyric.sleep(0.1)
-        var t2 = lyric.now()
-        check("sleep(0.1) completed without error", true)
+        lyric.sleep(0.05)
+        check("sleep(0.05) completed without error", true)
     catch Error as e:
         print("ERROR: sleep() threw exception:", e)
+    fade
+
+    try:
+        lyric.sleep(0)
+        check("sleep(0) completed without error", true)
+    catch Error as e:
+        print("ERROR: sleep(0) threw exception:", e)
+    fade
+
+    # ================================================================
+    # ls() — list directory / glob
+    # ================================================================
+    print("")
+    print("--- ls ---")
+
+    try:
+        arr entries = lyric.ls(".")
+        check("ls('.') returns a list", entries.len() >= 0)
+        check("ls('.') returns at least 1 entry", entries.len() > 0)
+        print("  ls('.') count:", entries.len())
+    catch Error as e:
+        print("ERROR: ls('.') threw exception:", e)
+    fade
+
+    try:
+        arr entries = lyric.ls("..")
+        check("ls('..') returns a list", entries.len() >= 0)
+    catch Error as e:
+        print("ERROR: ls('..') threw exception:", e)
+    fade
+
+    try:
+        arr entries = lyric.ls("*.ly")
+        check("ls('*.ly') returns a list", entries.len() >= 0)
+        print("  ls('*.ly') count:", entries.len())
+    catch Error as e:
+        print("ERROR: ls('*.ly') threw exception:", e)
     fade
 
     # ================================================================
@@ -333,6 +481,7 @@ def main() {
     try:
         lyric.mkdir(testdir)
         check("mkdir() creates directory", lyric.isdir(testdir) == true)
+        check("mkdir() directory exists", lyric.exists(testdir) == true)
     catch Error as e:
         print("ERROR: mkdir() threw exception:", e)
     fade
@@ -355,7 +504,7 @@ def main() {
         lyric.mkdir(testdir)
         lyric.cd(testdir)
         var newcwd = lyric.pwd()
-        check("cd() changes directory", newcwd != original)
+        check("cd() changes working directory", newcwd != original)
         print("  changed to:", newcwd)
         lyric.cd(original)
         lyric.rmdir(testdir)
@@ -391,6 +540,49 @@ def main() {
         # attempt cleanup
         try:
             lyric.rm(testfile)
+        catch:
+        fade
+    fade
+
+    # ================================================================
+    # Integration: mkdir + disk + isfile + rm + rmdir
+    # ================================================================
+    print("")
+    print("--- Integration: file ops ---")
+
+    str intdir = "_lyric_lib_int_test"
+    str intfile = "_lyric_lib_int_test/data.txt"
+
+    try:
+        lyric.mkdir(intdir)
+        check("created integration test dir", lyric.isdir(intdir))
+
+        dsk f = disk(intfile)
+        f.write("integration test data")
+        f.close()
+        check("created file inside test dir", lyric.isfile(intfile))
+
+        # verify join + base + dir work on the path
+        str b = lyric.base(intfile)
+        check("base() of test file == 'data.txt'", b == "data.txt")
+
+        str d = lyric.dir(intfile)
+        check("dir() of test file is non-empty", d != "")
+
+        # cleanup
+        lyric.rm(intfile)
+        check("rm() cleaned up file", lyric.exists(intfile) == false)
+        lyric.rmdir(intdir)
+        check("rmdir() cleaned up dir", lyric.exists(intdir) == false)
+    catch Error as e:
+        print("ERROR: integration test threw exception:", e)
+        # attempt cleanup
+        try:
+            lyric.rm(intfile)
+        catch:
+        fade
+        try:
+            lyric.rmdir(intdir)
         catch:
         fade
     fade

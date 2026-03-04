@@ -34,8 +34,14 @@ var cd(str path) {
 }
 
 # list directory
-arr ls(str glob) {
-    return glob.glob(glob)
+arr ls(str lspath) {
+    if lspath == '.'
+        return os.listdir(lspath)
+    elif lspath == '..'
+        return os.listdir(lspath)
+    else
+        return glob.glob(lspath)
+    end
 }
 
 # make directory
