@@ -2452,6 +2452,12 @@ class Interpreter:
                     raise RuntimeErrorLyric("Division by zero: cannot divide by zero. Check your divisor value before performing division.", node.line, node.column)
                 return left / right
             elif node.op == '%':
+                # String format operator: "Hello %s" % (name,) or "Value: %d" % 42
+                if isinstance(left, str):
+                    if isinstance(right, TupObject):
+                        return left % right._elements
+                    else:
+                        return left % (right,)
                 if not isinstance(left, int) or isinstance(left, bool):
                     raise TypeErrorLyric(f"Modulus operator '%' requires int operands, got {type(left).__name__} on the left")
                 if not isinstance(right, int) or isinstance(right, bool):
@@ -2632,178 +2638,237 @@ class Interpreter:
             available_exceptions = list(exception_map.keys())
             raise RuntimeErrorLyric(f"Unknown exception: '{exception_name}' is not a valid exception type. Available exceptions: {', '.join(available_exceptions[:5])} (and more)")
     
-    def _evaluate_import_statement(self, node: ImportNode) -> None:
-        """Evaluate an import statement for Lyric modules."""
+    def _find_module_file(self, base_dir, module_path, leaf_name):
+        """Find a .ly module file given a base directory and module path.
+
+        Tries {base_dir}/{module_path}.ly first (file), then
+        {base_dir}/{module_path}/{leaf_name}.ly (directory-as-package pattern).
+        Returns the file path or None.
+        """
         import os
+        # Try as file: e.g. lib/lyric/math.ly
+        candidate = os.path.join(base_dir, f"{module_path}.ly")
+        if os.path.isfile(candidate):
+            return candidate
+        # Try as directory package: e.g. lib/lyric/lyric.ly (dir/dir.ly pattern)
+        candidate = os.path.join(base_dir, module_path, f"{leaf_name}.ly")
+        if os.path.isfile(candidate):
+            return candidate
+        return None
+
+    def _load_module_file(self, module_file, module_name, node):
+        """Read, parse, and evaluate a .ly module file. Returns the module Interpreter."""
         from lyric.lexer import tokenize
         from lyric.parser import Parser
-        
-        module_name = node.module_name
 
-        # Reserved module names for future standard library (planned for 1.2.0)
-        RESERVED_IMPORTS = {'lyric', 'lyrical', 'ly'}
-        if module_name in RESERVED_IMPORTS or module_name.startswith('ly.'):
-            raise RuntimeErrorLyric(
-                f"ImportError: '{module_name}' is a reserved module name for the Lyric standard library. "
-                f"Please choose a different name for your module.",
-                node.line,
-                node.column
-            )
-
-        # Search for the module in the following order:
-        # 1. Current working directory
-        # 2. Directory of the script being executed (if known)
-        # 3. LYRIC_PATH environment variable
-        
-        search_paths = [
-            os.getcwd(),  # Current working directory
-        ]
-        
-        # Add the directory of the source file if known
-        if self.source_file:
-            source_dir = os.path.dirname(os.path.abspath(self.source_file))
-            if source_dir not in search_paths:
-                search_paths.append(source_dir)
-        
-        # Add LYRIC_PATH if set
-        lyric_path = os.environ.get('LYRIC_PATH', '')
-        if lyric_path:
-            search_paths.extend(lyric_path.split(os.pathsep))
-        
-        # Try to find the module file
-        module_file = None
-        for search_path in search_paths:
-            # Try .ly extension
-            candidate = os.path.join(search_path, f"{module_name}.ly")
-            if os.path.isfile(candidate):
-                module_file = candidate
-                break
-            
-            # Try as a directory with __init__.ly
-            candidate_init = os.path.join(search_path, module_name, "__init__.ly")
-            if os.path.isfile(candidate_init):
-                module_file = candidate_init
-                break
-        
-        if module_file is None:
-            raise RuntimeErrorLyric(
-                f"ModuleNotFoundError: No module named '{module_name}'. "
-                f"Searched in: {', '.join(search_paths)}",
-                node.line,
-                node.column
-            )
-        
-        # Read and parse the module
         try:
             with open(module_file, 'r', encoding='utf-8') as f:
                 source_code = f.read()
         except Exception as e:
             raise RuntimeErrorLyric(
                 f"Error reading module '{module_name}' from '{module_file}': {e}",
-                node.line,
-                node.column
+                node.line, node.column
             )
-        
-        # Parse the module
+
         try:
             tokens = tokenize(source_code)
             parser = Parser(tokens)
             module_ast = parser.parse()
         except Exception as e:
-            # Preserve the original error's line info from the imported module
             err_line = getattr(e, 'line', 0)
             err_col = getattr(e, 'column', 0)
             raise RuntimeErrorLyric(
                 f"Error parsing module '{module_name}' ({module_name}.ly line {err_line}): {e}",
-                err_line,
-                err_col
+                err_line, err_col
             )
 
-        # Create a new interpreter for the module with its own scope
         module_interpreter = Interpreter()
-
-        # Evaluate the module
         try:
             module_interpreter.evaluate(module_ast)
         except Exception as e:
-            # Preserve the original error's line info from the imported module
             err_line = getattr(e, 'line', 0)
             err_col = getattr(e, 'column', 0)
             raise RuntimeErrorLyric(
                 f"Error in module '{module_name}' ({module_name}.ly line {err_line}): {e}",
-                err_line,
-                err_col
+                err_line, err_col
             )
-        
-        # Import functions, classes, and module-level variables from the module
-        # However, functions need to retain access to their module's global scope
-        
+
+        return module_interpreter
+
+    def _make_module_namespace(self, module_name, module_interpreter):
+        """Create a LyricModuleNamespace from a module interpreter's state."""
+        functions_with_scope = {}
+        for name, func in module_interpreter.functions.items():
+            func_with_scope = func.copy()
+            func_with_scope['module_scope'] = module_interpreter.global_scope
+            functions_with_scope[name] = func_with_scope
+        scope_vars = {
+            name: val
+            for name, val in module_interpreter.global_scope.items()
+            if not callable(val)
+        }
+        return LyricModuleNamespace(
+            module_name,
+            functions_with_scope,
+            dict(module_interpreter.classes),
+            scope_vars
+        )
+
+    def _evaluate_import_statement(self, node: ImportNode) -> None:
+        """Evaluate an import statement for Lyric modules.
+
+        Supports simple imports (import mymod) and dotted imports (import lyric.math).
+        Reserved names (lyric, lyrical, ly) resolve only from the stdlib lib/ directory.
+        """
+        import os
+
+        module_name = node.module_name
+        parts = module_name.split('.')
+
+        # Depth cap for dotted imports
+        if len(parts) > 8:
+            raise RuntimeErrorLyric(
+                f"ImportError: import depth exceeds maximum of 8 levels: '{module_name}'",
+                node.line, node.column
+            )
+
+        # Stdlib lib directory (relative to this file: lyric/lib/)
+        lib_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib')
+
+        # 'ly' namespace reserved for future use — hard block
+        base_name = parts[0]
+        if base_name == 'ly':
+            raise RuntimeErrorLyric(
+                f"ImportError: '{module_name}' is a reserved module name for the Lyric standard library. "
+                f"Please choose a different name for your module.",
+                node.line, node.column
+            )
+
+        # Reserved stdlib prefixes (resolve from lib/ only)
+        RESERVED_PREFIXES = {'lyric', 'lyrical'}
+        is_reserved = base_name in RESERVED_PREFIXES
+
+        # Convert dotted name to file path: lyric.math -> lyric/math
+        module_path = module_name.replace('.', os.sep)
+        leaf_name = parts[-1]
+
+        # Resolve the leaf module file
+        if is_reserved:
+            # Reserved names resolve ONLY from stdlib lib directory
+            base_dir = lib_dir
+            module_file = self._find_module_file(base_dir, module_path, leaf_name)
+            if module_file is None:
+                raise RuntimeErrorLyric(
+                    f"ImportError: Module '{module_name}' is not available in the current version "
+                    f"of the Lyric standard library.",
+                    node.line, node.column
+                )
+        else:
+            # Non-reserved: search user paths
+            search_paths = [os.getcwd()]
+            if self.source_file:
+                source_dir = os.path.dirname(os.path.abspath(self.source_file))
+                if source_dir not in search_paths:
+                    search_paths.append(source_dir)
+            lyric_path = os.environ.get('LYRIC_PATH', '')
+            if lyric_path:
+                search_paths.extend(lyric_path.split(os.pathsep))
+
+            module_file = None
+            base_dir = None
+            for sp in search_paths:
+                module_file = self._find_module_file(sp, module_path, leaf_name)
+                if module_file:
+                    base_dir = sp
+                    break
+
+            if module_file is None:
+                raise RuntimeErrorLyric(
+                    f"ModuleNotFoundError: No module named '{module_name}'. "
+                    f"Searched in: {', '.join(search_paths)}",
+                    node.line, node.column
+                )
+
+        # Load and evaluate the leaf module
+        module_interpreter = self._load_module_file(module_file, module_name, node)
+
         if node.symbols:
-            # Selective import: import module; symbol1, symbol2
+            # Selective import: import lyric.math; sin, cos
+            # Pull symbols from the leaf module only
             for symbol_name, alias in node.symbols:
-                # Check if it's a function
                 if symbol_name in module_interpreter.functions:
                     func = module_interpreter.functions[symbol_name]
                     func_with_scope = func.copy()
                     func_with_scope['module_scope'] = module_interpreter.global_scope
-                    
-                    # Use alias if provided, otherwise use original name
                     target_name = alias if alias else symbol_name
                     self.functions[target_name] = func_with_scope
-                
-                # Check if it's a class
+
                 elif symbol_name in module_interpreter.classes:
                     cls = module_interpreter.classes[symbol_name]
-                    
-                    # Classes are imported into the classes dict
-                    # Aliases are not supported for classes - user should use var alias = ClassName()
                     if alias:
                         raise RuntimeErrorLyric(
                             f"ImportError: 'as' keyword is not supported for class imports. "
                             f"To create an alias for '{symbol_name}', use: var {alias} = {symbol_name}() after importing.",
-                            node.line,
-                            node.column
+                            node.line, node.column
                         )
-                    
                     self.classes[symbol_name] = cls
-                
-                # Check if it's a module-level variable
+
                 elif symbol_name in module_interpreter.global_scope:
                     value = module_interpreter.global_scope[symbol_name]
-                    
-                    # Use alias if provided, otherwise use original name
                     target_name = alias if alias else symbol_name
                     self.global_scope[target_name] = value
-                
-                # Symbol not found
+
                 else:
                     raise RuntimeErrorLyric(
                         f"ImportError: cannot import name '{symbol_name}' from module '{module_name}'. "
                         f"'{symbol_name}' is not defined in the module.",
-                        node.line,
-                        node.column
+                        node.line, node.column
                     )
         else:
-            # Whole-module import: bind as a LyricModuleNamespace so callers use
-            # module.func() / module.VAR instead of dumping names into calling scope.
-            functions_with_scope = {}
-            for name, func in module_interpreter.functions.items():
-                func_with_scope = func.copy()
-                func_with_scope['module_scope'] = module_interpreter.global_scope
-                functions_with_scope[name] = func_with_scope
-            scope_vars = {
-                name: val
-                for name, val in module_interpreter.global_scope.items()
-                if not callable(val)
-            }
-            namespace = LyricModuleNamespace(
-                module_name,
-                functions_with_scope,
-                dict(module_interpreter.classes),
-                scope_vars
-            )
-            self.global_scope[module_name] = namespace
-        
+            # Whole-module import
+            if len(parts) == 1:
+                # Simple import: import lyric -> bind as 'lyric'
+                namespace = self._make_module_namespace(module_name, module_interpreter)
+                self.global_scope[module_name] = namespace
+            else:
+                # Dotted import: import lyric.math -> build nested namespace chain
+                # accessible as lyric.math.func()
+                root_name = parts[0]
+
+                # Build or reuse root namespace
+                if root_name in self.global_scope and isinstance(self.global_scope[root_name], LyricModuleNamespace):
+                    root_ns = self.global_scope[root_name]
+                else:
+                    # Load root module file (e.g. lib/lyric/lyric.ly)
+                    root_file = self._find_module_file(base_dir, root_name, root_name)
+                    if root_file:
+                        root_interp = self._load_module_file(root_file, root_name, node)
+                        root_ns = self._make_module_namespace(root_name, root_interp)
+                    else:
+                        root_ns = LyricModuleNamespace(root_name, {}, {}, {})
+                    self.global_scope[root_name] = root_ns
+
+                # Build intermediate namespaces (for 3+ level imports)
+                current_ns = root_ns
+                for i in range(1, len(parts) - 1):
+                    part = parts[i]
+                    if part in current_ns._scope and isinstance(current_ns._scope[part], LyricModuleNamespace):
+                        current_ns = current_ns._scope[part]
+                    else:
+                        inter_module_path = os.sep.join(parts[:i+1])
+                        inter_file = self._find_module_file(base_dir, inter_module_path, part)
+                        if inter_file:
+                            inter_interp = self._load_module_file(inter_file, '.'.join(parts[:i+1]), node)
+                            inter_ns = self._make_module_namespace('.'.join(parts[:i+1]), inter_interp)
+                        else:
+                            inter_ns = LyricModuleNamespace('.'.join(parts[:i+1]), {}, {}, {})
+                        current_ns._scope[part] = inter_ns
+                        current_ns = inter_ns
+
+                # Attach leaf namespace
+                leaf_ns = self._make_module_namespace(module_name, module_interpreter)
+                current_ns._scope[parts[-1]] = leaf_ns
+
         return None
     
     def _evaluate_importpy_statement(self, node: ImportPyNode) -> None:

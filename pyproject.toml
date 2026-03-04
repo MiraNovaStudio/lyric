@@ -36,3 +36,6 @@ Homepage = "https://lyric-lang.org"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["lyric*"]
+
+[tool.setuptools.package-data]
+lyric = ["lib/**/*.ly"]
