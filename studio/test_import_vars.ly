@@ -1,4 +1,4 @@
-import test_utils
+import test_utils; x, add
 
 def main() {
     print("Imported x =", x)

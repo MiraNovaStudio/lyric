@@ -1,5 +1,9 @@
 # Test file to verify vim syntax highlighting
 
+class MyClass() 
+    int data = 0
++++
+
 # Type declarations should be GREEN (including var)
 var x = 5
 int y = 10
