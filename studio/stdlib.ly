@@ -15,13 +15,19 @@ def main() {
     print lyric.randint(1, 10)
     print lyric.randarr(["apple", "pear", "banana"])
     print lyric.randflt()
-
+    
+    int x = -100
     try: 
-        lyric.cd("nonexist")
+        x = lyric.cd("nonexist")
     catch RuntimeError as e:
-        print "here we go", e
-        print e
+        print "hello", x
     fade
+
+    print lyric.pwd()
+
+    arr file = lyric.ls(".")
+
+    print file
 
 
 

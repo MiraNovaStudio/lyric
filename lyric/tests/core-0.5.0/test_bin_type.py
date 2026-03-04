@@ -235,14 +235,21 @@ var cfg = Config()
 
 
 def test_bin_type_with_none():
-    """Test that bin type rejects None values."""
+    """Test that bin type accepts None (nullable)."""
     source = """
 bin flag = None
+print(flag)
 """
     ast = parse(source, interactive=True)
-    with pytest.raises(RuntimeErrorLyric) as exc_info:
+    import sys, io
+    captured = io.StringIO()
+    old_stdout = sys.stdout
+    sys.stdout = captured
+    try:
         evaluate(ast)
-    assert "Type mismatch" in str(exc_info.value)
+    finally:
+        sys.stdout = old_stdout
+    assert captured.getvalue().strip() == "None"
 
 
 def test_bin_mixed_with_other_types():

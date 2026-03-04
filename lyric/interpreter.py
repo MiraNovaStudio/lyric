@@ -948,7 +948,11 @@ class Interpreter:
         
         if expected_type == 'None':
             return value is None
-        
+
+        # None is a valid value for any type (nullable)
+        if value is None:
+            return True
+
         if expected_type == 'int':
             return isinstance(value, int)
         elif expected_type == 'flt':
@@ -1044,11 +1048,7 @@ class Interpreter:
         for i, param in enumerate(params):
             arg_value = args[i] if i < len(args) else None
             if i < len(param_types) and param_types[i] != 'var':
-                if arg_value is None:
-                    raise RuntimeErrorLyric(
-                        f"Type error: parameter '{param}' expects {param_types[i]}, got None"
-                    )
-                elif not self._is_type_compatible(param_types[i], arg_value):
+                if not self._is_type_compatible(param_types[i], arg_value):
                     raise RuntimeErrorLyric(
                         f"Type error: parameter '{param}' expects {param_types[i]}, got {type(arg_value).__name__}"
                     )
@@ -1084,10 +1084,6 @@ class Interpreter:
                             f"Expected {return_type}, but got {type(return_value).__name__}"
                         )
                     return return_value
-            if return_type != 'var' and return_type != 'None':
-                raise RuntimeErrorLyric(
-                    f"Type error: function '{func_name}' declared to return {return_type}, but returns None"
-                )
             return None
         finally:
             self.global_scope = old_scope
@@ -1380,17 +1376,13 @@ class Interpreter:
             
             # Type enforcement for parameters
             if i < len(param_types) and param_types[i] != 'var':
-                if arg_value is None:
-                    raise RuntimeErrorLyric(
-                        f"Type error: parameter '{param}' expects {param_types[i]}, got None"
-                    )
-                elif not self._is_type_compatible(param_types[i], arg_value):
+                if not self._is_type_compatible(param_types[i], arg_value):
                     raise RuntimeErrorLyric(
                         f"Type error: parameter '{param}' expects {param_types[i]}, got {type(arg_value).__name__}"
                     )
-            
+
             local_scope[param] = arg_value
-        
+
         # Save current scope and instance context
         old_scope = self.global_scope.copy()
         old_instance = self.current_instance
@@ -1644,7 +1636,10 @@ class Interpreter:
         elif expected_type == 'pyobject':
             # pyobject internally maps to var in Lyric syntax
             return True  # pyobject can hold any Python value
-        elif expected_type == 'int':
+        # None is a valid value for any type (nullable)
+        if value is None:
+            return True
+        if expected_type == 'int':
             return isinstance(value, int) and not isinstance(value, bool)
         elif expected_type == 'str':
             return isinstance(value, str)

@@ -264,14 +264,21 @@ var cfg = Config()
 
 
 def test_god_type_with_none():
-    """Test that god type rejects None values."""
+    """Test that god type accepts None (nullable)."""
     source = """
 god flag = None
+print(flag)
 """
     ast = parse(source, interactive=True)
-    with pytest.raises(RuntimeErrorLyric) as exc_info:
+    import sys, io
+    captured = io.StringIO()
+    old_stdout = sys.stdout
+    sys.stdout = captured
+    try:
         evaluate(ast)
-    assert "Type mismatch" in str(exc_info.value)
+    finally:
+        sys.stdout = old_stdout
+    assert captured.getvalue().strip() == "None"
 
 
 def test_god_mixed_with_other_types():
