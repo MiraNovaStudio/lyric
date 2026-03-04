@@ -28,6 +28,11 @@ var randarr(arr list) {
     return random.choice(list)
 }
 
+# seed the random
+def seed(int value) {
+    random.seed(value)
+}
+
 # change directory
 var cd(str path) {
     os.chdir(path)
@@ -35,9 +40,7 @@ var cd(str path) {
 
 # list directory
 arr ls(str lspath) {
-    if lspath == '.'
-        return os.listdir(lspath)
-    elif lspath == '..'
+    if os.path.isdir(lspath)
         return os.listdir(lspath)
     else
         return glob.glob(lspath)
