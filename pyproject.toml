@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lyric-lang"
-version = "0.9.10"
+version = "1.0.0"
 description = "Lyric is an experimental interpreted programming language developed by MiraNova Studios."
 authors = [
     {name = "MiraNova Studios", email = "aeonath@miranova.studio"}
@@ -12,7 +12,7 @@ authors = [
 readme = { file = "README_PYPI.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3",

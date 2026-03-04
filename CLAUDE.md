@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**Lyric** is an experimental interpreted programming language written in Python, developed by MiraNova Studios. Current version: 0.8.4 (Pre-Alpha). Website: https://lyric-lang.org
+**Lyric** is an experimental interpreted programming language written in Python, developed by MiraNova Studios. Current version: 1.0.0 (Alpha). Website: https://lyric-lang.org
 
 ## Commands
 
