@@ -11,3 +11,26 @@ importpy datetime
 def sleep(var seconds) {
     time.sleep(seconds)
 }
+
+# return random between 0.0 and 1.0
+flt randflt() {
+    return random.random()
+}
+
+# return random integer between low and high
+int randint(int low, int high) {
+    return random.randint(low, high)
+}
+
+# return a random array element
+var randarr(arr list) {
+    return random.choice(list)
+}
+
+# change directory
+var cd(str path) {
+    os.chdir(path)
+}
+
+
+

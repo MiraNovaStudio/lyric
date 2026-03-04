@@ -77,9 +77,9 @@ class TestErrorLineNumberFormatting:
         
         error_msg = str(exc_info.value)
         
-        # Should contain only one "Runtime error:" prefix
-        assert error_msg.startswith("Runtime error:")
-        assert error_msg.count("Runtime error:") == 1
+        # Should contain the error message without "Runtime error:" prefix
+        # (the CLI adds the prefix; __str__ returns the clean message for catch blocks)
+        assert "Undefined variable" in error_msg
         assert "line 0, column 0" not in error_msg
     
     def test_error_message_consistency(self):
@@ -115,7 +115,8 @@ class TestErrorLineNumberFormatting:
             interpreter.evaluate(ast)
         
         runtime_msg = str(runtime_exc.value)
-        assert runtime_msg.startswith("Runtime error:")
+        # Runtime errors return clean message (no prefix) for use in catch blocks
+        assert "Undefined variable" in runtime_msg
     
     def test_no_duplicate_line_column_info(self):
         """Test that error messages never contain duplicate line/column information."""

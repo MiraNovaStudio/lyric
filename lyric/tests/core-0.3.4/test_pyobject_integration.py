@@ -376,7 +376,7 @@ def test_importpy_error_formatting():
     error_msg = str(exc_info.value)
     assert "ImportError" in error_msg
     assert "nonexistent" in error_msg
-    assert "Runtime error:" in error_msg  # A17: error message starts with Runtime error prefix
+    assert "ImportError" in error_msg  # A17: error message contains the error type
 
 
 def test_importpy_pyobject_type_integration():

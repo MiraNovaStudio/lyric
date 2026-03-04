@@ -304,7 +304,7 @@ def _execute_file(file_path: str, arguments: list = None):
         if hasattr(e, 'line') and e.line > 0:
             print(f"Runtime error [line {e.line}]: {e.args[0] if e.args else str(e)}")
         else:
-            print(f"{e}")
+            print(f"Runtime error: {e}")
         sys.exit(1)
     except KeyboardInterrupt:
         print()
@@ -323,11 +323,11 @@ def _execute_immediate(code: str):
         parser._interactive_mode = True  # Mark as interactive mode
         parser.is_top_level = False  # Disable top-level restrictions
         ast = parser.parse()
-        
+
         # Execute the code
         interpreter = Interpreter()
         interpreter.evaluate(ast)
-        
+
     except (LexError, ParseError, SyntaxErrorLyric) as e:
         if hasattr(e, 'line') and e.line > 0:
             print(f"Error [line {e.line}]: {e.args[0] if e.args else str(e)}")
@@ -338,7 +338,7 @@ def _execute_immediate(code: str):
         if hasattr(e, 'line') and e.line > 0:
             print(f"Runtime error [line {e.line}]: {e.args[0] if e.args else str(e)}")
         else:
-            print(f"{e}")
+            print(f"Runtime error: {e}")
         sys.exit(1)
     except Exception as e:
         print(f"Unexpected error: {e}")
@@ -418,7 +418,7 @@ def _start_repl():
                     if hasattr(e, 'line') and e.line > 0:
                         print(f"Runtime error [line {e.line}]: {e.args[0] if e.args else str(e)}")
                     else:
-                        print(f"{e}")
+                        print(f"Runtime error: {e}")
                 except Exception as e:
                     print(f"Unexpected error: {e}")
                     import traceback
