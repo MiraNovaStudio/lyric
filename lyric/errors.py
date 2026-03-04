@@ -43,15 +43,13 @@ class RuntimeErrorLyric(Exception):
     """Raised when runtime execution fails."""
     def __init__(self, message: str, line: int = 0, column: int = 0, filename: str = ""):
         super().__init__(message)
+        self.message = message
         self.line = line
         self.column = column
         self.filename = filename
-    
+
     def __str__(self):
-        if self.filename:
-            return f"Runtime error in {self.filename}: {super().__str__()}"
-        else:
-            return f"Runtime error: {super().__str__()}"
+        return self.message
 
 
 class NameErrorLyric(RuntimeErrorLyric):
@@ -109,7 +107,7 @@ class ZeroDivisionErrorLyric(LyricError):
 
 # Exception type mapping for catch clauses
 EXCEPTION_TYPES = {
-    'Error': LyricError,
+    'Error': Exception,
     'TypeError': TypeErrorLyric,
     'ValueError': ValueErrorLyric,
     'NameError': NameErrorLyric,

@@ -32,7 +32,8 @@ def test_syntax_error_missing_done():
     """Test that missing 'done' triggers SyntaxErrorLyric with correct line (A7)."""
     source = """
 def main() {
-    given i in range(3):
+    int i
+    for i in range(3):
         print(i)
     # Missing 'done' here
 }"""

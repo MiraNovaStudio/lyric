@@ -283,7 +283,8 @@ end
         code = """
 map data = {"a": 1, "b": 2, "c": 3}
 int count = 0
-given key in data:
+var key
+for key in data:
     count = count + 1
 done
 print count

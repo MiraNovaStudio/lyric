@@ -251,11 +251,12 @@ def test_typed_parameters_with_default_values():
     result = interpreter._call_function("multiply", [3, 4])
     assert result == 12
     
-    # Test with fewer arguments (should set to None and cause type error)
+    # Test with fewer arguments (y defaults to None — accepted as nullable,
+    # but arithmetic with None causes a runtime type mismatch)
     with pytest.raises(RuntimeErrorLyric) as exc_info:
         interpreter._call_function("multiply", [3])
-    
-    assert "Type error: parameter 'y' expects int, got None" in str(exc_info.value)
+
+    assert "Type mismatch in operation" in str(exc_info.value)
 
 
 def test_type_compatibility_edge_cases():

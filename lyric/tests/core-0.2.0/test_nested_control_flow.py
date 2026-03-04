@@ -25,8 +25,9 @@ def main() {
     else:
         print("x is not positive")
     end
-    
-    given i in range(2):
+
+    int i
+    for i in range(2):
         print("Outer loop:", i)
         if i == 0:
             print("  First iteration")
@@ -66,9 +67,11 @@ def main() {
     x = 2
     if x > 0:
         print("Starting nested loop test")
-        given i in range(2):
+        int i
+        int j
+        for i in range(2):
             print("Outer:", i)
-            given j in range(2):
+            for j in range(2):
                 print("  Inner:", j)
             done
         done
@@ -105,7 +108,8 @@ def test_nested_if_in_loop():
     """Test nested if statements inside loops (A2: if inside loop)."""
     source = """
 def main() {
-    given i in range(3):
+    int i
+    for i in range(3):
         if i == 0:
             print("First iteration")
         elif i == 1:
@@ -142,12 +146,13 @@ def test_complex_nested_structure():
 def main() {
     x = 1
     y = 2
-    
+
     if x > 0:
         print("x is positive")
         if y > 1:
             print("y is greater than 1")
-            given i in range(2):
+            int i
+            for i in range(2):
                 print("Loop iteration:", i)
                 if i == 0:
                     print("  First loop iteration")

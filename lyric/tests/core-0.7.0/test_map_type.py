@@ -145,6 +145,7 @@ print person["address"]["city"]
         """def main() {\n    Test iterating over map yields keys.\n}"""
         code = """
 map data = {"a": 1, "b": 2, "c": 3}
+var key
 for key in data:
     print key
 done
@@ -180,6 +181,7 @@ map mydict = "not a dict"
         """def main() {\n    Test iterating over empty map.\n}"""
         code = """
 map empty = {}
+var key
 for key in empty:
     print key
 done
@@ -202,6 +204,7 @@ print data["names"][1]
         """def main() {\n    Test passing map as function parameter.\n}"""
         code = """
 def print_keys(map data) {
+    var key
     for key in data:
         print key
     done
@@ -216,7 +219,7 @@ print_keys(mydata)
     def test_map_in_function_return(self):
         """def main() {\n    Test returning map from function.\n}"""
         code = """
-map def get_dict() {
+map get_dict() {
     return {"status": "ok", "code": 200}
 }
 

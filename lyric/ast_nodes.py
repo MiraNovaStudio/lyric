@@ -99,19 +99,21 @@ class LoopNode(ASTNode):
     loop_kind: str  # "iterator" or "while"
     body: List['ASTNode']
     iterator_var: Optional[str] = None  # Variable name for iterator loops
+    iterator_type: Optional[str] = None  # Inline type declaration (e.g., "int", "str", "var")
     line: int = 0
     column: int = 0
-    
+
     def __repr__(self):
-        return f"LoopNode(kind='{self.loop_kind}', condition={self.condition_or_iter}, body={len(self.body)}, iterator_var={self.iterator_var})"
-    
+        return f"LoopNode(kind='{self.loop_kind}', condition={self.condition_or_iter}, body={len(self.body)}, iterator_var={self.iterator_var}, iterator_type={self.iterator_type})"
+
     def to_dict(self):
         return {
             'type': 'LoopNode',
             'loop_kind': self.loop_kind,
             'condition_or_iter': self.condition_or_iter.to_dict() if hasattr(self.condition_or_iter, 'to_dict') else str(self.condition_or_iter),
             'body': [stmt.to_dict() if hasattr(stmt, 'to_dict') else str(stmt) for stmt in self.body],
-            'iterator_var': self.iterator_var
+            'iterator_var': self.iterator_var,
+            'iterator_type': self.iterator_type
         }
 
 
@@ -317,6 +319,23 @@ class ListLiteralNode(ASTNode):
 
 
 @dataclass
+class TupleLiteralNode(ASTNode):
+    """Represents a tuple literal: (elem1, elem2, ...)"""
+    elements: List['ASTNode']
+    line: int = 0
+    column: int = 0
+
+    def __repr__(self):
+        return f"TupleLiteralNode(elements={len(self.elements)})"
+
+    def to_dict(self):
+        return {
+            'type': 'TupleLiteralNode',
+            'elements': [elem.to_dict() if hasattr(elem, 'to_dict') else str(elem) for elem in self.elements]
+        }
+
+
+@dataclass
 class DictLiteralNode(ASTNode):
     """Represents a dictionary literal."""
     pairs: List[tuple['ASTNode', 'ASTNode']]  # List of (key, value) pairs
@@ -482,15 +501,18 @@ class ImportPyNode(ASTNode):
     module_name: str
     line: int = 0
     column: int = 0
-    
+    names: list = None  # None = whole module; [...] = selective names (importpy mod; A, B)
+
     def __repr__(self):
+        if self.names:
+            return f"ImportPyNode(module='{self.module_name}', names={self.names})"
         return f"ImportPyNode(module='{self.module_name}')"
-    
+
     def to_dict(self):
-        return {
-            'type': 'ImportPyNode',
-            'module_name': self.module_name
-        }
+        d = {'type': 'ImportPyNode', 'module_name': self.module_name}
+        if self.names:
+            d['names'] = self.names
+        return d
 
 
 @dataclass

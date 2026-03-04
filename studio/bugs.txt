@@ -1,7 +1,0 @@
-
-10/25/2025 
-
-- print(" ", sys.path[i])  doesn't work
-
-- http_fetch.py prints nothing
-

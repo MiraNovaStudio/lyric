@@ -9,14 +9,24 @@ from lyric.lexer import Token, tokenize
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, FileOpNode, ExecChainNode
+    ListLiteralNode, TupleLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, FileOpNode, ExecChainNode
 )
 from lyric.errors import ParseError, SyntaxErrorLyric
 
 
 class Parser:
     """Recursive descent parser for Lyric language."""
-    
+
+    # Compound assignment operator token types and their binary op equivalents
+    COMPOUND_ASSIGN_TYPES = ('PLUS_ASSIGN', 'MINUS_ASSIGN', 'MULTIPLY_ASSIGN', 'DIVIDE_ASSIGN', 'PERCENT_ASSIGN')
+    COMPOUND_ASSIGN_OPS = {
+        'PLUS_ASSIGN': '+',
+        'MINUS_ASSIGN': '-',
+        'MULTIPLY_ASSIGN': '*',
+        'DIVIDE_ASSIGN': '/',
+        'PERCENT_ASSIGN': '%',
+    }
+
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.current = 0
@@ -149,9 +159,13 @@ class Parser:
         # Check for typed function declaration: TYPE funcname(
         if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_next_next().type == 'LPAREN':
             return self._parse_func_def()
-        # Check for old-style typed function: TYPE def funcname(
+        # Reject old-style 'TYPE def funcname()' syntax — no longer valid
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
-            return self._parse_func_def()
+            type_token = self._peek()
+            raise ParseError(
+                f"Invalid function syntax at line {type_token.line}: '{type_token.value} def' is not valid. "
+                f"Use '{type_token.value} funcname()' for a typed function or 'def funcname()' for an untyped function."
+            )
         # Check for untyped function: def funcname(
         elif self._check('DEF'):
             return self._parse_func_def()
@@ -211,7 +225,8 @@ class Parser:
                     return self._parse_file_operator_stmt()
                 raise SyntaxErrorLyric(f"Only variable declarations, functions, and classes are allowed at module level. Execution starts in main().", token.line, token.col)
             # Check for file operator statements: expr ->> expr, expr -> expr, expr <- expr
-            if self._is_file_operator_ahead():
+            # Let print statements handle their own file ops (print "text" ->> file)
+            if self._is_file_operator_ahead() and not (self._check('IDENT') and self._peek().value == 'print'):
                 return self._parse_file_operator_stmt()
             return self._parse_assignment_or_expr_stmt()
     
@@ -238,13 +253,13 @@ class Parser:
             return_type = type_token.value.lower()
             name_token = self._advance()
             name = name_token.value
-        # Check for old-style typed function: TYPE def funcname(
+        # Reject old-style 'TYPE def funcname()' syntax — no longer valid
         elif self._check('TYPE_OR_IDENT') and self._peek_next().type == 'DEF':
-            type_token = self._advance()
-            return_type = type_token.value.lower()
-            def_token = self._consume('DEF', "Expected 'def'")
-            name_token = self._consume('IDENT', "Expected function name")
-            name = name_token.value
+            type_token = self._peek()
+            raise ParseError(
+                f"Invalid function syntax at line {type_token.line}: '{type_token.value} def' is not valid. "
+                f"Use '{type_token.value} funcname()' for a typed function or 'def funcname()' for an untyped function."
+            )
         # Untyped function: def funcname(
         else:
             def_token = self._consume('DEF', "Expected 'def'")
@@ -487,12 +502,21 @@ class Parser:
     def _parse_loop_block(self) -> LoopNode:
         """Parse loop block: given expression [":"] statement* "done" """
         given_token = self._consume('GIVEN', "Expected 'given'")
-        
+
         iterator_var = None
-        
-        # Handle "i in range(3)" pattern
-        if self._check('IDENT') and self._peek_next().type == 'IN':
-            # Iterator pattern: given i in range(3):
+        iterator_type = None
+
+        # Handle "for int i in range(3)" pattern — typed inline declaration
+        if self._check('TYPE_OR_IDENT') and self._peek_next().type == 'IDENT' and self._peek_at(2).type == 'IN':
+            type_token = self._advance()        # consume type (e.g., "int")
+            iterator_type = type_token.value
+            iterator_var = self._advance().value # consume identifier (e.g., "i")
+            self._consume('IN', "Expected 'in'")
+            iterable = self._parse_expression()
+            condition_or_iter = iterable
+            loop_kind = "iterator"
+        # Handle "for i in range(3)" pattern — bare identifier
+        elif self._check('IDENT') and self._peek_next().type == 'IN':
             iterator_var = self._advance().value  # consume identifier
             self._consume('IN', "Expected 'in'")
             iterable = self._parse_expression()
@@ -527,7 +551,7 @@ class Parser:
         
         self._consume('DONE', "Expected 'done' after loop body")
         
-        return LoopNode(condition_or_iter, loop_kind, body, iterator_var, given_token.line, given_token.col)
+        return LoopNode(condition_or_iter, loop_kind, body, iterator_var, iterator_type, given_token.line, given_token.col)
     
     def _parse_assignment_or_expr_stmt(self):
         """Parse assignment or expression statement."""
@@ -553,6 +577,20 @@ class Parser:
                     expr = self._parse_expression()
                     args.append(expr)
                 
+                # Check if a file operator follows: print "text" ->> file
+                if self._check('FILE_APPEND', 'FILE_WRITE', 'FILE_READ'):
+                    if self._check('FILE_APPEND'):
+                        self._advance()
+                        operator = '->>'
+                    elif self._check('FILE_WRITE'):
+                        self._advance()
+                        operator = '->'
+                    else:
+                        self._advance()
+                        operator = '<-'
+                    right = self._parse_expression()
+                    return FileOpNode(operator=operator, left=CallNode('print', args, print_token.line, print_token.col), right=right, line=print_token.line, column=print_token.col)
+
                 # Create CallNode with arguments to match print(<expr>) AST
                 return CallNode('print', args, print_token.line, print_token.col)
             
@@ -566,8 +604,17 @@ class Parser:
                 expr = self._parse_expression()
                 
                 return AssignNode(name, expr, name_token.line, name_token.col)
-            elif (self._peek_next().type == 'DOT' and 
-                  self._peek_next_next().type == 'IDENT' and 
+            elif self._peek_next().type in self.COMPOUND_ASSIGN_TYPES:
+                # Compound assignment: x += expr → x = x + expr
+                name_token = self._advance()
+                name = name_token.value
+                op_token = self._advance()  # consume compound operator
+                op = self.COMPOUND_ASSIGN_OPS[op_token.type]
+                expr = self._parse_expression()
+                desugared = BinaryOpNode(op, IdentifierNode(name, name_token.line, name_token.col), expr, name_token.line, name_token.col)
+                return AssignNode(name, desugared, name_token.line, name_token.col)
+            elif (self._peek_next().type == 'DOT' and
+                  self._peek_next_next().type == 'IDENT' and
                   self._peek_next_next_next().type == 'ASSIGN'):
                 # Assignment to member: obj.attr = expression
                 obj_token = self._advance()
@@ -580,7 +627,67 @@ class Parser:
                 expr = self._parse_expression()
                 
                 return AssignNode(full_name, expr, obj_token.line, obj_token.col)
-            elif (self._peek_next().type == 'LBRACKET' and 
+            elif (self._peek_next().type == 'DOT' and
+                  self._peek_next_next().type == 'IDENT' and
+                  self._peek_next_next_next().type in self.COMPOUND_ASSIGN_TYPES):
+                # Compound member assignment: obj.attr += expr → obj.attr = obj.attr + expr
+                obj_token = self._advance()
+                obj_name = obj_token.value
+                self._advance()  # consume '.'
+                member_name = self._advance().value
+                op_token = self._advance()  # consume compound operator
+                op = self.COMPOUND_ASSIGN_OPS[op_token.type]
+
+                full_name = f"{obj_name}.{member_name}"
+                ident = IdentifierNode(full_name, obj_token.line, obj_token.col)
+                expr = self._parse_expression()
+                desugared = BinaryOpNode(op, ident, expr, obj_token.line, obj_token.col)
+                return AssignNode(full_name, desugared, obj_token.line, obj_token.col)
+            elif (self._peek_next().type == 'DOT' and
+                  self._peek_next_next().type == 'IDENT' and
+                  self._peek_at(3).type == 'LBRACKET' and
+                  self._peek_at(4).type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
+                  self._peek_at(5).type == 'RBRACKET' and
+                  self._peek_at(6).type == 'ASSIGN'):
+                # Member+index assignment: obj.member[key] = expression
+                obj_token = self._advance()
+                obj_name = obj_token.value
+                self._advance()  # consume '.'
+                member_name = self._advance().value
+                self._advance()  # consume '['
+                index_token = self._advance()
+                self._advance()  # consume ']'
+                self._advance()  # consume '='
+
+                full_name = f"{obj_name}.{member_name}"
+                index_expr = LiteralNode(index_token.value) if index_token.type != 'IDENT' else IdentifierNode(index_token.value, index_token.line, index_token.col)
+                indexed_expr = IndexNode(IdentifierNode(full_name, obj_token.line, obj_token.col), index_expr)
+                expr = self._parse_expression()
+                return AssignNode(f"{full_name}[{index_token.value}]", expr, obj_token.line, obj_token.col)
+            elif (self._peek_next().type == 'DOT' and
+                  self._peek_next_next().type == 'IDENT' and
+                  self._peek_at(3).type == 'LBRACKET' and
+                  self._peek_at(4).type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
+                  self._peek_at(5).type == 'RBRACKET' and
+                  self._peek_at(6).type in self.COMPOUND_ASSIGN_TYPES):
+                # Compound member+index assignment: obj.member[key] += expr
+                obj_token = self._advance()
+                obj_name = obj_token.value
+                self._advance()  # consume '.'
+                member_name = self._advance().value
+                self._advance()  # consume '['
+                index_token = self._advance()
+                self._advance()  # consume ']'
+                op_token = self._advance()  # consume compound operator
+                op = self.COMPOUND_ASSIGN_OPS[op_token.type]
+
+                full_name = f"{obj_name}.{member_name}"
+                index_expr = LiteralNode(index_token.value) if index_token.type != 'IDENT' else IdentifierNode(index_token.value, index_token.line, index_token.col)
+                indexed_expr = IndexNode(IdentifierNode(full_name, obj_token.line, obj_token.col), index_expr)
+                expr = self._parse_expression()
+                desugared = BinaryOpNode(op, indexed_expr, expr, obj_token.line, obj_token.col)
+                return AssignNode(f"{full_name}[{index_token.value}]", desugared, obj_token.line, obj_token.col)
+            elif (self._peek_next().type == 'LBRACKET' and
                   self._peek_next_next().type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
                   self._peek_next_next_next().type == 'RBRACKET' and
                   self._peek_next_next_next_next().type == 'ASSIGN'):
@@ -593,11 +700,29 @@ class Parser:
                 self._advance()  # consume '='
                 
                 # Create the indexed assignment
-                index_expr = LiteralNode(index_token.value)
+                index_expr = LiteralNode(index_token.value) if index_token.type != 'IDENT' else IdentifierNode(index_token.value, index_token.line, index_token.col)
                 indexed_expr = IndexNode(IdentifierNode(obj_name), index_expr)
                 expr = self._parse_expression()
                 
                 return AssignNode(f"{obj_name}[{index_token.value}]", expr, obj_token.line, obj_token.col)
+            elif (self._peek_next().type == 'LBRACKET' and
+                  self._peek_next_next().type in ('STRING', 'INT', 'FLOAT', 'IDENT') and
+                  self._peek_next_next_next().type == 'RBRACKET' and
+                  self._peek_next_next_next_next().type in self.COMPOUND_ASSIGN_TYPES):
+                # Compound index assignment: arr[i] += expr → arr[i] = arr[i] + expr
+                obj_token = self._advance()
+                obj_name = obj_token.value
+                self._advance()  # consume '['
+                index_token = self._advance()
+                self._advance()  # consume ']'
+                op_token = self._advance()  # consume compound operator
+                op = self.COMPOUND_ASSIGN_OPS[op_token.type]
+
+                index_expr = LiteralNode(index_token.value) if index_token.type != 'IDENT' else IdentifierNode(index_token.value, index_token.line, index_token.col)
+                indexed_expr = IndexNode(IdentifierNode(obj_name), index_expr)
+                expr = self._parse_expression()
+                desugared = BinaryOpNode(op, indexed_expr, expr, obj_token.line, obj_token.col)
+                return AssignNode(f"{obj_name}[{index_token.value}]", desugared, obj_token.line, obj_token.col)
             # Check for file operator statements
             elif self._peek_next().type in ('FILE_APPEND', 'FILE_WRITE', 'FILE_READ'):
                 return self._parse_file_operator_stmt()
@@ -702,7 +827,7 @@ class Parser:
         """Parse multiplication and division."""
         expr = self._parse_unary()
         
-        while self._match('MULTIPLY', 'DIVIDE'):
+        while self._match('MULTIPLY', 'DIVIDE', 'PERCENT'):
             operator = self._previous().value
             right = self._parse_unary()
             line, col = self._get_position_from_token(self._previous())
@@ -804,11 +929,12 @@ class Parser:
                     args = []
                     if not self._check('RPAREN'):
                         args = self._parse_argument_list()
-                    
+
                     self._consume('RPAREN', "Expected ')' after arguments")
-                    return CallNode(full_name, args, name_token.line, name_token.col)
-                
-                return IdentifierNode(full_name, name_token.line, name_token.col)
+                    return self._parse_indexing_chain(CallNode(full_name, args, name_token.line, name_token.col))
+
+                # Support indexing on member access: module.arr_var[0]
+                return self._parse_indexing_chain(IdentifierNode(full_name, name_token.line, name_token.col))
             
             # Start with identifier and check for indexing
             expr = IdentifierNode(name, name_token.line, name_token.col)
@@ -816,11 +942,31 @@ class Parser:
         
         if self._match('LPAREN'):
             lparen_token = self._previous()
-            expr = self._parse_expression()
-            self._consume('RPAREN', "Expected ')' after expression")
-            # Use the position of the opening parenthesis
-            expr.line, expr.column = lparen_token.line, lparen_token.col
-            return self._parse_indexing_chain(expr)
+            # Empty tuple: ()
+            if self._check('RPAREN'):
+                self._advance()
+                return self._parse_indexing_chain(TupleLiteralNode([], lparen_token.line, lparen_token.col))
+            first_expr = self._parse_expression()
+            if self._match('COMMA'):
+                # Tuple literal: (expr, ...) or single-element (expr,)
+                elements = [first_expr]
+                while not self._check('RPAREN') and not self._check('EOF'):
+                    while self._match('NEWLINE'):
+                        pass
+                    if self._check('RPAREN'):
+                        break  # trailing comma allowed
+                    elements.append(self._parse_expression())
+                    if not self._match('COMMA'):
+                        break
+                while self._match('NEWLINE'):
+                    pass
+                self._consume('RPAREN', "Expected ')' after tuple elements")
+                return self._parse_indexing_chain(TupleLiteralNode(elements, lparen_token.line, lparen_token.col))
+            else:
+                # Grouping expression: (expr)
+                self._consume('RPAREN', "Expected ')' after expression")
+                first_expr.line, first_expr.column = lparen_token.line, lparen_token.col
+                return self._parse_indexing_chain(first_expr)
         
         if self._match('LBRACKET'):
             # List literal: [ expression* ]
@@ -877,7 +1023,29 @@ class Parser:
             self._consume('RBRACE', "Expected '}' after dictionary pairs")
             return self._parse_indexing_chain(DictLiteralNode(pairs, lbrace_token.line, lbrace_token.col))
         
-        raise SyntaxErrorLyric("Expected expression", self._peek().line, self._peek().col)
+        token = self._peek()
+        hints = {
+            'LBRACE': "Unexpected '{'. Classes use '+++' as the closing delimiter, not braces. Braces are only used for function/method bodies.",
+            'RBRACE': "Unexpected '}'. Check for mismatched braces in your function or method body.",
+            'CLASS_END': "Unexpected '+++'. This class terminator appears outside of a class definition.",
+            'END': "Unexpected 'end'. Check that your block structure is correct.",
+            'DONE': "Unexpected 'done'. This loop terminator appears outside of a loop.",
+            'FADE': "Unexpected 'fade'. This try/catch terminator appears outside of a try block.",
+            'PLUS_ASSIGN': "Unexpected '+='. Compound assignment can only be used as a statement, not inside an expression.",
+            'MINUS_ASSIGN': "Unexpected '-='. Compound assignment can only be used as a statement, not inside an expression.",
+            'MULTIPLY_ASSIGN': "Unexpected '*='. Compound assignment can only be used as a statement, not inside an expression.",
+            'DIVIDE_ASSIGN': "Unexpected '/='. Compound assignment can only be used as a statement, not inside an expression.",
+            'PERCENT_ASSIGN': "Unexpected '%='. Compound assignment can only be used as a statement, not inside an expression.",
+            'EOF': "Unexpected end of file. Check for unclosed blocks, missing 'end', 'done', 'fade', or '+++'.",
+            'ASSIGN': "Unexpected '='. Did you mean '==' for comparison?",
+        }
+        hint = hints.get(token.type)
+        if hint:
+            raise SyntaxErrorLyric(hint, token.line, token.col)
+        raise SyntaxErrorLyric(
+            f"Unexpected token '{token.value}' (type: {token.type}). Expected an expression (variable, literal, function call, etc.).",
+            token.line, token.col
+        )
     
     def _parse_indexing_chain(self, expr):
         """Parse chained indexing operations: expr[index][index]... or expr[start:end:step]..."""
@@ -981,6 +1149,12 @@ class Parser:
         if self.current + 4 >= len(self.tokens):
             return self.tokens[-1]  # Return EOF token
         return self.tokens[self.current + 4]
+
+    def _peek_at(self, offset: int) -> Token:
+        """Look at the token at the given offset from current without advancing."""
+        if self.current + offset >= len(self.tokens):
+            return self.tokens[-1]  # Return EOF token
+        return self.tokens[self.current + offset]
 
     def _parse_try_block(self) -> TryNode:
         """Parse try/catch/finally block: try [":"] ... catch [Type] [as var] [":"] ... finally [":"] ... fade"""
@@ -1146,7 +1320,7 @@ class Parser:
             raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
         
         # Validate that the type is a known type
-        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'tup'}
         if type_name not in valid_types:
             raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
         
@@ -1177,7 +1351,7 @@ class Parser:
                 raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
             
             # Validate that the type is a known type
-            valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
+            valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'tup'}
             if type_name not in valid_types:
                 raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
             
@@ -1207,7 +1381,7 @@ class Parser:
             raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
         
         # Validate that the type is a known type
-        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'}
+        valid_types = {'int', 'str', 'flt', 'var', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'tup'}
         if type_name not in valid_types:
             raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
         
@@ -1240,7 +1414,7 @@ class Parser:
                 raise ParseError(f"Type 'pyobject' is internal only and cannot be used in explicit declarations at line {type_token.line}, column {type_token.col}")
             
             # Validate that the type is a known type
-            valid_types = {'int', 'str', 'flt', 'var', 'god', 'bin', 'arr', 'map', 'obj'}
+            valid_types = {'int', 'str', 'flt', 'var', 'god', 'bin', 'arr', 'map', 'obj', 'tup'}
             if type_name not in valid_types:
                 raise ParseError(f"Unknown type '{type_name}' at line {type_token.line}, column {type_token.col}. Valid types are: {', '.join(valid_types)}")
             
@@ -1258,49 +1432,86 @@ class Parser:
         return MultiDeclarationNode(declarations, 'public', line, column)
 
     def _parse_import_stmt(self) -> ImportNode:
-        """Parse import statement: import IDENT or import IDENT; symbol1, symbol2 as alias"""
+        """Parse import statement: import IDENT(.IDENT)* or import IDENT(.IDENT)*; symbol1, symbol2 as alias"""
         import_token = self._consume('IMPORT', "Expected 'import'")
         module_token = self._consume('IDENT', "Expected module name after 'import'")
-        
+        module_name = module_token.value
+
+        # Consume additional dotted components: lyric.math, lyric.math.trig, etc.
+        while self._check('DOT') and self._peek_next().type == 'IDENT':
+            self._advance()  # consume the DOT
+            part_token = self._consume('IDENT', "Expected module name component after '.'")
+            module_name += '.' + part_token.value
+
         symbols = None
-        
+
         # Check for selective import syntax: import module; symbol1, symbol2
         if self._check('SEMICOLON'):
             self._consume('SEMICOLON', "Expected ';'")
             symbols = []
-            
+
             # Parse first symbol
             symbol_name = self._consume('IDENT', "Expected symbol name after ';'").value
             alias = None
-            
+
             # Check for 'as' keyword
             if self._check('AS'):
                 self._consume('AS', "Expected 'as'")
                 alias = self._consume('IDENT', "Expected alias name after 'as'").value
-            
+
             symbols.append((symbol_name, alias))
-            
+
             # Parse additional symbols separated by commas
             while self._check('COMMA'):
                 self._consume('COMMA', "Expected ','")
                 symbol_name = self._consume('IDENT', "Expected symbol name after ','").value
                 alias = None
-                
+
                 # Check for 'as' keyword
                 if self._check('AS'):
                     self._consume('AS', "Expected 'as'")
                     alias = self._consume('IDENT', "Expected alias name after 'as'").value
-                
+
                 symbols.append((symbol_name, alias))
-        
-        return ImportNode(module_token.value, symbols, import_token.line, import_token.col)
+
+        return ImportNode(module_name, symbols, import_token.line, import_token.col)
     
     def _parse_importpy_stmt(self) -> ImportPyNode:
-        """Parse importpy statement: importpy IDENT"""
+        """Parse importpy statement: importpy IDENT(.IDENT)* [; Name1, Name2, ...]
+
+        Without semicolon list, the whole module proxy is bound to the last
+        component of the dotted name (e.g. `importpy http.server` → `server.*`).
+
+        With a semicolon list, each named attribute is bound directly into scope:
+            importpy http.server; HTTPServer, SimpleHTTPRequestHandler
+            importpy functools; partial
+        """
         importpy_token = self._consume('IMPORTPY', "Expected 'importpy'")
         module_token = self._consume('IDENT', "Expected module name after 'importpy'")
-        
-        return ImportPyNode(module_token.value, importpy_token.line, importpy_token.col)
+        module_name = module_token.value
+
+        # Consume additional dotted components: http.server, os.path, etc.
+        while self._check('DOT') and self._peek_next().type == 'IDENT':
+            self._advance()  # consume the DOT
+            part_token = self._consume('IDENT', "Expected module name component after '.'")
+            module_name += '.' + part_token.value
+
+        # Optional selective import list: ; Name1, Name2, ...
+        names = None
+        if self._match('SEMICOLON'):
+            names = []
+            while True:
+                if self._check('IDENT') or self._check('TYPE_OR_IDENT'):
+                    name_token = self._advance()
+                    names.append(name_token.value)
+                else:
+                    raise ParseError(
+                        f"Expected identifier in importpy name list at line {self._peek().line}, column {self._peek().col}"
+                    )
+                if not self._match('COMMA'):
+                    break
+
+        return ImportPyNode(module_name, importpy_token.line, importpy_token.col, names)
     
     def _is_file_operator_ahead(self) -> bool:
         """Check if there's a file operator ahead in the token stream."""

@@ -15,8 +15,8 @@ def test_auto_help_no_override():
     """Test that -h shows auto-generated help when not overridden."""
     code = """
 def main() {
-    var a = getopts("a")
-    var verbose = getopts("verbose")
+    var a = getopts("a", None)
+    var verbose = getopts(None, "verbose")
     print("Running program")
 }
 """
@@ -42,10 +42,10 @@ def main() {
 
 
 def test_auto_help_with_override():
-    """Test that -h is handled by program when getopts('h') is used."""
+    """Test that -h is handled by program when getopts('h', ...) is used."""
     code = """
 def main() {
-    var help = getopts("h")
+    var help = getopts("h", None)
     if help
         print("Custom help message")
     else
@@ -102,7 +102,7 @@ def test_auto_help_with_argc_argv():
     """Test auto-help recognizes main(argc, argv) signature."""
     code = """
 def main(int argc, arr argv) {
-    var verbose = getopts("verbose")
+    var verbose = getopts(None, "verbose")
     print("Args:", argc)
 }
 """
@@ -130,7 +130,7 @@ def test_no_help_when_h_not_passed():
     """Test that program runs normally without -h."""
     code = """
 def main() {
-    var a = getopts("a")
+    var a = getopts("a", None)
     print("Program executed")
 }
 """
@@ -157,11 +157,11 @@ def test_auto_help_with_multiple_options():
     """Test auto-help lists all available options."""
     code = """
 def main() {
-    var debug = getopts("debug")
-    var verbose = getopts("verbose")
-    var file = getopts("file")
-    var a = getopts("a")
-    var b = getopts("b")
+    var debug = getopts(None, "debug")
+    var verbose = getopts(None, "verbose")
+    var file = getopts(None, "file")
+    var a = getopts("a", None)
+    var b = getopts("b", None)
     print("Running")
 }
 """
@@ -189,10 +189,10 @@ def main() {
 
 
 def test_override_with_double_quotes():
-    """Test that getopts("h") with double quotes is recognized."""
+    """Test that getopts("h", ...) with double quotes is recognized."""
     code = """
 def main() {
-    var host = getopts("h")
+    var host = getopts("h", None)
     if host
         print("Host:", host)
     else
@@ -221,10 +221,10 @@ def main() {
 
 
 def test_override_with_single_quotes():
-    """Test that getopts('h') with single quotes is recognized."""
+    """Test that getopts('h', ...) with single quotes is recognized."""
     code = """
 def main() {
-    var host = getopts('h')
+    var host = getopts('h', None)
     print("Host:", host)
 }
 """
@@ -252,9 +252,9 @@ def test_auto_help_sorted_options():
     """Test that options are sorted alphabetically in auto-help."""
     code = """
 def main() {
-    var z = getopts("z")
-    var a = getopts("a")
-    var m = getopts("m")
+    var z = getopts("z", None)
+    var a = getopts("a", None)
+    var m = getopts("m", None)
     print("Running")
 }
 """
@@ -286,8 +286,8 @@ def test_auto_help_duplicate_options():
     """Test that duplicate getopts calls only list option once."""
     code = """
 def main() {
-    var v1 = getopts("verbose")
-    var v2 = getopts("verbose")
+    var v1 = getopts(None, "verbose")
+    var v2 = getopts(None, "verbose")
     print("Running")
 }
 """

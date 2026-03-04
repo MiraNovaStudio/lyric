@@ -25,15 +25,15 @@ class Lexer:
     KEYWORDS = {
         'def', 'class', 'if', 'else', 'elif', 'case', 'given', 'for', 'done', 'end', 
         'try', 'catch', 'finally', 'fade', 'and', 'or', 'not', 'in', 'as', 'return',
-        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'True', 'False', 'true', 'false', 'None', 'raise', 'import', 'importpy',
+        'int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'tup', 'True', 'False', 'true', 'false', 'None', 'raise', 'import', 'importpy',
         'break', 'continue', 'public', 'private', 'protected'
     }
     
     # Single character operators and delimiters
     SINGLE_CHARS = {
-        '+', '-', '*', '/', '=', '(', ')', '{', '}', ':', ',', ';', '.', '[', ']'
+        '+', '-', '*', '/', '%', '=', '(', ')', '{', '}', ':', ',', ';', '.', '[', ']'
     }
-    
+
     # Operator type mappings
     OPERATOR_TYPES = {
         '>': 'GT',
@@ -43,6 +43,7 @@ class Lexer:
         '-': 'MINUS',
         '*': 'MULTIPLY',
         '/': 'DIVIDE',
+        '%': 'PERCENT',
         '(': 'LPAREN',
         ')': 'RPAREN',
         '{': 'LBRACE',
@@ -57,7 +58,8 @@ class Lexer:
     
     # Multi-character operators
     MULTI_CHARS = {
-        '==', '!=', '<', '<=', '>', '>=', '+++', '->>', '->', '<-', '&&', '||'
+        '==', '!=', '<', '<=', '>', '>=', '+++', '->>', '->', '<-', '&&', '||',
+        '+=', '-=', '*=', '/=', '%='
     }
     
     def __init__(self, source: str):
@@ -135,9 +137,13 @@ class Lexer:
             self._scan_string(char)
             return
         
-        # Handle division operator
+        # Handle division operator (and /= compound assignment)
         if char == '/':
-            self.tokens.append(Token('DIVIDE', char, self.line, self.start_col))
+            if self._peek() == '=':
+                self._advance()  # consume '='
+                self.tokens.append(Token('DIVIDE_ASSIGN', '/=', self.line, self.start_col))
+            else:
+                self.tokens.append(Token('DIVIDE', char, self.line, self.start_col))
             return
         
         # Handle numbers
@@ -155,6 +161,16 @@ class Lexer:
             self._scan_multi_char_operator(char)
             return
         
+        # Handle *= and %= compound assignment operators
+        if char == '*' and self._peek() == '=':
+            self._advance()  # consume '='
+            self.tokens.append(Token('MULTIPLY_ASSIGN', '*=', self.line, self.start_col))
+            return
+        if char == '%' and self._peek() == '=':
+            self._advance()  # consume '='
+            self.tokens.append(Token('PERCENT_ASSIGN', '%=', self.line, self.start_col))
+            return
+
         # Handle single character operators and delimiters
         if char in self.SINGLE_CHARS:
             token_type = self.OPERATOR_TYPES.get(char, char)
@@ -256,7 +272,7 @@ class Lexer:
             elif value == 'None':
                 # Convert None keyword to actual None value
                 self.tokens.append(Token('NONE', None, start_line, start_col))
-            elif value in ('int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk'):
+            elif value in ('int', 'str', 'flt', 'var', 'pyobject', 'rex', 'god', 'bin', 'arr', 'map', 'obj', 'dsk', 'tup'):
                 # Type keywords can also be used as identifiers in expressions
                 # We'll let the parser decide based on context
                 self.tokens.append(Token('TYPE_OR_IDENT', value, start_line, start_col))
@@ -305,6 +321,14 @@ class Lexer:
         elif first_char == '|':
             # Handle | (pipe operator)
             self.tokens.append(Token('PIPE', '|', start_line, start_col))
+        elif first_char == '+' and self._peek() == '=':
+            # Handle += (compound addition assignment)
+            self._advance()  # consume '='
+            self.tokens.append(Token('PLUS_ASSIGN', '+=', start_line, start_col))
+        elif first_char == '-' and self._peek() == '=':
+            # Handle -= (compound subtraction assignment)
+            self._advance()  # consume '='
+            self.tokens.append(Token('MINUS_ASSIGN', '-=', start_line, start_col))
         elif first_char in '<>=!' and self._peek() == '=':
             # Handle <=, >=, ==, !=
             operator = first_char + self._advance()

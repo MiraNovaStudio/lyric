@@ -5,11 +5,12 @@
 """Interpreter module for executing Lyric AST nodes."""
 
 from typing import Any, List
+from collections.abc import Mapping, Sequence
 import re
 from lyric.ast_nodes import (
     ProgramNode, FunctionNode, IfNode, LoopNode, AssignNode, CallNode,
     BinaryOpNode, UnaryOpNode, LiteralNode, IdentifierNode, ClassNode, ReturnNode, BreakNode, ContinueNode,
-    ListLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode, FileOpNode, ExecChainNode
+    ListLiteralNode, TupleLiteralNode, DictLiteralNode, IndexNode, SliceNode, TypeDeclarationNode, MultiDeclarationNode, TryNode, CatchClauseNode, RaiseNode, ImportNode, ImportPyNode, RexNode, FileOpNode, ExecChainNode
 )
 from lyric.errors import (
     RuntimeErrorLyric, CompileErrorLyric, NameErrorLyric, EXCEPTION_TYPES,
@@ -343,6 +344,143 @@ class MapObject:
         return iter(self.elements)
 
 
+class TupObject:
+    """Represents an immutable tup (tuple) object with read-only methods."""
+
+    def __init__(self, elements: list = None):
+        """Initialize TupObject with a list of elements (stored immutably)."""
+        self._elements = tuple(elements) if elements is not None else ()
+
+    @property
+    def elements(self):
+        return self._elements
+
+    def count(self, value: Any) -> int:
+        """Return number of occurrences of value."""
+        return self._elements.count(value)
+
+    def index(self, value: Any, start: int = 0, end: int = None) -> int:
+        """Return index of first occurrence; raise ValueError if not found."""
+        try:
+            if end is None:
+                return self._elements.index(value, start)
+            else:
+                return self._elements.index(value, start, end)
+        except ValueError:
+            raise ValueErrorLyric(f"'{value}' is not in tup")
+
+    def len(self) -> int:
+        """Return number of elements in the tuple."""
+        return len(self._elements)
+
+    def max(self) -> Any:
+        """Return largest element; error if tuple is empty."""
+        if not self._elements:
+            raise ValueErrorLyric("max() arg is an empty tup")
+        try:
+            return max(self._elements)
+        except TypeError as e:
+            raise TypeErrorLyric(f"max() error: {e}")
+
+    def min(self) -> Any:
+        """Return smallest element; error if tuple is empty."""
+        if not self._elements:
+            raise ValueErrorLyric("min() arg is an empty tup")
+        try:
+            return min(self._elements)
+        except TypeError as e:
+            raise TypeErrorLyric(f"min() error: {e}")
+
+    def sum(self) -> Any:
+        """Return sum of numeric elements."""
+        if not self._elements:
+            return 0
+        try:
+            return sum(self._elements)
+        except TypeError:
+            for i, elem in enumerate(self._elements):
+                if not isinstance(elem, (int, float)):
+                    raise TypeErrorLyric(f"sum() does not support non-numeric types: element at index {i} is {type(elem).__name__}")
+            raise TypeErrorLyric("sum() error with tup elements")
+
+    def __repr__(self):
+        if len(self._elements) == 1:
+            return f"({self._elements[0]!r},)"
+        return repr(self._elements)
+
+    def __str__(self):
+        if len(self._elements) == 1:
+            return f"({self._elements[0]!r},)"
+        return str(self._elements)
+
+    def __len__(self):
+        return len(self._elements)
+
+    def __getitem__(self, key):
+        """Support indexing and slicing."""
+        if isinstance(key, slice):
+            return TupObject(list(self._elements[key]))
+        return self._elements[key]
+
+    def __iter__(self):
+        """Support iteration."""
+        return iter(self._elements)
+
+    def __contains__(self, item):
+        """Support 'in' operator."""
+        return item in self._elements
+
+    def __eq__(self, other):
+        if isinstance(other, TupObject):
+            return self._elements == other._elements
+        if isinstance(other, tuple):
+            return self._elements == other
+        return False
+
+    def __hash__(self):
+        return hash(self._elements)
+
+
+class LyricModuleNamespace:
+    """Represents a Lyric module imported as a namespace.
+
+    Bound to the module name so that `module.func()` and `module.var`
+    work without dumping all names into the calling scope:
+        import mymodule          -> mymodule.helper()  mymodule.CONST
+        import mymodule; helper  -> helper()  (selective, existing behaviour)
+    """
+
+    def __init__(self, module_name: str, functions: dict, classes: dict, scope: dict):
+        self._module_name = module_name
+        self._functions = functions  # name → func_def dict (module_scope attached)
+        self._classes = classes      # name → class_def dict
+        self._scope = scope          # name → non-callable variable values
+
+    def has_function(self, name: str) -> bool:
+        return name in self._functions
+
+    def has_class(self, name: str) -> bool:
+        return name in self._classes
+
+    def has_variable(self, name: str) -> bool:
+        return name in self._scope
+
+    def get_member(self, name: str) -> Any:
+        """Return the named member (value, func_def, or class_def) or raise."""
+        if name in self._scope:
+            return self._scope[name]
+        if name in self._functions:
+            return self._functions[name]
+        if name in self._classes:
+            return self._classes[name]
+        raise RuntimeErrorLyric(
+            f"AttributeError: module '{self._module_name}' has no member '{name}'"
+        )
+
+    def __repr__(self):
+        return f"<LyricModule '{self._module_name}'>"
+
+
 class DskObject:
     """Represents a dsk (disk/file) object with file operations."""
     
@@ -577,6 +715,29 @@ class Interpreter:
         register_builtins(self.global_scope)
         self.functions = {}
         self.classes = {}
+        # Override isinstance to support inheritance chain walking
+        _orig_isinstance = self.global_scope['isinstance']
+        _classes_ref = self.classes
+        def _isinstance_with_inheritance(obj, class_or_type):
+            if isinstance(obj, dict) and '__instance_class__' in obj:
+                target_name = None
+                if isinstance(class_or_type, dict) and '__class_name__' in class_or_type:
+                    target_name = class_or_type['__class_name__']
+                elif isinstance(class_or_type, str):
+                    target_name = class_or_type
+                if target_name is not None:
+                    current = obj.get('__instance_class__')
+                    while current:
+                        if current == target_name:
+                            return True
+                        cd = _classes_ref.get(current)
+                        if cd:
+                            current = cd.get('__base_class__')
+                        else:
+                            break
+                    return False
+            return _orig_isinstance(obj, class_or_type)
+        self.global_scope['isinstance'] = _isinstance_with_inheritance
         # Track the source file path for relative imports
         self.source_file = source_file
         # Track the current instance context for access control
@@ -787,7 +948,11 @@ class Interpreter:
         
         if expected_type == 'None':
             return value is None
-        
+
+        # None is a valid value for any type (nullable)
+        if value is None:
+            return True
+
         if expected_type == 'int':
             return isinstance(value, int)
         elif expected_type == 'flt':
@@ -811,9 +976,11 @@ class Interpreter:
             return isinstance(value, list)  # arr maps to Python list
         elif expected_type == 'map':
             return isinstance(value, dict)  # map maps to Python dict
-        
+        elif expected_type == 'tup':
+            return isinstance(value, (tuple, TupObject))
+
         return False
-    
+
     def evaluate(self, ast: ProgramNode) -> Any:
         """Evaluate a ProgramNode and return the result."""
         try:
@@ -863,78 +1030,129 @@ class Interpreter:
                 raise ZeroDivisionErrorLyric(str(e))
             raise RuntimeErrorLyric(str(e))
     
+    def _call_func_def(self, func_def: dict, args: List[Any], func_name: str = '<anonymous>',
+                       module_functions: dict = None, module_classes: dict = None) -> Any:
+        """Execute a Lyric function definition with pre-evaluated argument values.
+
+        module_functions / module_classes, when provided, are temporarily
+        registered so that intra-module calls (e.g. square() calling multiply())
+        resolve correctly when called from a LyricModuleNamespace.
+        """
+        params = func_def['params']
+        param_types = func_def.get('param_types', [])
+        return_type = func_def.get('return_type', 'var')
+        body = func_def['body']
+        module_scope = func_def.get('module_scope', None)
+
+        local_scope = {}
+        for i, param in enumerate(params):
+            arg_value = args[i] if i < len(args) else None
+            if i < len(param_types) and param_types[i] != 'var':
+                if not self._is_type_compatible(param_types[i], arg_value):
+                    raise RuntimeErrorLyric(
+                        f"Type error: parameter '{param}' expects {param_types[i]}, got {type(arg_value).__name__}"
+                    )
+            local_scope[param] = arg_value
+
+        old_scope = self.global_scope.copy()
+        if module_scope is not None:
+            self.global_scope = module_scope.copy()
+        self.global_scope.update(local_scope)
+        self._push_scope()
+
+        # Temporarily register module functions/classes so intra-module calls resolve
+        saved_functions: dict = {}
+        saved_classes: dict = {}
+        if module_functions:
+            for name, mfunc in module_functions.items():
+                saved_functions[name] = self.functions.get(name)
+                self.functions[name] = mfunc
+        if module_classes:
+            for name, mcls in module_classes.items():
+                saved_classes[name] = self.classes.get(name)
+                self.classes[name] = mcls
+
+        try:
+            result = None
+            for statement in body:
+                result = self._evaluate_statement(statement)
+                if isinstance(result, ReturnValue):
+                    return_value = result.value
+                    if return_type != 'var' and not self._is_type_compatible(return_type, return_value):
+                        raise RuntimeErrorLyric(
+                            f"Type error: return value does not match declared type. "
+                            f"Expected {return_type}, but got {type(return_value).__name__}"
+                        )
+                    return return_value
+            return None
+        finally:
+            self.global_scope = old_scope
+            self._pop_scope()
+            for name, old_val in saved_functions.items():
+                if old_val is None:
+                    self.functions.pop(name, None)
+                else:
+                    self.functions[name] = old_val
+            for name, old_val in saved_classes.items():
+                if old_val is None:
+                    self.classes.pop(name, None)
+                else:
+                    self.classes[name] = old_val
+
     def _call_function(self, func_name: str, args: List[Any]) -> Any:
         """Call a function by name with arguments."""
         if func_name in self.functions:
-            func_def = self.functions[func_name]
-            params = func_def['params']
-            param_types = func_def.get('param_types', [])
-            return_type = func_def.get('return_type', 'var')
-            body = func_def['body']
-            module_scope = func_def.get('module_scope', None)  # Get module scope if available
-            
-            # Create local scope
-            local_scope = {}
-            for i, param in enumerate(params):
-                if i < len(args):
-                    arg_value = args[i]
-                else:
-                    arg_value = None
-                
-                # Type enforcement for parameters
-                if i < len(param_types) and param_types[i] != 'var':
-                    if arg_value is None:
-                        raise RuntimeErrorLyric(
-                            f"Type error: parameter '{param}' expects {param_types[i]}, got None"
-                        )
-                    elif not self._is_type_compatible(param_types[i], arg_value):
-                        raise RuntimeErrorLyric(
-                            f"Type error: parameter '{param}' expects {param_types[i]}, got {type(arg_value).__name__}"
-                        )
-                
-                local_scope[param] = arg_value
-            
-            # Save current scope
-            old_scope = self.global_scope.copy()
-            
-            # If function has a module scope, use it as the base scope
-            if module_scope is not None:
-                self.global_scope = module_scope.copy()
-            
-            # Set local scope (parameters override module scope)
-            self.global_scope.update(local_scope)
-            
-            # Push function scope for variable types
-            self._push_scope()
-            
-            try:
-                # Execute function body
-                result = None
-                for statement in body:
-                    result = self._evaluate_statement(statement)
-                    if isinstance(result, ReturnValue):
-                        return_value = result.value
-                        # Validate return type
-                        if return_type != 'var' and not self._is_type_compatible(return_type, return_value):
-                            raise RuntimeErrorLyric(
-                                f"Type error: return value does not match declared type. "
-                                f"Expected {return_type}, but got {type(return_value).__name__}"
-                            )
-                        return return_value
-                
-                # If no explicit return, return None
-                if return_type != 'var' and return_type != 'None':
-                    raise RuntimeErrorLyric(
-                        f"Type error: function '{func_name}' declared to return {return_type}, but returns None"
-                    )
-                return None
-            finally:
-                # Restore scope
-                self.global_scope = old_scope
-                self._pop_scope()
+            return self._call_func_def(self.functions[func_name], args, func_name=func_name)
         else:
             raise RuntimeErrorLyric(f"Function '{func_name}' is not defined")
     
+    def _instantiate_class_by_name(self, class_name: str, arg_nodes: list) -> dict:
+        """Instantiate a class by name. class_name must already be in self.classes."""
+        class_def = self.classes[class_name]
+        instance = {}
+
+        def copy_from_inheritance_chain(cname):
+            if cname not in self.classes:
+                raise RuntimeErrorLyric(f"Class '{cname}' is not defined")
+            cd = self.classes[cname]
+            if '__base_class__' in cd:
+                copy_from_inheritance_chain(cd['__base_class__'])
+            for key, value in cd.items():
+                if not key.startswith('__') or key == '__constructor__' or key.startswith('__visibility_'):
+                    if key not in ('__class_name__', '__base_class__'):
+                        instance[key] = value
+
+        def collect_constructor_chain(cname):
+            ctors = []
+            if cname not in self.classes:
+                return ctors
+            cd = self.classes[cname]
+            if '__base_class__' in cd:
+                ctors.extend(collect_constructor_chain(cd['__base_class__']))
+            if '__constructor__' in cd:
+                ctors.append((cname, cd['__constructor__']))
+            return ctors
+
+        copy_from_inheritance_chain(class_name)
+        instance['__instance_class__'] = class_name
+        if '__base_class__' in class_def:
+            instance['__base_class__'] = class_def['__base_class__']
+
+        constructor_chain = collect_constructor_chain(class_name)
+        for cname, constructor_method in constructor_chain:
+            if cname == class_name:
+                self._call_method(instance, constructor_method, arg_nodes, class_context=cname)
+            else:
+                self._call_method(instance, constructor_method, [], class_context=cname)
+
+        if '__constructor__' in instance:
+            del instance['__constructor__']
+
+        if not constructor_chain and 'init' in instance and isinstance(instance['init'], dict):
+            self._call_method(instance, instance['init'], arg_nodes)
+
+        return instance
+
     def _is_derived_from(self, child_class: str, parent_class: str) -> bool:
         """Check if child_class is derived from parent_class."""
         if child_class not in self.classes:
@@ -1158,17 +1376,13 @@ class Interpreter:
             
             # Type enforcement for parameters
             if i < len(param_types) and param_types[i] != 'var':
-                if arg_value is None:
-                    raise RuntimeErrorLyric(
-                        f"Type error: parameter '{param}' expects {param_types[i]}, got None"
-                    )
-                elif not self._is_type_compatible(param_types[i], arg_value):
+                if not self._is_type_compatible(param_types[i], arg_value):
                     raise RuntimeErrorLyric(
                         f"Type error: parameter '{param}' expects {param_types[i]}, got {type(arg_value).__name__}"
                     )
-            
+
             local_scope[param] = arg_value
-        
+
         # Save current scope and instance context
         old_scope = self.global_scope.copy()
         old_instance = self.current_instance
@@ -1244,12 +1458,61 @@ class Interpreter:
         """Evaluate an assignment statement."""
         value = self._evaluate_expression(node.expr)
         
-        if '.' in node.name:
+        if '.' in node.name and '[' in node.name and ']' in node.name:
+            # Member+index assignment: obj.member[key] = value
+            dot_pos = node.name.find('.')
+            bracket_start = node.name.find('[')
+            bracket_end = node.name.find(']')
+            obj_name = node.name[:dot_pos]
+            member_name = node.name[dot_pos+1:bracket_start]
+            index_str = node.name[bracket_start+1:bracket_end]
+
+            # Resolve the object and member
+            if obj_name in self.global_scope:
+                obj = self.global_scope[obj_name]
+                if isinstance(obj, dict) and member_name in obj:
+                    member_obj = obj[member_name]
+                elif hasattr(obj, member_name):
+                    member_obj = getattr(obj, member_name)
+                else:
+                    raise RuntimeErrorLyric(f"Cannot access member '{member_name}' of '{obj_name}'", node.line, node.column)
+            else:
+                raise RuntimeErrorLyric(f"Variable '{obj_name}' is not defined", node.line, node.column)
+
+            # Resolve index — check if it's a variable name
+            resolved_index = index_str
+            try:
+                resolved_index = int(index_str)
+            except ValueError:
+                # Not an integer — check if it's a variable
+                if index_str in self.global_scope:
+                    resolved_index = self.global_scope[index_str]
+
+            if isinstance(member_obj, (dict, MapObject, Mapping)):
+                member_obj[resolved_index] = value
+            elif isinstance(member_obj, (list, ArrObject)):
+                try:
+                    idx = int(resolved_index)
+                    obj_len = len(member_obj.elements) if isinstance(member_obj, ArrObject) else len(member_obj)
+                    if idx < 0 or idx >= obj_len:
+                        raise IndexErrorLyric(f"Index out of range: tried to access index {idx} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
+                    member_obj[idx] = value
+                except (ValueError, TypeError):
+                    raise RuntimeErrorLyric(f"Invalid list index: '{resolved_index}' is not a valid integer.", node.line, node.column)
+            elif isinstance(member_obj, Sequence):
+                try:
+                    idx = int(resolved_index)
+                    member_obj[idx] = value
+                except (ValueError, TypeError):
+                    raise RuntimeErrorLyric(f"Invalid list index: '{resolved_index}' is not a valid integer.", node.line, node.column)
+            else:
+                raise RuntimeErrorLyric(f"Cannot assign to indexed expression on '{member_name}'", node.line, node.column)
+        elif '.' in node.name:
             # Assignment to member: self.attribute = value
             parts = node.name.split('.')
             obj_name = parts[0]
             member_name = parts[1]
-            
+
             if obj_name in self.global_scope:
                 obj = self.global_scope[obj_name]
                 if isinstance(obj, dict):
@@ -1268,19 +1531,35 @@ class Interpreter:
             
             if obj_name in self.global_scope:
                 obj = self.global_scope[obj_name]
-                if isinstance(obj, (dict, MapObject)):
-                    # For dictionaries and MapObject, the index is a key
-                    obj[index_str] = value
+
+                # Resolve index — check if it's a variable name
+                resolved_index = index_str
+                try:
+                    resolved_index = int(index_str)
+                except ValueError:
+                    if index_str in self.global_scope:
+                        resolved_index = self.global_scope[index_str]
+
+                if isinstance(obj, (dict, MapObject, Mapping)):
+                    # For dictionaries, MapObject, and Python Mapping types, the index is a key
+                    obj[resolved_index] = value
                 elif isinstance(obj, (list, ArrObject)):
                     # For lists and ArrObject, the index should be an integer
                     try:
-                        index = int(index_str)
+                        idx = int(resolved_index)
                         obj_len = len(obj.elements) if isinstance(obj, ArrObject) else len(obj)
-                        if index < 0 or index >= obj_len:
-                            raise IndexErrorLyric(f"Index out of range: tried to access index {index} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
-                        obj[index] = value
-                    except ValueError:
-                        raise RuntimeErrorLyric(f"Invalid list index: '{index_str}' is not a valid integer. List indices must be integers.", node.line, node.column)
+                        if idx < 0 or idx >= obj_len:
+                            raise IndexErrorLyric(f"Index out of range: tried to access index {idx} in list of length {obj_len}. Valid indices are 0 to {obj_len-1}", node.line, node.column)
+                        obj[idx] = value
+                    except (ValueError, TypeError):
+                        raise RuntimeErrorLyric(f"Invalid list index: '{resolved_index}' is not a valid integer. List indices must be integers.", node.line, node.column)
+                elif isinstance(obj, Sequence):
+                    # For Python Sequence types (deque, etc.), the index should be an integer
+                    try:
+                        idx = int(resolved_index)
+                        obj[idx] = value
+                    except (ValueError, TypeError):
+                        raise RuntimeErrorLyric(f"Invalid list index: '{resolved_index}' is not a valid integer. List indices must be integers.", node.line, node.column)
                 else:
                     raise RuntimeErrorLyric(f"Cannot assign to indexed expression: '{obj_name}' is of type {type(obj).__name__}, but only lists and dictionaries support indexed assignment", node.line, node.column)
             else:
@@ -1317,12 +1596,7 @@ class Interpreter:
     
     def _evaluate_type_declaration(self, node: TypeDeclarationNode) -> Any:
         """Evaluate a type declaration statement."""
-        # Check for redeclaration in current scope only
-        if node.name in self._get_current_scope():
-            raise CompileErrorLyric(
-                f"Variable '{node.name}' already declared",
-                node.line, node.column
-            )
+        # Redeclaration in the same scope acts as reassignment
         
         value = self._evaluate_expression(node.expr)
         
@@ -1345,13 +1619,7 @@ class Interpreter:
     
     def _evaluate_multi_declaration(self, node: MultiDeclarationNode) -> Any:
         """Evaluate a multi-variable declaration statement."""
-        # Check for redeclarations in current scope first
-        for type_name, var_name in node.declarations:
-            if var_name in self._get_current_scope():
-                raise CompileErrorLyric(
-                    f"Variable '{var_name}' already declared",
-                    node.line, node.column
-                )
+        # Redeclaration in the same scope acts as reassignment
         
         # Declare all variables as uninitialized in current scope
         for type_name, var_name in node.declarations:
@@ -1370,7 +1638,10 @@ class Interpreter:
         elif expected_type == 'pyobject':
             # pyobject internally maps to var in Lyric syntax
             return True  # pyobject can hold any Python value
-        elif expected_type == 'int':
+        # None is a valid value for any type (nullable)
+        if value is None:
+            return True
+        if expected_type == 'int':
             return isinstance(value, int) and not isinstance(value, bool)
         elif expected_type == 'str':
             return isinstance(value, str)
@@ -1386,6 +1657,8 @@ class Interpreter:
             return isinstance(value, (list, ArrObject))  # arr maps to ArrObject or Python list
         elif expected_type == 'map':
             return isinstance(value, (dict, MapObject))  # map maps to MapObject or Python dict
+        elif expected_type == 'tup':
+            return isinstance(value, (tuple, TupObject))  # tup maps to TupObject or Python tuple
         elif expected_type == 'dsk':
             return isinstance(value, DskObject)  # dsk maps to DskObject
         elif expected_type == 'obj':
@@ -1394,6 +1667,21 @@ class Interpreter:
         else:
             return False
     
+    def _lyric_to_python(self, val: Any) -> Any:
+        """Convert Lyric collection wrappers to Python-native types.
+
+        Applied before passing arguments to external Python callables so that
+        Python code receives plain lists/dicts rather than ArrObject/MapObject.
+        Recurses into nested collections.
+        """
+        if isinstance(val, ArrObject):
+            return [self._lyric_to_python(e) for e in val.elements]
+        if isinstance(val, MapObject):
+            return {k: self._lyric_to_python(v) for k, v in val.elements.items()}
+        if isinstance(val, TupObject):
+            return tuple(self._lyric_to_python(e) for e in val.elements)
+        return val
+
     def _evaluate_return_statement(self, node: ReturnNode) -> ReturnValue:
         """Evaluate a return statement."""
         if node.value:
@@ -1404,7 +1692,12 @@ class Interpreter:
         """Evaluate a list literal."""
         elements = [self._evaluate_expression(elem) for elem in node.elements]
         return ArrObject(elements)
-    
+
+    def _evaluate_tuple_literal(self, node: 'TupleLiteralNode') -> 'TupObject':
+        """Evaluate a tuple literal."""
+        elements = [self._evaluate_expression(elem) for elem in node.elements]
+        return TupObject(elements)
+
     def _evaluate_dict_literal(self, node: DictLiteralNode) -> 'MapObject':
         """Evaluate a dictionary literal."""
         result = {}
@@ -1419,12 +1712,14 @@ class Interpreter:
         obj = self._evaluate_expression(node.obj)
         index = self._evaluate_expression(node.index)
         
-        if isinstance(obj, (list, tuple, ArrObject)):
+        if isinstance(obj, (list, tuple, ArrObject, TupObject)):
             if not isinstance(index, int):
                 raise TypeErrorLyric(f"Invalid list index: expected integer, but got {type(index).__name__}. List indices must be integers (0, 1, 2, ...)")
-            if isinstance(obj, ArrObject):
-                if index < 0 or index >= len(obj.elements):
-                    raise IndexErrorLyric(f"Index out of range: tried to access index {index} in arr of length {len(obj.elements)}. Valid indices are 0 to {len(obj.elements)-1}")
+            if isinstance(obj, (ArrObject, TupObject)):
+                elems = obj.elements
+                if index < 0 or index >= len(elems):
+                    type_label = 'arr' if isinstance(obj, ArrObject) else 'tup'
+                    raise IndexErrorLyric(f"Index out of range: tried to access index {index} in {type_label} of length {len(elems)}. Valid indices are 0 to {len(elems)-1}")
                 return obj[index]
             else:
                 if index < 0 or index >= len(obj):
@@ -1435,7 +1730,10 @@ class Interpreter:
                 # MapObject handles KeyError in its __getitem__
                 return obj[index]
             else:
-                # Plain dict
+                # Dict or dict subclass (Counter, defaultdict, OrderedDict)
+                if hasattr(obj, '__missing__'):
+                    # Dict subclasses with __missing__ (Counter returns 0, defaultdict creates default)
+                    return obj[index]
                 if index not in obj:
                     available_keys = list(obj.keys())[:5]  # Show first 5 keys
                     keys_preview = ", ".join(repr(k) for k in available_keys)
@@ -1443,6 +1741,12 @@ class Interpreter:
                         keys_preview += f" (and {len(obj)-5} more)"
                     raise KeyErrorLyric(f"Key not found: '{index}' is not a key in this dictionary. Available keys: {keys_preview}")
                 return obj[index]
+        elif isinstance(obj, Mapping):
+            # Python Mapping types (Counter, defaultdict, OrderedDict, ChainMap, etc.)
+            return obj[index]
+        elif isinstance(obj, Sequence):
+            # Python Sequence types (deque, etc.)
+            return obj[index]
         else:
             raise TypeErrorLyric(f"Cannot index object: '{type(obj).__name__}' does not support indexing. Only lists and dictionaries can be indexed with []. Use dot notation (.) for object properties.")
     
@@ -1591,14 +1895,32 @@ class Interpreter:
         if isinstance(node.condition_or_iter, CallNode) and node.condition_or_iter.func_name == "range":
             # Get the iterator variable name from the loop node
             iterator_var = node.iterator_var or 'i'
-            
+
+            if node.iterator_type:
+                # Inline declaration: auto-declare the variable
+                self._set_variable_in_current_scope(iterator_var, node.iterator_type)
+                self.global_scope[iterator_var] = None
+                declared_type = node.iterator_type
+            elif not self._is_variable_declared_in_any_scope(iterator_var):
+                raise RuntimeErrorLyric(
+                    f"Loop variable '{iterator_var}' must be declared before use in a 'given' loop. "
+                    f"Declare it first, e.g.: var {iterator_var}, int {iterator_var}"
+                )
+            else:
+                declared_type = self._get_variable_type(iterator_var)
+
             # Evaluate range arguments
             args = [self._evaluate_expression(arg) for arg in node.condition_or_iter.args]
-            
+
             if len(args) == 1:
                 # range(n) -> 0 to n-1
                 end = args[0]
                 for i in range(end):
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, i):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(i).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
@@ -1613,6 +1935,11 @@ class Interpreter:
                 # range(start, end)
                 start, end = args
                 for i in range(start, end):
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, i):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(i).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
@@ -1627,6 +1954,11 @@ class Interpreter:
                 # range(start, end, step)
                 start, end, step = args
                 for i in range(start, end, step):
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, i):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(i).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = i
                     # Execute loop body
@@ -1640,9 +1972,31 @@ class Interpreter:
         else:
             # Generic iterator (simplified)
             iterator_var = node.iterator_var or 'item'
+
+            if node.iterator_type:
+                # Inline declaration: auto-declare the variable
+                self._set_variable_in_current_scope(iterator_var, node.iterator_type)
+                self.global_scope[iterator_var] = None
+                declared_type = node.iterator_type
+            elif not self._is_variable_declared_in_any_scope(iterator_var):
+                raise RuntimeErrorLyric(
+                    f"Loop variable '{iterator_var}' must be declared before use in a 'given' loop. "
+                    f"Declare it first, e.g.: var {iterator_var}, arr {iterator_var}"
+                )
+            else:
+                declared_type = self._get_variable_type(iterator_var)
+
             iterable = self._evaluate_expression(node.condition_or_iter)
-            if isinstance(iterable, (list, tuple, ArrObject)):
+            if isinstance(iterable, (list, tuple, ArrObject, TupObject)):
                 for item in iterable:
+                    # Convert tuple to list for arr-declared variables
+                    if declared_type == 'arr' and isinstance(item, tuple):
+                        item = list(item)
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, item):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(item).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = item
                     try:
@@ -1656,6 +2010,11 @@ class Interpreter:
                 # Iterate over keys in insertion order
                 keys = iterable.keys() if isinstance(iterable, MapObject) else list(iterable.keys())
                 for key in keys:
+                    # Type check iteration item
+                    if not self._is_type_compatible(declared_type, key):
+                        raise RuntimeErrorLyric(
+                            f"Type mismatch in loop: cannot assign {type(key).__name__} to loop variable '{iterator_var}' declared as {declared_type}"
+                        )
                     # Assign loop variable to scope
                     self.global_scope[iterator_var] = key
                     try:
@@ -1665,7 +2024,7 @@ class Interpreter:
                         break  # Exit loop
                     except ContinueSignal:
                         continue  # Skip to next iteration
-        
+
         return None
     
     def _evaluate_while_loop(self, node: LoopNode) -> Any:
@@ -1695,7 +2054,9 @@ class Interpreter:
                 # Navigate through the member path
                 current_obj = obj
                 for member_name in member_path:
-                    if isinstance(current_obj, dict) and member_name in current_obj:
+                    if isinstance(current_obj, LyricModuleNamespace):
+                        current_obj = current_obj.get_member(member_name)
+                    elif isinstance(current_obj, dict) and member_name in current_obj:
                         # Check if this is a class instance with access control
                         if '__instance_class__' in current_obj:
                             # Check attribute access
@@ -1713,6 +2074,12 @@ class Interpreter:
                             current_obj = getattr(current_obj, member_name)
                         except AttributeError:
                             raise RuntimeErrorLyric(f"AttributeError: '{current_obj}' has no attribute '{member_name}'")
+                    elif hasattr(current_obj, member_name):
+                        # Handle arbitrary Python instances (e.g., datetime objects)
+                        try:
+                            current_obj = getattr(current_obj, member_name)
+                        except AttributeError:
+                            raise RuntimeErrorLyric(f"AttributeError: '{type(current_obj).__name__}' has no attribute '{member_name}'")
                     else:
                         available_members = list(current_obj.keys()) if isinstance(current_obj, dict) else []
                         if available_members:
@@ -1758,7 +2125,7 @@ class Interpreter:
                     # Handle PyModuleProxy and similar objects
                     try:
                         method = getattr(current_obj, method_name)
-                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        args = [self._lyric_to_python(self._evaluate_expression(arg)) for arg in node.args]
                         if callable(method):
                             return method(*args)
                         else:
@@ -1798,6 +2165,55 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: ArrObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, TupObject):
+                    # Handle TupObject methods (read-only)
+                    if hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    else:
+                        raise RuntimeErrorLyric(f"AttributeError: TupObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, LyricModuleNamespace):
+                    # module.func() or module.Class() call
+                    if current_obj.has_function(method_name):
+                        func_def = current_obj._functions[method_name]
+                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        return self._call_func_def(
+                            func_def, args, func_name=method_name,
+                            module_functions=current_obj._functions,
+                            module_classes=current_obj._classes
+                        )
+                    elif current_obj.has_class(method_name):
+                        # Temporarily inject module context so constructors see module vars
+                        saved_cls = {n: self.classes.get(n) for n in current_obj._classes}
+                        saved_fns = {n: self.functions.get(n) for n in current_obj._functions}
+                        old_global = self.global_scope.copy()
+                        for n, c in current_obj._classes.items():
+                            self.classes[n] = c
+                        for n, f in current_obj._functions.items():
+                            self.functions[n] = f
+                        self.global_scope.update(current_obj._scope)
+                        try:
+                            return self._instantiate_class_by_name(method_name, node.args)
+                        finally:
+                            self.global_scope = old_global
+                            for n, old in saved_cls.items():
+                                if old is None:
+                                    self.classes.pop(n, None)
+                                else:
+                                    self.classes[n] = old
+                            for n, old in saved_fns.items():
+                                if old is None:
+                                    self.functions.pop(n, None)
+                                else:
+                                    self.functions[n] = old
+                    else:
+                        raise RuntimeErrorLyric(
+                            f"AttributeError: module '{current_obj._module_name}' has no callable member '{method_name}'"
+                        )
                 elif isinstance(current_obj, MapObject):
                     # Handle MapObject methods
                     if hasattr(current_obj, method_name):
@@ -1820,11 +2236,41 @@ class Interpreter:
                             raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
                     else:
                         raise RuntimeErrorLyric(f"AttributeError: DskObject has no attribute '{method_name}'")
+                elif isinstance(current_obj, str):
+                    # Handle string methods — adds .len() since Python uses len() not .len()
+                    if method_name == 'len':
+                        return len(current_obj)
+                    elif hasattr(current_obj, method_name):
+                        method = getattr(current_obj, method_name)
+                        args = [self._lyric_to_python(self._evaluate_expression(arg)) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method on str.")
+                    else:
+                        raise RuntimeErrorLyric(f"Method not found: '{method_name}' is not a method of str")
+                elif method_name == 'len' and hasattr(current_obj, '__len__'):
+                    # Generic .len() support for any Python object with __len__
+                    return len(current_obj)
+                elif hasattr(current_obj, method_name):
+                    # Handle arbitrary Python instances (e.g., datetime, time objects,
+                    # and any Python object returned from importpy)
+                    try:
+                        method = getattr(current_obj, method_name)
+                        args = [self._lyric_to_python(self._evaluate_expression(arg)) for arg in node.args]
+                        if callable(method):
+                            return method(*args)
+                        else:
+                            raise RuntimeErrorLyric(f"Cannot call '{method_name}': it is not a function or method. '{method_name}' is of type {type(method).__name__}. Use parentheses () only for function calls.")
+                    except RuntimeErrorLyric:
+                        raise
+                    except Exception as e:
+                        raise RuntimeErrorLyric(f"Error calling '{method_name}' on {type(current_obj).__name__}: {str(e)}")
                 elif callable(current_obj):
                     # Handle classes and callable objects
                     try:
                         method = getattr(current_obj, method_name)
-                        args = [self._evaluate_expression(arg) for arg in node.args]
+                        args = [self._lyric_to_python(self._evaluate_expression(arg)) for arg in node.args]
                         if callable(method):
                             return method(*args)
                         else:
@@ -1860,83 +2306,7 @@ class Interpreter:
                 raise RuntimeErrorLyric(f"Invalid range() arguments: range() takes 1-3 arguments (start, stop, step), but got {len(args)}. Usage: range(stop) or range(start, stop) or range(start, stop, step)")
         elif node.func_name in self.classes:
             # Class instantiation: ClassName()
-            class_def = self.classes[node.func_name]
-            
-            # Create instance by copying from entire inheritance chain
-            instance = {}
-            
-            # Helper function to recursively copy from inheritance chain
-            def copy_from_inheritance_chain(class_name):
-                """Recursively copy members from base classes up to root."""
-                if class_name not in self.classes:
-                    raise RuntimeErrorLyric(f"Class '{class_name}' is not defined")
-                
-                current_class_def = self.classes[class_name]
-                
-                # First, recursively copy from base class (if any)
-                if '__base_class__' in current_class_def:
-                    base_class_name = current_class_def['__base_class__']
-                    copy_from_inheritance_chain(base_class_name)
-                
-                # Then copy this class's members (overriding base class members)
-                for key, value in current_class_def.items():
-                    if not key.startswith('__') or key == '__constructor__' or key.startswith('__visibility_'):
-                        # Copy everything except __class_name__ and __base_class__
-                        if key not in ('__class_name__', '__base_class__'):
-                            instance[key] = value
-            
-            # Helper function to collect constructor chain from base to child
-            def collect_constructor_chain(class_name):
-                """Collect constructors in base→child order."""
-                constructors = []
-                
-                if class_name not in self.classes:
-                    return constructors
-                
-                current_class_def = self.classes[class_name]
-                
-                # First, recursively collect from base class (if any)
-                if '__base_class__' in current_class_def:
-                    base_class_name = current_class_def['__base_class__']
-                    constructors.extend(collect_constructor_chain(base_class_name))
-                
-                # Then add this class's constructor (if it exists)
-                if '__constructor__' in current_class_def:
-                    constructors.append((class_name, current_class_def['__constructor__']))
-                
-                return constructors
-            
-            # Copy entire inheritance chain
-            copy_from_inheritance_chain(node.func_name)
-            
-            # Add instance class name marker
-            instance['__instance_class__'] = node.func_name
-            
-            # Store base class chain for method resolution
-            if '__base_class__' in class_def:
-                instance['__base_class__'] = class_def['__base_class__']
-            
-            # Call constructors in base→child order (automatic chaining)
-            constructor_chain = collect_constructor_chain(node.func_name)
-            for class_name, constructor_method in constructor_chain:
-                # Only pass arguments to the most derived (child) constructor
-                if class_name == node.func_name:
-                    self._call_method(instance, constructor_method, node.args, class_context=class_name)
-                else:
-                    # Base class constructors are called with no arguments (automatic chaining)
-                    self._call_method(instance, constructor_method, [], class_context=class_name)
-            
-            # Remove constructor from instance after calling all constructors
-            if '__constructor__' in instance:
-                del instance['__constructor__']
-            
-            # Also check for legacy init() method for backward compatibility (if no constructor was called)
-            if not constructor_chain and 'init' in instance and isinstance(instance['init'], dict):
-                init_method = instance['init']
-                # Call the init method with the provided arguments
-                self._call_method(instance, init_method, node.args)
-            
-            return instance
+            return self._instantiate_class_by_name(node.func_name, node.args)
         elif node.func_name in self.global_scope and callable(self.global_scope[node.func_name]):
             # Built-in function from global scope
             args = [self._evaluate_expression(arg) for arg in node.args]
@@ -1974,6 +2344,8 @@ class Interpreter:
             return self._evaluate_function_call(expr)
         elif isinstance(expr, ListLiteralNode):
             return self._evaluate_list_literal(expr)
+        elif isinstance(expr, TupleLiteralNode):
+            return self._evaluate_tuple_literal(expr)
         elif isinstance(expr, DictLiteralNode):
             return self._evaluate_dict_literal(expr)
         elif isinstance(expr, IndexNode):
@@ -2001,7 +2373,9 @@ class Interpreter:
                 # Navigate through the member path
                 current_obj = obj
                 for member_name in member_path:
-                    if isinstance(current_obj, dict) and member_name in current_obj:
+                    if isinstance(current_obj, LyricModuleNamespace):
+                        current_obj = current_obj.get_member(member_name)
+                    elif isinstance(current_obj, dict) and member_name in current_obj:
                         # Check if this is a class instance with access control
                         if '__instance_class__' in current_obj:
                             # Check attribute access
@@ -2074,6 +2448,20 @@ class Interpreter:
                 if right == 0:
                     raise RuntimeErrorLyric("Division by zero: cannot divide by zero. Check your divisor value before performing division.", node.line, node.column)
                 return left / right
+            elif node.op == '%':
+                # String format operator: "Hello %s" % (name,) or "Value: %d" % 42
+                if isinstance(left, str):
+                    if isinstance(right, TupObject):
+                        return left % right._elements
+                    else:
+                        return left % (right,)
+                if not isinstance(left, int) or isinstance(left, bool):
+                    raise TypeErrorLyric(f"Modulus operator '%' requires int operands, got {type(left).__name__} on the left")
+                if not isinstance(right, int) or isinstance(right, bool):
+                    raise TypeErrorLyric(f"Modulus operator '%' requires int operands, got {type(right).__name__} on the right")
+                if right == 0:
+                    raise ZeroDivisionErrorLyric("Modulus by zero: cannot take modulus with zero divisor.")
+                return left % right
             elif node.op == '==':
                 return left == right
             elif node.op == '!=':
@@ -2094,10 +2482,10 @@ class Interpreter:
                 # Membership check: key in dict, item in list, char in string
                 if isinstance(right, MapObject):
                     return left in right  # MapObject implements __contains__
-                elif isinstance(right, (dict, list, str, tuple, ArrObject)):
+                elif isinstance(right, (dict, list, str, tuple, ArrObject, TupObject)):
                     return left in right
                 else:
-                    raise TypeErrorLyric(f"'in' requires a container (map, arr, str), got {type(right).__name__}")
+                    raise TypeErrorLyric(f"'in' requires a container (map, arr, tup, str), got {type(right).__name__}", node.line, node.column)
             else:
                 raise RuntimeErrorLyric(f"Unknown binary operator: {node.op}", node.line, node.column)
         except TypeError as e:
@@ -2118,7 +2506,9 @@ class Interpreter:
         """Evaluate a try/catch/finally statement with typed exception binding."""
         result = None
         exception_occurred = None
-        
+
+        # Each try body gets its own scope so sequential try blocks can reuse variable names
+        self._push_scope()
         try:
             # Execute try body
             for statement in node.try_body:
@@ -2143,50 +2533,61 @@ class Interpreter:
                 e = ZeroDivisionErrorLyric(str(e))
             # Catch any exception that occurs
             exception_occurred = e
-        
+        finally:
+            self._pop_scope()
+
         # If an exception occurred, try to match it with catch clauses
         if exception_occurred and node.catch_clauses:
             matched_clause = None
-            
+
             # Find the first matching catch clause
             for catch_clause in node.catch_clauses:
                 if self._exception_matches_clause(exception_occurred, catch_clause):
                     matched_clause = catch_clause
                     break
-            
+
             # Execute the matching catch clause
             if matched_clause:
                 # Bind exception to variable if specified
                 if matched_clause.variable_name:
                     self.global_scope[matched_clause.variable_name] = exception_occurred
-                
-                # Execute catch body
-                for statement in matched_clause.body:
-                    result = self._evaluate_statement(statement)
-                    if isinstance(result, ReturnValue):
-                        # Store result but don't return yet - finally must execute
-                        result = result
-                        break
-                
+
+                # Each catch body gets its own scope
+                self._push_scope()
+                try:
+                    # Execute catch body
+                    for statement in matched_clause.body:
+                        result = self._evaluate_statement(statement)
+                        if isinstance(result, ReturnValue):
+                            # Store result but don't return yet - finally must execute
+                            result = result
+                            break
+                finally:
+                    self._pop_scope()
+
                 # Clear the exception since it was caught
                 exception_occurred = None
-        
+
         # Execute finally block if it exists (always executes)
         if node.finally_body:
-            for statement in node.finally_body:
-                finally_result = self._evaluate_statement(statement)
-                if isinstance(finally_result, ReturnValue):
-                    # Finally block return takes precedence
-                    result = finally_result
-        
+            self._push_scope()
+            try:
+                for statement in node.finally_body:
+                    finally_result = self._evaluate_statement(statement)
+                    if isinstance(finally_result, ReturnValue):
+                        # Finally block return takes precedence
+                        result = finally_result
+            finally:
+                self._pop_scope()
+
         # If exception was not caught, re-raise it
         if exception_occurred:
             raise exception_occurred
-        
+
         # Return the result (could be from try, catch, or finally)
         if isinstance(result, ReturnValue):
             return result
-        
+
         return None
     
     def _exception_matches_clause(self, exception: Exception, catch_clause: CatchClauseNode) -> bool:
@@ -2234,172 +2635,283 @@ class Interpreter:
             available_exceptions = list(exception_map.keys())
             raise RuntimeErrorLyric(f"Unknown exception: '{exception_name}' is not a valid exception type. Available exceptions: {', '.join(available_exceptions[:5])} (and more)")
     
-    def _evaluate_import_statement(self, node: ImportNode) -> None:
-        """Evaluate an import statement for Lyric modules."""
+    def _find_module_file(self, base_dir, module_path, leaf_name):
+        """Find a .ly module file given a base directory and module path.
+
+        Tries {base_dir}/{module_path}.ly first (file), then
+        {base_dir}/{module_path}/{leaf_name}.ly (directory-as-package pattern).
+        Returns the file path or None.
+        """
         import os
+        # Try as file: e.g. lib/lyric/math.ly
+        candidate = os.path.join(base_dir, f"{module_path}.ly")
+        if os.path.isfile(candidate):
+            return candidate
+        # Try as directory package: e.g. lib/lyric/lyric.ly (dir/dir.ly pattern)
+        candidate = os.path.join(base_dir, module_path, f"{leaf_name}.ly")
+        if os.path.isfile(candidate):
+            return candidate
+        return None
+
+    def _load_module_file(self, module_file, module_name, node, is_stdlib=False):
+        """Read, parse, and evaluate a .ly module file. Returns the module Interpreter.
+
+        When is_stdlib is True, stdlib mode is enabled in pyproxy so that
+        importpy statements inside stdlib .ly files bypass the whitelist
+        (but NOT the blacklist).
+        """
         from lyric.lexer import tokenize
         from lyric.parser import Parser
-        
-        module_name = node.module_name
-        
-        # Search for the module in the following order:
-        # 1. Current working directory
-        # 2. Directory of the script being executed (if known)
-        # 3. LYRIC_PATH environment variable
-        
-        search_paths = [
-            os.getcwd(),  # Current working directory
-        ]
-        
-        # Add the directory of the source file if known
-        if self.source_file:
-            source_dir = os.path.dirname(os.path.abspath(self.source_file))
-            if source_dir not in search_paths:
-                search_paths.append(source_dir)
-        
-        # Add LYRIC_PATH if set
-        lyric_path = os.environ.get('LYRIC_PATH', '')
-        if lyric_path:
-            search_paths.extend(lyric_path.split(os.pathsep))
-        
-        # Try to find the module file
-        module_file = None
-        for search_path in search_paths:
-            # Try .ly extension
-            candidate = os.path.join(search_path, f"{module_name}.ly")
-            if os.path.isfile(candidate):
-                module_file = candidate
-                break
-            
-            # Try as a directory with __init__.ly
-            candidate_init = os.path.join(search_path, module_name, "__init__.ly")
-            if os.path.isfile(candidate_init):
-                module_file = candidate_init
-                break
-        
-        if module_file is None:
-            raise RuntimeErrorLyric(
-                f"ModuleNotFoundError: No module named '{module_name}'. "
-                f"Searched in: {', '.join(search_paths)}",
-                node.line,
-                node.column
-            )
-        
-        # Read and parse the module
+
         try:
             with open(module_file, 'r', encoding='utf-8') as f:
                 source_code = f.read()
         except Exception as e:
             raise RuntimeErrorLyric(
                 f"Error reading module '{module_name}' from '{module_file}': {e}",
-                node.line,
-                node.column
+                node.line, node.column
             )
-        
-        # Parse the module
+
         try:
             tokens = tokenize(source_code)
             parser = Parser(tokens)
             module_ast = parser.parse()
         except Exception as e:
+            err_line = getattr(e, 'line', 0)
+            err_col = getattr(e, 'column', 0)
             raise RuntimeErrorLyric(
-                f"Error parsing module '{module_name}': {e}",
-                node.line,
-                node.column
+                f"Error parsing module '{module_name}' ({module_name}.ly line {err_line}): {e}",
+                err_line, err_col
             )
-        
-        # Create a new interpreter for the module with its own scope
+
+        if is_stdlib:
+            from lyric.pyproxy import set_stdlib_mode
+            set_stdlib_mode(True)
+
         module_interpreter = Interpreter()
-        
-        # Evaluate the module
         try:
             module_interpreter.evaluate(module_ast)
         except Exception as e:
+            err_line = getattr(e, 'line', 0)
+            err_col = getattr(e, 'column', 0)
             raise RuntimeErrorLyric(
-                f"Error executing module '{module_name}': {e}",
-                node.line,
-                node.column
+                f"Error in module '{module_name}' ({module_name}.ly line {err_line}): {e}",
+                err_line, err_col
             )
-        
-        # Import functions, classes, and module-level variables from the module
-        # However, functions need to retain access to their module's global scope
-        
+        finally:
+            if is_stdlib:
+                set_stdlib_mode(False)
+
+        return module_interpreter
+
+    def _make_module_namespace(self, module_name, module_interpreter):
+        """Create a LyricModuleNamespace from a module interpreter's state."""
+        functions_with_scope = {}
+        for name, func in module_interpreter.functions.items():
+            func_with_scope = func.copy()
+            func_with_scope['module_scope'] = module_interpreter.global_scope
+            functions_with_scope[name] = func_with_scope
+        scope_vars = {
+            name: val
+            for name, val in module_interpreter.global_scope.items()
+            if not callable(val)
+        }
+        return LyricModuleNamespace(
+            module_name,
+            functions_with_scope,
+            dict(module_interpreter.classes),
+            scope_vars
+        )
+
+    def _evaluate_import_statement(self, node: ImportNode) -> None:
+        """Evaluate an import statement for Lyric modules.
+
+        Supports simple imports (import mymod) and dotted imports (import lyric.math).
+        Reserved names (lyric, lyrical, ly) resolve only from the stdlib lib/ directory.
+        """
+        import os
+
+        module_name = node.module_name
+        parts = module_name.split('.')
+
+        # Depth cap for dotted imports
+        if len(parts) > 8:
+            raise RuntimeErrorLyric(
+                f"ImportError: import depth exceeds maximum of 8 levels: '{module_name}'",
+                node.line, node.column
+            )
+
+        # Stdlib lib directory (relative to this file: lyric/lib/)
+        lib_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib')
+
+        # 'ly' namespace reserved for future use — hard block
+        base_name = parts[0]
+        if base_name == 'ly':
+            raise RuntimeErrorLyric(
+                f"ImportError: '{module_name}' is a reserved module name for the Lyric standard library. "
+                f"Please choose a different name for your module.",
+                node.line, node.column
+            )
+
+        # Reserved stdlib prefixes (resolve from lib/ only)
+        RESERVED_PREFIXES = {'lyric', 'lyrical'}
+        is_reserved = base_name in RESERVED_PREFIXES
+
+        # Convert dotted name to file path: lyric.math -> lyric/math
+        module_path = module_name.replace('.', os.sep)
+        leaf_name = parts[-1]
+
+        # Resolve the leaf module file
+        if is_reserved:
+            # Reserved names resolve ONLY from stdlib lib directory
+            base_dir = lib_dir
+            module_file = self._find_module_file(base_dir, module_path, leaf_name)
+            if module_file is None:
+                raise RuntimeErrorLyric(
+                    f"ImportError: Module '{module_name}' is not available in the current version "
+                    f"of the Lyric standard library.",
+                    node.line, node.column
+                )
+        else:
+            # Non-reserved: search user paths
+            search_paths = [os.getcwd()]
+            if self.source_file:
+                source_dir = os.path.dirname(os.path.abspath(self.source_file))
+                if source_dir not in search_paths:
+                    search_paths.append(source_dir)
+            lyric_path = os.environ.get('LYRIC_PATH', '')
+            if lyric_path:
+                search_paths.extend(lyric_path.split(os.pathsep))
+
+            module_file = None
+            base_dir = None
+            for sp in search_paths:
+                module_file = self._find_module_file(sp, module_path, leaf_name)
+                if module_file:
+                    base_dir = sp
+                    break
+
+            if module_file is None:
+                raise RuntimeErrorLyric(
+                    f"ModuleNotFoundError: No module named '{module_name}'. "
+                    f"Searched in: {', '.join(search_paths)}",
+                    node.line, node.column
+                )
+
+        # Load and evaluate the leaf module
+        module_interpreter = self._load_module_file(module_file, module_name, node, is_stdlib=is_reserved)
+
         if node.symbols:
-            # Selective import: import module; symbol1, symbol2
+            # Selective import: import lyric.math; sin, cos
+            # Pull symbols from the leaf module only
             for symbol_name, alias in node.symbols:
-                # Check if it's a function
                 if symbol_name in module_interpreter.functions:
                     func = module_interpreter.functions[symbol_name]
                     func_with_scope = func.copy()
                     func_with_scope['module_scope'] = module_interpreter.global_scope
-                    
-                    # Use alias if provided, otherwise use original name
                     target_name = alias if alias else symbol_name
                     self.functions[target_name] = func_with_scope
-                
-                # Check if it's a class
+
                 elif symbol_name in module_interpreter.classes:
                     cls = module_interpreter.classes[symbol_name]
-                    
-                    # Classes are imported into the classes dict
-                    # Aliases are not supported for classes - user should use var alias = ClassName()
                     if alias:
                         raise RuntimeErrorLyric(
                             f"ImportError: 'as' keyword is not supported for class imports. "
                             f"To create an alias for '{symbol_name}', use: var {alias} = {symbol_name}() after importing.",
-                            node.line,
-                            node.column
+                            node.line, node.column
                         )
-                    
                     self.classes[symbol_name] = cls
-                
-                # Check if it's a module-level variable
+
                 elif symbol_name in module_interpreter.global_scope:
                     value = module_interpreter.global_scope[symbol_name]
-                    
-                    # Use alias if provided, otherwise use original name
                     target_name = alias if alias else symbol_name
                     self.global_scope[target_name] = value
-                
-                # Symbol not found
+
                 else:
                     raise RuntimeErrorLyric(
                         f"ImportError: cannot import name '{symbol_name}' from module '{module_name}'. "
                         f"'{symbol_name}' is not defined in the module.",
-                        node.line,
-                        node.column
+                        node.line, node.column
                     )
         else:
-            # Import all functions, classes, and variables from the module
-            
-            # Import functions with their module scope
-            for name, func in module_interpreter.functions.items():
-                # Attach module scope to function so it can access module variables
-                func_with_scope = func.copy()
-                func_with_scope['module_scope'] = module_interpreter.global_scope
-                self.functions[name] = func_with_scope
-            
-            # Import classes
-            for name, cls in module_interpreter.classes.items():
-                self.classes[name] = cls
-            
-            # Import module-level variables
-            # We need to filter out built-in functions and only import user-defined variables
-            for name, value in module_interpreter.global_scope.items():
-                # Skip built-in functions (they are callables)
-                if not callable(value):
-                    self.global_scope[name] = value
-        
+            # Whole-module import
+            if len(parts) == 1:
+                # Simple import: import lyric -> bind as 'lyric'
+                namespace = self._make_module_namespace(module_name, module_interpreter)
+                self.global_scope[module_name] = namespace
+            else:
+                # Dotted import: import lyric.math -> build nested namespace chain
+                # accessible as lyric.math.func()
+                root_name = parts[0]
+
+                # Build or reuse root namespace
+                if root_name in self.global_scope and isinstance(self.global_scope[root_name], LyricModuleNamespace):
+                    root_ns = self.global_scope[root_name]
+                else:
+                    # Load root module file (e.g. lib/lyric/lyric.ly)
+                    root_file = self._find_module_file(base_dir, root_name, root_name)
+                    if root_file:
+                        root_interp = self._load_module_file(root_file, root_name, node, is_stdlib=is_reserved)
+                        root_ns = self._make_module_namespace(root_name, root_interp)
+                    else:
+                        root_ns = LyricModuleNamespace(root_name, {}, {}, {})
+                    self.global_scope[root_name] = root_ns
+
+                # Build intermediate namespaces (for 3+ level imports)
+                current_ns = root_ns
+                for i in range(1, len(parts) - 1):
+                    part = parts[i]
+                    if part in current_ns._scope and isinstance(current_ns._scope[part], LyricModuleNamespace):
+                        current_ns = current_ns._scope[part]
+                    else:
+                        inter_module_path = os.sep.join(parts[:i+1])
+                        inter_file = self._find_module_file(base_dir, inter_module_path, part)
+                        if inter_file:
+                            inter_interp = self._load_module_file(inter_file, '.'.join(parts[:i+1]), node, is_stdlib=is_reserved)
+                            inter_ns = self._make_module_namespace('.'.join(parts[:i+1]), inter_interp)
+                        else:
+                            inter_ns = LyricModuleNamespace('.'.join(parts[:i+1]), {}, {}, {})
+                        current_ns._scope[part] = inter_ns
+                        current_ns = inter_ns
+
+                # Attach leaf namespace
+                leaf_ns = self._make_module_namespace(module_name, module_interpreter)
+                current_ns._scope[parts[-1]] = leaf_ns
+
         return None
     
     def _evaluate_importpy_statement(self, node: ImportPyNode) -> None:
         """Evaluate an importpy statement."""
-        from lyric.pyproxy import PyModuleProxy
-        
-        # Create the module proxy and bind it to the global scope
+        from lyric.pyproxy import PyModuleProxy, PyCallableProxy
+
         proxy = PyModuleProxy(node.module_name)
-        self.global_scope[node.module_name] = proxy
-        
+
+        if node.names is not None:
+            # Selective import: importpy http.server; HTTPServer, SimpleHTTPRequestHandler
+            # Each named attribute is bound directly into scope, wrapped in
+            # PyCallableProxy so Lyric-to-Python arg conversion still happens.
+            for name in node.names:
+                try:
+                    attr = getattr(proxy, name)
+                except RuntimeErrorLyric:
+                    raise
+                except AttributeError:
+                    raise RuntimeErrorLyric(
+                        f"ImportError: cannot import '{name}' from '{node.module_name}'"
+                    )
+                # getattr(proxy) wraps plain functions in PyCallableProxy already;
+                # classes (types) come back raw — wrap those too so arg conversion works.
+                if callable(attr) and not isinstance(attr, PyCallableProxy):
+                    attr = PyCallableProxy(attr, f"{node.module_name}.{name}")
+                self.global_scope[name] = attr
+        else:
+            # Whole-module import: bind proxy to last dotted component.
+            #   importpy math          -> math
+            #   importpy http.server   -> server
+            #   importpy os.path       -> path
+            binding_name = node.module_name.split('.')[-1]
+            self.global_scope[binding_name] = proxy
+
         return None
     
     def _evaluate_file_op(self, node: FileOpNode) -> None:
@@ -2410,6 +2922,22 @@ class Interpreter:
         - exec("cmd") <- var: Pipe variable as stdin
         - exec("cmd") <- input -> output: Both redirections
         """
+        # Check if left side is a print statement redirected to file: print "text" ->> file
+        if isinstance(node.left, CallNode) and node.left.func_name == 'print':
+            args = [self._evaluate_expression(arg) for arg in node.left.args]
+            content = ' '.join(str(a) for a in args) + '\n'
+            right_val = self._evaluate_expression(node.right)
+            if not isinstance(right_val, DskObject):
+                raise RuntimeErrorLyric(
+                    f"File write operators ({node.operator}) require dsk type on right side, got {type(right_val).__name__}",
+                    node.line, node.column
+                )
+            if node.operator == '->>':
+                right_val.append(content)
+            elif node.operator == '->':
+                right_val.overwrite(content)
+            return None
+
         # Check if left side is an exec() call or exec chain for special I/O redirection handling
         if isinstance(node.left, CallNode) and node.left.func_name == 'exec':
             return self._evaluate_exec_with_io(node)
@@ -2514,11 +3042,14 @@ class Interpreter:
     
     def _evaluate_exec_with_io(self, node: FileOpNode) -> None:
         """Handle exec() calls with I/O redirection operators.
-        
-        Supports:
-        - exec("cmd") -> var: Capture stdout to variable
-        - exec("cmd") <- var: Pipe variable content as stdin  
-        - exec("cmd") <- input -> output: Both (requires chained parsing)
+
+        stderr is always merged with stdout (stderr=subprocess.STDOUT) so the
+        entirety of a command's output — both stdout and stderr — is considered
+        the output of the command in all of the following forms:
+
+        - exec("cmd") -> var: Capture stdout and stderr to variable
+        - exec("cmd") ->> file: Append stdout and stderr to dsk file
+        - exec("cmd") <- var: Pipe variable content as stdin (output to terminal)
         """
         import subprocess
         
@@ -2545,7 +3076,7 @@ class Interpreter:
         
         # Determine operation based on operator
         if node.operator == '->':
-            # exec("cmd") -> output: Capture stdout to variable
+            # exec("cmd") -> output: Capture stdout and stderr to variable
             capture_output = True
             if not isinstance(node.right, IdentifierNode):
                 raise RuntimeErrorLyric(
@@ -2578,12 +3109,14 @@ class Interpreter:
             output_target = right_val  # Store the file object directly
         
         # Execute the command
+        from lyric.runtime import get_shell_args
+        sh = get_shell_args(command)
         try:
             if stdin_data:
                 # When we have stdin data, use input= parameter directly
                 result = subprocess.run(
-                    command,
-                    shell=True,
+                    sh['args'],
+                    shell=sh['shell'],
                     stdout=subprocess.PIPE if capture_output else None,
                     stderr=subprocess.STDOUT,  # Always merge stderr to stdout
                     input=stdin_data,  # Pass stdin data directly as string
@@ -2592,8 +3125,8 @@ class Interpreter:
             else:
                 # No stdin data
                 result = subprocess.run(
-                    command,
-                    shell=True,
+                    sh['args'],
+                    shell=sh['shell'],
                     stdout=subprocess.PIPE if capture_output else None,
                     stderr=subprocess.STDOUT,
                     text=True
@@ -2624,12 +3157,16 @@ class Interpreter:
     
     def _evaluate_exec_chain(self, node: ExecChainNode) -> int:
         """Evaluate an exec chain with pipe operators (|, &&, ||).
-        
+
+        stderr is merged with stdout for every command in the chain
+        (stderr=subprocess.STDOUT), so the entirety of each command's output —
+        both stdout and stderr — is used as the data flowing through the chain.
+
         Behaviors:
-        - | (pipe): Pass output to next command, always continue
+        - | (pipe): Pass stdout+stderr to next command's stdin, always continue
         - && (and): Short-circuit on failure (non-zero exit code)
         - || (or): Short-circuit on success (zero exit code)
-        
+
         Returns: First non-zero exit code, or 0 if all succeed
         """
         import subprocess
@@ -2691,11 +3228,13 @@ class Interpreter:
                         )
                     
                     # Execute with optional input
+                    from lyric.runtime import get_shell_args
+                    sh = get_shell_args(command)
                     try:
                         if has_input and current_output:
                             result = subprocess.run(
-                                command,
-                                shell=True,
+                                sh['args'],
+                                shell=sh['shell'],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 input=current_output,
@@ -2703,13 +3242,13 @@ class Interpreter:
                             )
                         else:
                             result = subprocess.run(
-                                command,
-                                shell=True,
+                                sh['args'],
+                                shell=sh['shell'],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 text=True
                             )
-                        
+
                         exit_code = result.returncode
                         current_output = result.stdout if result.stdout else ""
                         
@@ -2832,11 +3371,13 @@ class Interpreter:
                 if element.func_name == 'exec':
                     command = self._evaluate_expression(element.args[0])
                     
+                    from lyric.runtime import get_shell_args
+                    sh = get_shell_args(command)
                     try:
                         if has_input and current_output:
                             result = subprocess.run(
-                                command,
-                                shell=True,
+                                sh['args'],
+                                shell=sh['shell'],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 input=current_output,
@@ -2844,13 +3385,13 @@ class Interpreter:
                             )
                         else:
                             result = subprocess.run(
-                                command,
-                                shell=True,
+                                sh['args'],
+                                shell=sh['shell'],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 text=True
                             )
-                        
+
                         exit_code = result.returncode
                         current_output = result.stdout if result.stdout else ""
                         

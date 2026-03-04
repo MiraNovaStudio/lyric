@@ -105,10 +105,11 @@ end
         finally:
             sys.stdout = old_stdout
 
-    def test_given_loop_colonless_syntax(self):
-        """Test that given loops work without colons."""
+    def test_for_loop_colonless_syntax(self):
+        """Test that for loops work without colons."""
         source = '''def main() {
-given i in range(3)
+int i
+for i in range(3)
 print("iteration")
 done
 }'''
@@ -216,10 +217,11 @@ end
         finally:
             sys.stdout = old_stdout
 
-    def test_given_loop_with_colon_works_without_warning(self):
-        """Test that given loops with colons work without deprecation warnings."""
+    def test_for_loop_with_colon_works_without_warning(self):
+        """Test that for loops with colons work without deprecation warnings."""
         source = '''def main() {
-given i in range(2):
+int i
+for i in range(2):
 print("iteration")
 done
 }'''

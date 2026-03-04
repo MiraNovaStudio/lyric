@@ -119,6 +119,7 @@ def main() {{
     myfile.close()
     
     print("Lines:", lines.len())
+    var line
     for line in lines
         print("  ", line)
     done
@@ -162,6 +163,7 @@ def main() {{
     arr lines = myfile.readlines()
     myfile.close()
     
+    var line
     for line in lines
         print(line)
     done

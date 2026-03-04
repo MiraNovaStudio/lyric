@@ -397,32 +397,41 @@ class TestConstructorErrorHandling:
     """Test error handling for constructor functionality."""
     
     def test_constructor_parameter_count_mismatch(self):
-        """Test constructor with wrong number of parameters."""
+        """Test constructor with fewer arguments — missing params get None (nullable)."""
         source = """
         class Person:
             var name
             var age
-            
+
             def Person(str name, int age) {
                 self.name = name
                 self.age = age
             }
         +++
-        
+
         def main() {
             # This should work
             person1 = Person("Alice", 30)
-            
-            # This should fail with wrong parameter count
+
+            # Missing age param gets None (nullable) — no type error
             person2 = Person("Bob")
+            print(person2.name)
+            print(person2.age)
         }
         """
-        
+
         ast = parse(source, interactive=True)
-        with pytest.raises(RuntimeErrorLyric) as exc_info:
+        import sys, io
+        captured = io.StringIO()
+        old_stdout = sys.stdout
+        sys.stdout = captured
+        try:
             evaluate(ast)
-        
-        assert "parameter" in str(exc_info.value).lower()
+        finally:
+            sys.stdout = old_stdout
+        lines = captured.getvalue().strip().split("\n")
+        assert lines[0] == "Bob"
+        assert lines[1] == "None"
     
     def test_constructor_type_mismatch(self):
         """Test constructor with type mismatch."""
@@ -503,6 +512,7 @@ class TestConstructorIntegration:
             }
             
             def count_to_max() {
+                int i
                 for i in range(self.max_count):
                     self.count = self.count + 1
                     print("Count:", self.count)

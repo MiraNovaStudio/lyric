@@ -37,6 +37,7 @@ class TestBreakKeyword:
         source = """
         def main() {
             var count = 0
+            int i
             for i in range(10):
                 count = count + 1
                 if i == 5:
@@ -59,6 +60,7 @@ class TestBreakKeyword:
         """Test break with print statements to verify early exit."""
         source = """
         def main() {
+            int i
             for i in range(10):
                 if i == 3:
                     break
@@ -93,7 +95,9 @@ class TestBreakKeyword:
         def main() {
             var outer_count = 0
             var inner_count = 0
-            
+            int i
+            int j
+
             for i in range(3):
                 outer_count = outer_count + 1
                 for j in range(5):
@@ -103,7 +107,7 @@ class TestBreakKeyword:
                     end
                 done
             done
-            
+
             return inner_count
         }
         """
@@ -159,6 +163,7 @@ class TestContinueKeyword:
         source = """
         def main() {
             var sum = 0
+            int i
             for i in range(10):
                 if i == 5:
                     continue
@@ -181,6 +186,7 @@ class TestContinueKeyword:
         """Test continue with print statements to verify skipping."""
         source = """
         def main() {
+            int i
             for i in range(6):
                 if i == 2:
                     continue
@@ -218,7 +224,9 @@ class TestContinueKeyword:
         source = """
         def main() {
             var total = 0
-            
+            int i
+            int j
+
             for i in range(3):
                 for j in range(5):
                     if j == 2:
@@ -227,7 +235,7 @@ class TestContinueKeyword:
                     total = total + 1
                 done
             done
-            
+
             return total
         }
         """
@@ -286,6 +294,7 @@ class TestBreakContinueTogether:
         source = """
         def main() {
             var sum = 0
+            int i
             for i in range(20):
                 if i == 15:
                     break
@@ -318,12 +327,14 @@ class TestBreakContinueTogether:
         source = """
         def main() {
             var result = 0
-            
+            int i
+            int j
+
             for i in range(5):
                 if i == 3:
                     break
                 end
-                
+
                 for j in range(5):
                     if j == 2:
                         continue
@@ -331,7 +342,7 @@ class TestBreakContinueTogether:
                     result = result + 1
                 done
             done
-            
+
             return result
         }
         """
@@ -355,6 +366,7 @@ class TestBreakContinueWithTryCatch:
         source = """
         def main() {
             var count = 0
+            int i
             for i in range(10):
                 try:
                     count = count + 1
@@ -381,6 +393,7 @@ class TestBreakContinueWithTryCatch:
         source = """
         def main() {
             var sum = 0
+            int i
             for i in range(10):
                 try:
                     if i == 5:
@@ -412,6 +425,7 @@ class TestBreakContinueEdgeCases:
         source = """
         def main() {
             var count = 0
+            int i
             for i in range(10):
                 count = count + 1
                 break
@@ -432,6 +446,7 @@ class TestBreakContinueEdgeCases:
         source = """
         def main() {
             var executed = 0
+            int i
             for i in range(5):
                 continue
                 executed = executed + 1
@@ -451,6 +466,7 @@ class TestBreakContinueEdgeCases:
         """Test break followed by return (break should be reached first)."""
         source = """
         def main() {
+            int i
             for i in range(10):
                 if i == 3:
                     break

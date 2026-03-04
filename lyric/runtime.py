@@ -73,6 +73,26 @@ def str_builtin(value: Any) -> str:
     return str(value)
 
 
+def tup_builtin(value: Any) -> Any:
+    """Built-in tup() — convert an arr or list to a TupObject (immutable tuple).
+
+    Examples
+    --------
+    tup([1, 2, 3])          # -> TupObject (1, 2, 3)
+    tup(["a", "b"])         # -> TupObject ("a", "b")
+    """
+    from lyric.interpreter import ArrObject, TupObject
+    if isinstance(value, TupObject):
+        return value
+    if isinstance(value, ArrObject):
+        return TupObject(list(value.elements))
+    if isinstance(value, (list, tuple)):
+        return TupObject(list(value))
+    raise RuntimeErrorLyric(
+        f"TypeError: tup() expects an arr or list, got {type(value).__name__}"
+    )
+
+
 def bin_builtin(value: Any) -> bool:
     """Built-in bin (boolean) conversion function.
     
@@ -271,12 +291,21 @@ def isinstance_builtin(obj: Any, class_or_type: Any) -> bool:
 
 def type_builtin(obj: Any) -> str:
     """Built-in type function returning the object's class name or Python type."""
+    # Import here to avoid circular imports
+    from lyric.interpreter import ArrObject, MapObject
+
     # Handle Lyric class instances
     if isinstance(obj, dict) and '__instance_class__' in obj:
         return obj['__instance_class__']
-    
+
+    # Handle Lyric container types
+    if isinstance(obj, ArrObject):
+        return "arr"
+    elif isinstance(obj, MapObject):
+        return "map"
+
     # Handle Python built-in types (check bool first since it's a subclass of int)
-    if isinstance(obj, bool):
+    elif isinstance(obj, bool):
         return "god"  # Return "god" for boolean types (honoring Kurt Gödel)
     elif isinstance(obj, int):
         return "int"
@@ -319,12 +348,14 @@ def values_builtin(obj: Any) -> list:
 
 # Global storage for command-line options
 _command_line_options = {}
+_command_line_raw_args = []
 
 
-def set_command_line_options(options: dict) -> None:
+def set_command_line_options(options: dict, raw_args: list = None) -> None:
     """Set the command-line options to be accessed by getopts()."""
-    global _command_line_options
+    global _command_line_options, _command_line_raw_args
     _command_line_options = options
+    _command_line_raw_args = raw_args if raw_args is not None else []
 
 
 def get_command_line_options() -> dict:
@@ -333,28 +364,57 @@ def get_command_line_options() -> dict:
     return _command_line_options
 
 
-def getopts_builtin(option_name: str) -> Any:
+def getopts_builtin(short_option, long_option) -> Any:
     """Built-in getopts function that retrieves command-line options.
-    
+
+    Always takes exactly two arguments:
+        getopts("v", "verbose")   — matches -v or --verbose
+        getopts(None, "verbose")  — long option only (--verbose)
+        getopts("v", None)        — short option only (-v)
+        getopts("f:", "file:")    — option expects a value (-f val or --file val)
+
+    A trailing colon ':' indicates the option expects a value argument,
+    supporting space-separated syntax: -f config.txt or --file config.txt
+
     Args:
-        option_name: Name of the option to retrieve (without dashes)
-        
+        short_option: Short option name (without dash), or None to skip.
+                      Append ':' to indicate the option expects a value.
+        long_option:  Long option name (without dashes), or None to skip.
+                      Append ':' to indicate the option expects a value.
+
     Returns:
-        - The option value if it was provided with a value (e.g., --file=myfile returns "myfile")
-        - True if the option was provided as a flag (e.g., -a or --verbose returns True)
+        - The option value if it was provided with a value
+        - True  if the option was provided as a flag
         - False if the option was not provided at all
     """
-    global _command_line_options
-    
-    if option_name in _command_line_options:
-        value = _command_line_options[option_name]
-        # If value is None, it means the flag was present without a value
-        if value is None:
+    global _command_line_options, _command_line_raw_args
+
+    # Check for ':' suffix indicating value-expected options
+    expects_value = False
+    if short_option is not None and short_option.endswith(':'):
+        short_option = short_option[:-1]
+        expects_value = True
+    if long_option is not None and long_option.endswith(':'):
+        long_option = long_option[:-1]
+        expects_value = True
+
+    # First check parsed options (handles = syntax: -f=value, --file=value)
+    for name in (short_option, long_option):
+        if name is not None and name in _command_line_options:
+            value = _command_line_options[name]
+            if value is not None:
+                return value
+            # Option was a flag (no = value) — if it expects a value,
+            # scan raw args for the next argument after the flag
+            if expects_value:
+                for i, arg in enumerate(_command_line_raw_args):
+                    if arg == f'-{short_option}' or arg == f'--{long_option}':
+                        if i + 1 < len(_command_line_raw_args):
+                            return _command_line_raw_args[i + 1]
+                return False
             return True
-        return value
-    else:
-        # Option was not provided
-        return False
+
+    return False
 
 
 def disk_builtin(filepath: str) -> Any:
@@ -391,27 +451,50 @@ def exit_builtin(code: int = 0) -> None:
     sys.exit(code)
 
 
+def get_shell_args(command):
+    """Build the correct subprocess args for the caller's shell.
+
+    On Windows, subprocess.run(shell=True) always uses cmd.exe.  When Lyric
+    is launched from Git Bash (or another Unix-like shell), the SHELL env var
+    points to that shell.  We detect this and return args that invoke bash
+    directly with ``-c``, so flags like ``mkdir -p`` work as the user expects.
+
+    Returns:
+        dict of keyword arguments to pass to subprocess.run().
+    """
+    import os, sys
+    if sys.platform == 'win32':
+        shell = os.environ.get('SHELL')
+        if shell and os.path.isfile(shell):
+            return {'args': [shell, '-c', command], 'shell': False}
+    return {'args': command, 'shell': True}
+
+
 def exec_builtin(command: str) -> int:
     """Built-in exec function that executes a shell command.
-    
+
+    stderr is merged with stdout (stderr=subprocess.STDOUT) so the entirety of
+    the command's output is captured together.
+
     Args:
         command: Shell command to execute
-        
+
     Returns:
         Exit code of the command (0 for success)
     """
     import subprocess
-    
+
     if not isinstance(command, str):
         from lyric.errors import RuntimeErrorLyric
         raise RuntimeErrorLyric(f"exec() expects a string command, got {type(command).__name__}")
-    
+
     try:
         # Execute command and capture output
         # stderr is redirected to stdout as per requirements
+        sh = get_shell_args(command)
         result = subprocess.run(
-            command,
-            shell=True,
+            sh['args'],
+            shell=sh['shell'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # Merge stderr into stdout
             text=True
@@ -446,6 +529,7 @@ def register_builtins(env: dict) -> None:
     env['int'] = int_builtin
     env['flt'] = flt_builtin
     env['str'] = str_builtin
+    env['tup'] = tup_builtin
     env['bin'] = bin_builtin
     env['god'] = god_builtin
     env['arr'] = arr_builtin

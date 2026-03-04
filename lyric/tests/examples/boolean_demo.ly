@@ -79,7 +79,7 @@ def main() {
     
     # Test range with comparisons
     print("\n=== Range with Comparisons ===")
-    given i in range(3)
+    for i in range(3)
         if i == 0
             print("First iteration")
         elif i == 1

@@ -456,7 +456,8 @@ print matrix[0][1]
         """def main() {\n    Test iterating over arr with for loop.\n}"""
         code = """
 arr numbers = [1, 2, 3]
-given item in numbers:
+var item
+for item in numbers:
     print item
 done
 """

@@ -21,6 +21,7 @@ def fetch(str url): {
     
     arr link_array = arr(links)
     print "Found " + str(link_array.len()) + " links:"
+    var link
     given link in links:
         print "  " + link[1] + " -> " + link[0]
     done

@@ -1,5 +1,5 @@
 # does_it_work.ly
-import mathlib
+import mathlib; Calculator, get_secret
 
 # ——— Python interop (importpy) ———
 importpy datetime
@@ -85,6 +85,7 @@ def main() {
 
     arr numbers = [10, 20, 30, 40, 50]
     int sum = 0
+    int num
     for num in numbers:
         sum = sum + num
     done
@@ -98,11 +99,12 @@ def main() {
 
     int result = add(5, 7)
     print result
-    Calculator calc = Calculator(10)
+    obj calc = Calculator(10)
     calc.add(5)
     print calc.value
     int hidden = get_secret()
     print hidden
         
+    # Test file i/o operator
     print("All constructs exercised. ✅")
 }

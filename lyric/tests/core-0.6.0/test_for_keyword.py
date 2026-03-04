@@ -35,6 +35,7 @@ class TestForKeyword:
         """Test that `for` keyword works for basic iteration."""
         source = """
         def main() {
+            int i
             for i in range(3):
                 print(i)
             done
@@ -62,6 +63,7 @@ class TestForKeyword:
         source = """
         def main() {
             var sum = 0
+            int i
             for i in range(5):
                 sum = sum + i
             done
@@ -81,6 +83,8 @@ class TestForKeyword:
         """Test nested `for` loops."""
         source = """
         def main() {
+            int i
+            int j
             for i in range(2):
                 for j in range(2):
                     print(i, j)
@@ -109,6 +113,7 @@ class TestForKeyword:
         """Test `for` keyword with conditional statements."""
         source = """
         def main() {
+            int i
             for i in range(5):
                 if i > 2:
                     print("greater")
@@ -134,43 +139,48 @@ class TestForKeyword:
         assert "greater" in output
         assert "smaller" in output
     
-    def test_for_and_given_are_equivalent(self):
-        """Test that `for` and `given` produce identical results."""
+    def test_for_is_iterator_given_is_while(self):
+        """Test that `for` is used for iteration and `given` is used for while-loops."""
+        # for...in is for iterator loops
         source_for = """
         def test_for() {
             var sum = 0
+            int i
             for i in range(5):
                 sum = sum + i
             done
             return sum
         }
         """
-        
+
+        # given is for while-style condition loops
         source_given = """
         def test_given() {
             var sum = 0
-            given i in range(5):
+            var i = 0
+            given i < 5:
                 sum = sum + i
+                i = i + 1
             done
             return sum
         }
         """
-        
-        # Test with `for`
+
+        # Test for...in iterator loop
         ast_for = parse(source_for)
         interpreter_for = Interpreter()
         interpreter_for.evaluate(ast_for)
         result_for = interpreter_for._call_function('test_for', [])
-        
-        # Test with `given`
+
+        # Test given while-loop
         ast_given = parse(source_given)
         interpreter_given = Interpreter()
         interpreter_given.evaluate(ast_given)
         result_given = interpreter_given._call_function('test_given', [])
-        
-        # Both should produce the same result
+
+        # Both should produce the same result (0+1+2+3+4 = 10)
         assert result_for == result_given
-        assert result_for == 10  # 0+1+2+3+4
+        assert result_for == 10
     
     def test_for_keyword_token_generation(self):
         """Test that `for` keyword generates GIVEN token."""
@@ -193,6 +203,7 @@ class TestForKeyword:
         # If not yet implemented, this test will be skipped
         source = """
         def main() {
+            int i
             for i in range(10):
                 if i == 5:
                     break
@@ -228,8 +239,9 @@ class TestForKeyword:
         def double(int n) {
             return n * 2
         }
-        
+
         def main() {
+            int i
             for i in range(3):
                 print(double(i))
             done

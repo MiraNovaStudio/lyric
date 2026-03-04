@@ -11,8 +11,7 @@ from lyric.parser import parse, Parser
 from lyric.lexer import tokenize
 from lyric.interpreter import evaluate, Interpreter
 from lyric.runtime import set_command_line_options
-
-__version__ = "0.8.4"
+from lyric import __version__
 
 
 def _parse_options(args):
@@ -42,10 +41,15 @@ def _parse_options(args):
                 # Flag without value: --verbose
                 option_name = arg[2:]
                 options[option_name] = None  # Flag present, no value
-        elif arg.startswith('-') and len(arg) == 2 and arg[1].isalpha():
-            # Short option (e.g., -a)
-            option_name = arg[1]
-            options[option_name] = None
+        elif arg.startswith('-') and len(arg) >= 2 and arg[1].isalpha():
+            # Short option (e.g., -a or multi-char -hc)
+            if '=' in arg:
+                option_name = arg[1:].split('=', 1)[0]
+                option_value = arg.split('=', 1)[1]
+                options[option_name] = option_value
+            else:
+                option_name = arg[1:]
+                options[option_name] = None
         else:
             # Not an option, it's a regular argument
             arguments.append(arg)
@@ -65,12 +69,30 @@ def main():
     
     if command == "--version":
         print(f"Lyric {__version__}")
+    elif command == "--blacklist":
+        from lyric.pyproxy import BLACKLISTED_MODULES
+        print("Importpy Blacklist — modules that cannot be imported even with --unsafe:")
+        print("(These rely on CPython bytecode, frames, object identity, or interpreter internals.)")
+        print()
+        for mod in sorted(BLACKLISTED_MODULES):
+            print(f"  {mod}")
+        sys.exit(0)
+    elif command == "--whitelist":
+        from lyric.pyproxy import WHITELISTED_MODULES
+        print("Importpy Whitelist — modules approved for importpy use in Lyric:")
+        print("(Use --unsafe to allow non-whitelisted, non-blacklisted modules.)")
+        print()
+        for mod in sorted(WHITELISTED_MODULES):
+            print(f"  {mod}")
+        sys.exit(0)
     elif command == "--help":
         print("Lyric Language Interpreter")
         print("")
         print("Usage:")
         print("  lyric --version                    Show version information")
         print("  lyric --help                       Show this help message")
+        print("  lyric --blacklist                  Print the importpy module blacklist")
+        print("  lyric --whitelist                  Print the importpy module whitelist")
         print("  lyric run <file.ly> [options] [args]  Run a Lyric source file with options and arguments")
         print("  lyric <file.ly> [options] [args]      Run a Lyric source file (shorthand)")
         print("  lyric -i [code]                   Interactive mode (REPL) or execute immediate code")
@@ -79,6 +101,8 @@ def main():
         print("  -a, -b, -c, etc.                  Short options (single character)")
         print("  --verbose, --debug, etc.          Long options (multiple characters)")
         print("  --file=myfile                     Long option with value")
+        print("  --unsafe                          Allow importpy of non-whitelisted modules")
+        print("                                    (blacklisted modules are still blocked)")
         print("")
         print("Arguments:")
         print("  Arguments are passed after options and available via main(argc, argv)")
@@ -115,20 +139,30 @@ def main():
         arguments = remaining[1:]  # Everything after the filename
         
         # Set command-line options for getopts()
-        set_command_line_options(options)
-        
+        set_command_line_options(options, sys.argv[2:])
+
+        # Activate unsafe importpy mode if --unsafe flag is present
+        if 'unsafe' in options:
+            from lyric.pyproxy import set_unsafe_mode
+            set_unsafe_mode(True)
+
         _execute_file(file_path, arguments)
     elif command.endswith('.ly'):
         # Treat as shorthand for "lyric run <file.ly>"
         # Parse options from remaining args
         options, remaining = _parse_options(sys.argv[2:])
-        
+
         file_path = command
         arguments = remaining  # All remaining args are arguments
-        
+
         # Set command-line options for getopts()
-        set_command_line_options(options)
-        
+        set_command_line_options(options, sys.argv[2:])
+
+        # Activate unsafe importpy mode if --unsafe flag is present
+        if 'unsafe' in options:
+            from lyric.pyproxy import set_unsafe_mode
+            set_unsafe_mode(True)
+
         _execute_file(file_path, arguments)
     else:
         print(f"Unknown command: {command}")
@@ -157,45 +191,65 @@ def _check_for_auto_help(source: str, file_path: str):
     
     options = get_command_line_options()
     
-    # Check if -h was passed
-    if 'h' not in options:
+    # Check if -h or --help was passed
+    if 'h' not in options and 'help' not in options:
         return False
-    
-    # Check if the program uses getopts("h") or getopts('h')
-    # Simple text search to see if program overrides -h
-    if 'getopts("h")' in source or "getopts('h')" in source:
-        # Program overrides -h, let it handle it
+
+    # Check if the program handles -h/--help itself via getopts.
+    # Matches getopts("h", ...) as the short arg, or getopts(..., "help") as the long arg.
+    import re
+    if re.search(r'''getopts\(\s*["']h["']''', source):
         return False
-    
+    if re.search(r''',\s*["']help["']''', source):
+        return False
+
     # Auto-generate help
     print(f"Usage: lyric {os.path.basename(file_path)} [options] [arguments]")
     print()
-    print("Auto-generated help (use -h in your program to override)")
+    print("Auto-generated help (use getopts(\"h\", \"help\") in your program to override)")
     print()
-    
-    # Scan for getopts calls to list available options
-    import re
-    getopts_pattern = r'getopts\(["\']([^"\']+)["\']\)'
-    matches = re.findall(getopts_pattern, source)
-    
-    if matches:
+
+    # Scan for getopts calls to list available options.
+    # getopts() always takes two args: getopts(short, long)
+    # Either arg can be None.
+    getopts_calls = re.findall(r'getopts\(([^)]+)\)', source)
+
+    options_found = []
+    for call_args in getopts_calls:
+        # Extract quoted strings and None tokens
+        parts = [p.strip() for p in call_args.split(',')]
+        short = None
+        long = None
+        if len(parts) >= 1:
+            m = re.search(r'''["']([^"']+)["']''', parts[0])
+            if m:
+                short = m.group(1)
+        if len(parts) >= 2:
+            m = re.search(r'''["']([^"']+)["']''', parts[1])
+            if m:
+                long = m.group(1)
+
+        if short and long:
+            options_found.append(f"  -{short}, --{long}")
+        elif short:
+            options_found.append(f"  -{short}")
+        elif long:
+            options_found.append(f"  --{long}")
+
+    if options_found:
         print("Available options:")
-        for opt in sorted(set(matches)):
-            if len(opt) == 1:
-                print(f"  -{opt}")
-            else:
-                print(f"  --{opt}")
+        for opt in sorted(set(options_found)):
+            print(opt)
     else:
         print("No options defined in this program.")
-    
+
     print()
     print("Arguments:")
-    # Check if main has argc/argv parameters
     if 'def main(int argc, arr argv)' in source or 'def main(argc, argv)' in source:
         print("  This program accepts command-line arguments via main(argc, argv)")
     else:
         print("  This program does not accept arguments")
-    
+
     return True
 
 
@@ -250,8 +304,11 @@ def _execute_file(file_path: str, arguments: list = None):
         if hasattr(e, 'line') and e.line > 0:
             print(f"Runtime error [line {e.line}]: {e.args[0] if e.args else str(e)}")
         else:
-            print(f"{e}")
+            print(f"Runtime error: {e}")
         sys.exit(1)
+    except KeyboardInterrupt:
+        print()
+        sys.exit(0)
     except Exception as e:
         print(f"Unexpected error: {e}")
         sys.exit(1)
@@ -266,11 +323,11 @@ def _execute_immediate(code: str):
         parser._interactive_mode = True  # Mark as interactive mode
         parser.is_top_level = False  # Disable top-level restrictions
         ast = parser.parse()
-        
+
         # Execute the code
         interpreter = Interpreter()
         interpreter.evaluate(ast)
-        
+
     except (LexError, ParseError, SyntaxErrorLyric) as e:
         if hasattr(e, 'line') and e.line > 0:
             print(f"Error [line {e.line}]: {e.args[0] if e.args else str(e)}")
@@ -281,7 +338,7 @@ def _execute_immediate(code: str):
         if hasattr(e, 'line') and e.line > 0:
             print(f"Runtime error [line {e.line}]: {e.args[0] if e.args else str(e)}")
         else:
-            print(f"{e}")
+            print(f"Runtime error: {e}")
         sys.exit(1)
     except Exception as e:
         print(f"Unexpected error: {e}")
@@ -361,7 +418,7 @@ def _start_repl():
                     if hasattr(e, 'line') and e.line > 0:
                         print(f"Runtime error [line {e.line}]: {e.args[0] if e.args else str(e)}")
                     else:
-                        print(f"{e}")
+                        print(f"Runtime error: {e}")
                 except Exception as e:
                     print(f"Unexpected error: {e}")
                     import traceback

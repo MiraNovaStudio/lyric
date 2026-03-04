@@ -139,6 +139,7 @@ print letters[2:]
         """def main() {\n    Test iterating over arr using for loop.\n}"""
         code = """
 arr colors = ["red", "green", "blue"]
+var color
 for color in colors:
     print color
 done
@@ -146,11 +147,12 @@ done
         result = self._run_code(code)
         # Should print red, green, blue
 
-    def test_arr_iteration_given_loop(self):
-        """def main() {\n    Test iterating over arr using given loop.\n}"""
+    def test_arr_iteration_for_loop_alternate(self):
+        """def main() {\n    Test iterating over arr using for loop with different data.\n}"""
         code = """
 arr numbers = [10, 20, 30]
-given num in numbers:
+var num
+for num in numbers:
     print num
 done
 """
@@ -209,6 +211,7 @@ arr mylist = "not a list"
         """def main() {\n    Test iterating over empty arr.\n}"""
         code = """
 arr empty = []
+var item
 for item in empty:
     print item
 done
@@ -230,6 +233,7 @@ print items.len()
         """def main() {\n    Test passing arr as function parameter.\n}"""
         code = """
 def process_list(arr data) {
+    var item
     for item in data:
         print item
     done
@@ -244,7 +248,7 @@ process_list(mydata)
     def test_arr_in_function_return(self):
         """def main() {\n    Test returning arr from function.\n}"""
         code = """
-arr def get_list() {
+arr get_list() {
     return [1, 2, 3]
 }
 

@@ -1,400 +1,127 @@
-# Lyric Language
+# Lyric
 
-Lyric is a lightweight interpreted programming language designed for simplicity, readability, and elegant syntax. This project is being developed from scratch to test our development processes and create a clean, educational programming language implementation.
+Lyric is a experimental interpreted programming language built in Python, designed for clarity and expressive syntax. Type declarations are optional and enforced at runtime — variables declared with a type (`int`, `str`, `flt`, etc.) are strongly checked on assignment, while `var` opts into dynamic typing. It is developed and maintained by **MiraNova Studios**.
 
-**Status**: Active Development - Version 0.7.4 (Pre-Alpha)
+**Current version:** 1.0.0 (Alpha)
+**Website:** [lyric-lang.org](https://lyric-lang.org)
 
-## Project Goals
+---
 
-This iteration of Lyric is being built from the ground up to:
-- Test and refine our development processes
-- Create a clean, minimal language implementation
-- Establish proper testing and documentation practices
-- Build a solid foundation for future language features
-
-## Current State
-
-The project has completed Sprint 1, Sprint 2, Sprint 3, Sprint 4, and Sprint 5 with:
-- ✅ Complete lexer implementation with tokenization
-- ✅ Recursive descent parser with AST generation
-- ✅ Interpreter with scope management and built-in functions
-- ✅ CLI interface for running Lyric programs
-- ✅ Comprehensive test suite (436 tests)
-- ✅ Class definitions and instantiation
-- ✅ Nested control flow (if/else, given/done)
-- ✅ Error reporting with line numbers
-- ✅ Built-in functions (print, input, int, float, str, range, len, isinstance, type)
-- ✅ List literals and None support
-- ✅ Typed variable declarations (int, str, flt, var)
-- ✅ Dictionary literals and indexing
-- ✅ Class constructors with init() methods
-- ✅ Exception handling (try/catch/finally)
-- ✅ Return statements and function parameters
-- ✅ Python interoperability with `importpy` statement
-- ✅ `pyobject` type system integration
-- ✅ Multi-variable declarations with mixed types (`var x, int y, str z`)
-- ✅ Dynamic typing with `var` keyword
-- ✅ AST position tracking for precise error reporting
-- ✅ Optional colon syntax across all core constructs
-- ✅ Native regular expression support with `rex` type and `/pattern/` literals
-- ✅ Boolean types (`god` and `bin`) with `true`/`false` literals
-- ✅ Enhanced CLI with `lyric run file.ly` and `lyric file.ly` commands
-- ✅ Global `lyric` command availability after `pip install`
-
-## How to Run
-
-Lyric programs use the `.ly` file extension and are executed through the command line interface:
+## Installation
 
 ```bash
-lyric run path_to_file.ly
-# or simply:
-lyric path_to_file.ly
+pip install lyric-lang
 ```
 
-For example:
+After installation the `lyric` command is available globally.
+
 ```bash
-lyric run lyric/tests/examples/hello.ly
-lyric run lyric/tests/examples/class_test.ly
+lyric run program.ly
+# or
+lyric program.ly
 ```
 
-### Example Programs
+Lyric programs use the `.ly` file extension. Shebang lines (`#!/usr/bin/env lyric`) are supported.
 
-**Hello World** (`lyric/tests/examples/hello.ly`):
-```lyric
-def main() {
-    print("Hello, Lyric!")
-}
-```
+---
 
-**Typed Variables** (`lyric/tests/examples/type_tests.ly`):
-```lyric
-# Type declarations with enforcement
-int age = 25
-str name = "Alice"
-flt pi = 3.14159
-var dynamic = "anything"
+## Architecture
 
-# Type enforcement prevents mismatches
-# int count = "hello"  # This would cause a type error
-
-print("Name:", name, "Age:", age, "PI:", pi)
-```
-
-**Lists and Dictionaries** (`lyric/tests/examples/list_dict_tests.ly`):
-```lyric
-# List literals and operations
-var numbers = [1, 2, 3, 4, 5]
-var fruits = ["apple", "banana", "cherry"]
-
-# Dictionary literals and access
-var person = {"name": "Alice", "age": 30, "city": "New York"}
-var settings = {"theme": "dark", "language": "en"}
-
-# Indexing and modification
-numbers[0] = 10
-person["age"] = 31
-
-print("First number:", numbers[0])
-print("Person name:", person["name"])
-print("List length:", len(numbers))
-```
-
-**Class with Constructor** (`lyric/tests/examples/class_init_tests.ly`):
-```lyric
-class Person:
-    def init(str name, int age) {
-        self.name = name
-        self.age = age
-        self.greeting = "Hello, I'm " + name
-    }
-    
-    def greet() {
-        print(self.greeting)
-        print("I am", self.age, "years old")
-    }
-+++
-
-def main() {
-    var person = Person("Alice", 30)
-    person.greet()
-    
-    # Access instance variables
-    print("Name:", person.name)
-    print("Age:", person.age)
-}
-```
-
-**Regular Expressions** (`lyric/tests/examples/regex_demo.ly`):
-```lyric
-# Regular expression literals with /pattern/ syntax
-rex email_pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-rex phone_pattern = /^\d{3}-\d{3}-\d{4}$/
-
-# Test email validation
-var email = "user@example.com"
-if email_pattern.match(email):
-    print("Valid email address")
-else:
-    print("Invalid email address")
-
-# Replace operations
-rex space_pattern = /\s+/
-var text = "hello    world   with   spaces"
-var cleaned = space_pattern.replace(text, " ")
-print(cleaned)  # prints "hello world with spaces"
-
-# Multiple replacements
-rex vowel_pattern = /[aeiou]/i
-var message = "Hello World"
-var result = vowel_pattern.replace(message, "*")
-print(result)  # prints "H*ll* W*rld"
-```
-
-**Boolean Types** (`lyric/tests/examples/boolean_demo.ly`):
-```lyric
-# God type (honoring Kurt Gödel)
-god is_valid = true
-god is_complete = false
-
-# Bin type (alternative boolean type)
-bin is_active = true
-bin is_pending = false
-
-# Both types work identically
-if is_valid and is_active:
-    print("Both conditions are true")
-
-# Type checking
-print(type(is_valid))  # prints "god"
-print(type(is_active)) # prints "bin"
-
-# Logical operations
-var result = is_valid or is_complete
-print(result)  # prints true
-
-# Comparisons
-var comparison = 5 > 3
-print(comparison)  # prints true
-print(type(comparison))  # prints "god"
-```
-
-**Python Interoperability** (`lyric/tests/examples/importpy_tests.ly`):
-```lyric
-# Import Python modules using importpy
-importpy math
-importpy datetime
-
-# Use Python functions and constants
-var result = math.sqrt(16)
-print(result)  # prints 4.0
-
-var pi = math.pi
-print(pi)      # prints 3.141592653589793
-
-# Access Python classes and methods
-var now = datetime.datetime.now()
-print(now.year)  # prints current year
-
-# Chained member access works
-var today = datetime.date.today()
-print(today)
-
-# Multiple modules
-importpy os
-var current_dir = os.getcwd()
-print(current_dir)
-
-# pyobject values work seamlessly with var type
-var math_obj = math
-var sqrt_func = math_obj.sqrt
-var result2 = sqrt_func(25)
-print(result2)  # prints 5.0
-```
-
-**Exception Handling** (`lyric/tests/examples/exception_tests.ly`):
-```lyric
-# Basic try/catch/finally
-try:
-    var result = 10 / 0
-    print("Result:", result)
-catch:
-    print("Division by zero caught!")
-finally:
-    print("Cleanup completed")
-fade
-
-# Exception handling in functions
-def safe_divide(int a, int b) {
-    try:
-        return a / b
-    catch:
-        print("Division failed, returning 0")
-        return 0
-    finally:
-        print("Division attempt completed")
-    fade
-}
-
-var result = safe_divide(10, 0)
-print("Safe result:", result)
-```
-
-**Complex Example** (combining all features):
-```lyric
-class BankAccount:
-    def init(str owner, flt initial_balance) {
-        self.owner = owner
-        self.balance = initial_balance
-        self.transactions = []
-    }
-    
-    def deposit(flt amount) {
-        self.balance = self.balance + amount
-        append(self.transactions, "Deposit: " + str(amount))
-    }
-    
-    def withdraw(flt amount) {
-        try:
-            if self.balance >= amount:
-                self.balance = self.balance - amount
-                append(self.transactions, "Withdrawal: " + str(amount))
-            else:
-                raise ValueErrorLyric
-        catch:
-            print("Insufficient funds!")
-        finally:
-            print("Transaction attempt completed")
-        end
-    }
-+++
-
-def main() {
-    var account = BankAccount("Alice", 1000.0)
-    account.deposit(500.0)
-    account.withdraw(200.0)
-    
-    print("Account owner:", account.owner)
-    print("Current balance:", account.balance)
-    print("Transaction count:", len(account.transactions))
-}
-```
-
-## How to Develop
-
-Development requires Python 3.8 or newer.
-
-### Basic Workflow
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd lyric
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install pytest flake8 setuptools
-   ```
-
-3. **Run tests** (once implemented)
-   ```bash
-   pytest tests/
-   ```
-
-4. **Check code formatting**
-   ```bash
-   flake8 lyric/ tests/
-   ```
-
-### Development Commands (Future)
-
-- `pytest` will run the comprehensive test suite
-- `flake8` enforces coding style and identifies potential issues
-- `python -m lyric.cli run examples/hello.ly` will run the interpreter directly
-
-## Planned Project Layout
+The interpreter is implemented as a classical pipeline: source text flows through the lexer, parser, and interpreter in sequence. All stages are implemented from scratch in pure Python with no parser-generator dependencies.
 
 ```
 lyric/
-├── lyric/                    # Main source code for the language
-│   ├── lexer.py             # Converts source code into tokens
-│   ├── parser.py            # Builds the abstract syntax tree
-│   ├── ast.py               # Defines node types for syntax trees
-│   ├── interpreter.py       # Executes parsed programs
-│   ├── runtime.py           # Provides built-in functions
-│   ├── errors.py            # Defines exceptions for lexing, parsing, and runtime
-│   └── cli.py               # Command line interface for running Lyric programs
-├── tests/                   # Contains automated test files and example programs
-│   ├── examples/            # Sample Lyric programs
-│   ├── test_lexer.py        # Lexer test suite
-│   ├── test_parser.py       # Parser test suite
-│   ├── test_interpreter.py  # Interpreter test suite
-│   └── test_cli_integration.py # CLI integration test suite
-├── examples/                # Additional example programs
-├── README.md                # Project overview and setup instructions
-├── CHANGELOG.md             # Version history and release notes
-└── pyproject.toml           # Build configuration and CLI entry point
+├── lexer.py          # Tokenizer — converts source text into a token stream
+├── parser.py         # Recursive descent parser — produces an AST
+├── ast_nodes.py      # AST node definitions
+├── interpreter.py    # Tree-walking interpreter with lexical scoping
+├── runtime.py        # Built-in functions and type coercions
+├── pyproxy.py        # Python interoperability layer (importpy bridge)
+├── errors.py         # Lexer, parser, and runtime error types
+└── cli.py            # Command-line interface
 ```
 
-## Dependencies
+### Lexer
 
-The following Python packages are required for development:
+The lexer performs single-pass tokenization with support for string literals (single and double quotes), regex literals (`/pattern/flags`), shebang lines, and inline comments (`#`). Tokens carry line and column positions used for error reporting.
 
-- **pytest** — for comprehensive testing of all language components
-- **flake8** — for linting and style checking
-- **setuptools** — for package building and CLI entry point configuration
+### Parser
 
-All dependencies can be installed with pip:
-```bash
-pip install pytest flake8 setuptools
-```
+The parser is a hand-written recursive descent parser that produces a typed AST. It handles operator precedence, optional colon syntax across all control structures, and both `given`/`done` and `for`/`end` loop forms. The parser enforces top-level restrictions (e.g. bare expressions outside functions are rejected).
+
+### Interpreter
+
+The interpreter walks the AST directly. Scope is managed via a linked chain of environment frames — each function call and block pushes a new frame, and variable resolution walks the chain outward. Class instances are represented as environment frames with a `self` reference. Method resolution follows the inheritance chain at dispatch time.
+
+### Type System
+
+Lyric uses optional type declarations enforced at runtime. Variables declared with a specific type are strongly checked on every assignment and function call; `var` disables enforcement for that binding. The core types are:
+
+| Type  | Description |
+|-------|-------------|
+| `int` | Integer |
+| `flt` | Float |
+| `str` | String |
+| `var` | Dynamic (no enforcement) |
+| `god` | Boolean (honoring Kurt Gödel) |
+| `bin` | Boolean (alternative form) |
+| `rex` | Regular expression literal (`/pattern/`) |
+| `arr` | Array (ordered collection) |
+| `map` | Dictionary / key-value map |
+| `obj` | Generic object reference |
+| `dsk` | Disk / file handle type |
+
+Type coercion is available via casting functions (`int()`, `str()`, `flt()`, etc.) and explicit cast operators. The `var` type opts out of enforcement for dynamic use cases.
+
+### Classes and Inheritance
+
+Classes are defined with `class Name(Parent):` syntax. Constructors use `init()`. Constructor chaining (`super`) and single inheritance are supported. Access control is enforced via naming conventions. Method resolution walks the inheritance chain.
+
+### Python Interoperability
+
+The `importpy` keyword loads any installed Python package through `pyproxy.py`, which wraps Python objects for use inside the Lyric runtime. Return values are translated back to Lyric types where possible. This layer is intentionally kept separate from native `import`, which resolves Lyric modules.
+
+### Error Reporting
+
+All errors (lexer, parser, runtime) carry source position information. Error messages include file name, line number, and a formatted excerpt of the offending line.
+
+---
 
 ## Language Features
 
-### Core Constructs (Implemented)
+- Typed variable declarations: `int x = 5`, `str name = "lyric"`, `var x = anything`
+- Functions with typed parameters: `def greet(str name, int age) { ... }`
+- Classes with `init()` constructors, inheritance, and access control
+- Control flow: `if`/`elif`/`else`, `given`/`done` and `for`/`end` loops, `break`/`continue`, `case`
+- Exception handling: `try`/`catch`/`finally`/`fade` with typed exception binding
+- Regular expressions as first-class values with `rex` type and `/pattern/` literals
+- `importpy` for Python library access; native `import` for Lyric modules
+- `exec()` with I/O redirection via file operators
+- `getopts` for CLI argument parsing within scripts
+- Dual print syntax, mixed quote strings, multi-variable declarations
 
-- **Functions**: `def name(params) { body }` with optional return statements ✅
-- **Conditionals**: `if condition: ... else: ... end` with nested support ✅
-- **Loops**: `given variable in iterable: ... done` or `given condition: ... done` ✅
-- **Classes**: `class Name: ... +++` with instantiation, methods, and member access ✅
-- **Variables**: Dynamic typing with `name = value` assignment ✅
-- **Typed Variables**: `int name = value`, `str name = value`, `flt name = value`, `var name = value` ✅
-- **Boolean Types**: `god name = true/false` and `bin name = true/false` (honoring Kurt Gödel) ✅
-- **Regular Expressions**: `rex name = /pattern/` with `.match()` and `.replace()` methods ✅
-- **Data Structures**: `[item1, item2, ...]` for lists and `{"key": value}` for dictionaries ✅
-- **Exception Handling**: `try: ... catch: ... finally: ... fade` with error propagation ✅
-- **Comments**: `# comment text` (full-line and inline comments) ✅
-- **Python Interoperability**: `importpy module` for seamless Python library access ✅
+See the [language specification](https://lyric-lang.org) for full syntax reference.
 
-### Built-in Functions (Implemented)
+---
 
-- `print(*args)` — Multi-argument printing ✅
-- `input(prompt?)` — Read from stdin with optional prompt ✅
-- `int(value)`, `float(value)`, `str(value)` — Type conversions ✅
-- `range(start?, stop, step?)` — Integer sequence generation ✅
-- `len(sequence)` — Length calculation for strings, lists, dictionaries ✅
-- `isinstance(obj, type)` — Type checking for classes and built-in types ✅
-- `type(obj)` — Get type name of objects ✅
-- `append(list, item)` — Add items to lists ✅
-- `keys(dict)` — Get dictionary keys ✅
-- `values(dict)` — Get dictionary values ✅
+## Module System
 
-### Planned Features (Future Sprints)
+Lyric supports two import mechanisms. Native Lyric modules (`import name`) are resolved by a `ModuleLoader` that searches the runtime module path and caches loaded modules. Python packages (`importpy name`) are loaded through the `pyproxy` bridge as a secondary mechanism. Resolution order is: native Lyric module → built-in standard library → Python bridge → `ModuleNotFoundError`.
 
-- **Modules**: Import/export system
-- **File I/O**: Enhanced file operations
-- **Advanced Type System**: Generic types and type inference
-- **Standard Library**: Extended built-in functions and utilities
+---
 
-## Development Process
+## Development
 
-This project follows a structured sprint-based development approach:
+Requires Python 3.8 or newer.
 
-1. **Sprint Planning**: Each sprint has defined tasks and goals
-2. **Implementation**: Code is developed incrementally with tests
-3. **Documentation**: Changes are documented in changelog entries
-4. **Version Control**: Structured commits with clear messages
-5. **Testing**: Comprehensive test coverage for all components
+```bash
+pip install pytest flake8 build twine
+pytest lyric/tests/
+```
+
+Tests are organized under `lyric/tests/` by version milestone (e.g. `core-0.8.0/`). Run the full suite with `pytest` from the project root.
+
+---
 
 ### Branching and Tagging Model
 
@@ -413,21 +140,6 @@ This keeps branches clean, tags meaningful, and the evolution from development t
 
 ## License and Credits
 
-The Lyric language is developed by **Michael (Aeonath)**, **ChatGPT**, and **Claude** as part of the **MiraNova Studios** initiative. This project represents a collaborative effort to create a clean, educational programming language implementation.
+Lyric is developed by **MiraNova Studios**.
 
-Licensed under the GNU General Public License v3 or later.
-
-## Contributing
-
-This project is currently in active development following a structured sprint methodology. The development process emphasizes:
-
-- Clean, readable code
-- Comprehensive testing
-- Clear documentation
-- Incremental feature development
-- Proper version control practices
-
-There is currenlty no GitHub project page for this project but one is
-planned in the future.
-
-
+Licensed under the MiraNova Software License. See the `LICENSE` file for full terms. All rights reserved — © 2025–2026 MiraNova Studios.

@@ -164,7 +164,8 @@ def test_range_comparison():
     """Test range(3) and numeric comparisons (A6)."""
     source = """
 def main() {
-    given i in range(3):
+    int i
+    for i in range(3):
         if i == 0:
             print("First iteration")
         elif i == 1:
