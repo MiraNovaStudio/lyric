@@ -347,7 +347,7 @@ def _execute_immediate(code: str):
 
 def _start_repl():
     """Start interactive REPL (Read-Eval-Print Loop)."""
-    print("Lyric 0.7.0 Interactive Mode")
+    print("Lyric {} Interactive Mode".format(__version__))
     print('Type "exit()" or press Ctrl+C to quit')
     print()
     
