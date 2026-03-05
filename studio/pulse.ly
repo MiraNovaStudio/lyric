@@ -1,12 +1,13 @@
+#!/usr/bin/env lyric
 # create a pulse journal post
-importpy datetime; datetime
+
+import lyric
 
 def main(int argc, arr argv) {
     str journal_dir = "content/journal"
     exec("mkdir -p " + journal_dir)
 
-    var now = datetime.now()
-    str timestamp = now.strftime("%Y%m%d_%H%M")
+    str timestamp = lyric.datefmt("%Y%m%d_%H%M")
 
     god help = getopts("h", "help")
     god list = getopts("l", "list")
@@ -32,9 +33,7 @@ def main(int argc, arr argv) {
         exit(1)
     end
 
-    str date_cmd_output
-    exec("date +%Y-%m-%d") -> date_cmd_output
-    str date = date_cmd_output.rstrip('\n')
+    arr date = lyric.date()
 
     str journal_file_name = journal_dir + "/" + timestamp + "_POST.md"
 
@@ -42,7 +41,7 @@ def main(int argc, arr argv) {
 
     print "---" ->> journal_file
     print "title: " + (argv[0]) ->> journal_file
-    print "date: " + date ->> journal_file
+    print "date: " + date[0] ->> journal_file
     print "---" ->> journal_file
     print "" ->> journal_file
     print "Write your journal entry here..." ->> journal_file

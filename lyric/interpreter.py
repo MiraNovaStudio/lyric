@@ -2436,9 +2436,17 @@ class Interpreter:
         
         try:
             if node.op == '+':
-                # Handle string concatenation with mixed types
+                # String concatenation requires both operands to be strings
+                if isinstance(left, str) and isinstance(right, str):
+                    return left + right
                 if isinstance(left, str) or isinstance(right, str):
-                    return str(left) + str(right)
+                    left_type = type(left).__name__
+                    right_type = type(right).__name__
+                    raise TypeErrorLyric(
+                        f"Cannot concatenate {left_type} and {right_type} with '+'. "
+                        f"Use str() to convert non-string operands explicitly (e.g., \"hello\" + str(5)).",
+                        node.line, node.column
+                    )
                 return left + right
             elif node.op == '-':
                 return left - right

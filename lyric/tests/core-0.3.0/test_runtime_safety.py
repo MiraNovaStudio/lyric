@@ -8,7 +8,7 @@ import pytest
 from lyric.lexer import tokenize
 from lyric.parser import Parser
 from lyric.interpreter import Interpreter
-from lyric.errors import RuntimeErrorLyric, ParseError, SyntaxErrorLyric
+from lyric.errors import RuntimeErrorLyric, ParseError, SyntaxErrorLyric, TypeErrorLyric
 
 
 class TestRuntimeSafety:
@@ -170,11 +170,13 @@ class TestRuntimeSafety:
         parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
-        
-        # String concatenation now works with mixed types
-        interpreter.evaluate(ast)
-        result = interpreter.global_scope['result']
-        assert result == "5hello"  # String concatenation result
+
+        # Mixing int and str with '+' should raise a TypeError
+        with pytest.raises(TypeErrorLyric) as exc_info:
+            interpreter.evaluate(ast)
+        error_msg = str(exc_info.value)
+        assert "Cannot concatenate" in error_msg
+        assert "str()" in error_msg
     
     def test_enhanced_range_function_error_messages(self):
         """Test enhanced error messages for range function."""
@@ -197,8 +199,7 @@ class TestRuntimeSafety:
         assert "Usage: range(stop) or range(start, stop) or range(start, stop, step)" in error_msg
     
     def test_enhanced_unknown_operator_messages(self):
-        """Test enhanced error messages for unknown operators."""
-        # Use a valid syntax that will cause a runtime error for unknown operator
+        """Test that mixed-type '+' raises a clear TypeError."""
         source = """
         var result = 5 + "hello"
         """
@@ -208,11 +209,12 @@ class TestRuntimeSafety:
         parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
-        
-        # String concatenation now works with mixed types
-        interpreter.evaluate(ast)
-        result = interpreter.global_scope['result']
-        assert result == "5hello"  # String concatenation result
+
+        # Mixing int and str with '+' should raise a TypeError
+        with pytest.raises(TypeErrorLyric) as exc_info:
+            interpreter.evaluate(ast)
+        error_msg = str(exc_info.value)
+        assert "Cannot concatenate" in error_msg
     
     def test_enhanced_unknown_unary_operator_messages(self):
         """Test enhanced error messages for unknown unary operators."""
@@ -431,8 +433,11 @@ class TestRuntimeSafety:
         parser.is_top_level = False
         ast = parser.parse()
         interpreter = Interpreter()
-        
-        # String concatenation now works with mixed types
-        interpreter.evaluate(ast)
-        result = interpreter.global_scope['result']
-        assert result == "5hello"  # String concatenation result
+
+        # Mixing int and str with '+' should raise a TypeErrorLyric, not a raw Python error
+        with pytest.raises(TypeErrorLyric) as exc_info:
+            interpreter.evaluate(ast)
+        error_msg = str(exc_info.value)
+        assert "Cannot concatenate" in error_msg
+        # Ensure the error message is user-friendly, not a Python stack trace
+        assert "Traceback" not in error_msg

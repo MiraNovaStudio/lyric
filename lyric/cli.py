@@ -345,25 +345,69 @@ def _execute_immediate(code: str):
         sys.exit(1)
 
 
+def _repl_input(prompt):
+    """Read a line of input with immediate Ctrl+D (EOF) support.
+
+    On Windows, input() uses the C runtime fgets() which only recognises
+    Ctrl+Z as EOF.  Ctrl+D is passed through as a literal \\x04 character
+    and requires Enter before the line is returned.  To match Unix behaviour
+    (and Python 3.14's own REPL which uses ReadConsoleInput), we read raw
+    keystrokes via msvcrt so Ctrl+D triggers EOFError immediately.
+    """
+    if sys.platform == 'win32':
+        try:
+            import msvcrt
+            sys.stdout.write(prompt)
+            sys.stdout.flush()
+            chars = []
+            while True:
+                ch = msvcrt.getwch()
+                if ch == '\x04':          # Ctrl+D
+                    sys.stdout.write('\n')
+                    raise EOFError()
+                if ch == '\x03':          # Ctrl+C
+                    sys.stdout.write('\n')
+                    raise KeyboardInterrupt()
+                if ch in ('\r', '\n'):    # Enter
+                    sys.stdout.write('\n')
+                    return ''.join(chars)
+                if ch == '\x08':          # Backspace
+                    if chars:
+                        chars.pop()
+                        sys.stdout.write('\x08 \x08')
+                        sys.stdout.flush()
+                    continue
+                if ch in ('\x00', '\xe0'):  # Special key prefix (arrows, etc.)
+                    msvcrt.getwch()         # consume the scancode
+                    continue
+                chars.append(ch)
+                sys.stdout.write(ch)
+                sys.stdout.flush()
+        except ImportError:
+            pass
+    # Unix / fallback
+    return input(prompt)
+
+
 def _start_repl():
     """Start interactive REPL (Read-Eval-Print Loop)."""
     print("Lyric {} Interactive Mode".format(__version__))
-    print('Type "exit()" or press Ctrl+C to quit')
+    print('Type "exit()" or press Ctrl+D to quit')
     print()
-    
+
     interpreter = Interpreter()
     buffer = []
     in_block = False
     block_depth = 0
-    
+
     while True:
         try:
             # Show prompt
             if in_block:
-                line = input("...   ")
+                line = _repl_input("...   ")
             else:
-                line = input("lyric> ")
-            
+                line = _repl_input("lyric> ")
+
             # Check for exit command
             if line.strip() in ('exit()', 'quit()', 'exit', 'quit'):
                 print("Goodbye!")
@@ -378,7 +422,10 @@ def _start_repl():
                 # Check for block start
                 if any(keyword in stripped for keyword in ['def ', 'class ', 'if ', 'given ', 'for ', 'try:', 'catch:', 'finally:']):
                     in_block = True
-                    block_depth += 1
+                    # Only count keyword toward depth for end-style blocks;
+                    # brace-style blocks track depth via { } below
+                    if '{' not in line:
+                        block_depth += 1
                 
                 # Track braces and block ends
                 if '{' in line:
