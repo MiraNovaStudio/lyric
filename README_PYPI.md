@@ -1,41 +1,41 @@
 # Lyric
 
-Lyric is an experimental interpreted programming language developed by MiraNova Studios.
-It is currently in an early phase and intended for experimentation and exploration.
+Lyric is an experimental interpreted programming language built in Python, featuring strict type declarations, classes with inheritance, Python interoperability, and exception handling.
 
-## Status
+**Version:** 1.0.1 (Alpha)  
+**Docs:** [lyric-lang.org](https://lyric-lang.org)  
+**Source:** [GitHub](https://github.com/aeonath/lyric-lang)  
 
-Lyric is available for early use.
-This release focuses on the core language and runtime.
-
-- No native standard library yet
-- Python interop is available via `importpy`
-- APIs and behavior may evolve as the project matures
-
-## Installation
+## Install
 
 ```bash
 pip install lyric-lang
 ```
 
-## Getting Started
-
-Visit [lyric-lang.org](https://lyric-lang.org) for documentation, language reference, and examples.
+Requires Python 3.10+.
 
 ## Usage
 
 ```bash
-lyric program.ly
+lyric program.ly          # run a file
+lyric -i                  # interactive REPL
+lyric -i "print 2 + 2"    # evaluate an expression
+```
+
+## Example
+
+Hello world program.
+
+```lyric
+def main() {
+    print "Hello World"
+}
 ```
 
 ## Bugs
 
-Bug reports and feedback are welcome.  Please report bugs to [MiraNova Studios](https://miranova.studio/contact.html).
+Bug reports and feedback are welcome at [GitHub Issues](https://github.com/aeonath/lyric-lang/issues).
 
 ---
 
-© 2025–2026 MiraNova Studios. All rights reserved.
-
-Licensed under the MiraNova Software License.
-
-Source availability and licensing may be revisited in the future.
+Copyright (c) 2026 MiraNova Studios. Licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html).
