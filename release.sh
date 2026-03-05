@@ -9,6 +9,7 @@
 # Example:
 #   ./release.sh 0.1.0
 # ============================================================
+export TWINE_PASSWORD=$(cat ~/.pypi-token)
 
 set -e  # exit immediately on error
 PROJECT="lyric-lang"
