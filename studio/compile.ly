@@ -1,7 +1,7 @@
 def main() {
 
-	str test = "test 1234"
+	test = "test 1234"
 
-	print test.len()
+    test = 5
 
 }

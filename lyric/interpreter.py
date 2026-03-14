@@ -2467,13 +2467,7 @@ class Interpreter:
         try:
             if op == '+':
                 if isinstance(left, str) or isinstance(right, str):
-                    left_type = type(left).__name__
-                    right_type = type(right).__name__
-                    raise TypeErrorLyric(
-                        f"Cannot concatenate {left_type} and {right_type} with '+'. "
-                        f"Use str() to convert non-string operands explicitly (e.g., \"hello\" + str(5)).",
-                        node.line, node.column
-                    )
+                    return str(left) + str(right)
                 return left + right
             if op == '-':
                 return left - right
