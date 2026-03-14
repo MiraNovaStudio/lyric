@@ -11,6 +11,7 @@ cp -vf README.md ${DEST_DIR}
 cp -vf LICENSE ${DEST_DIR}
 cp -vf GPL3 ${DEST_DIR}
 cp -vf pyproject.toml ${DEST_DIR}
+cp -vf build-deb.sh ${DEST_DIR}
 
 mkdir -p ${DEST_DIR}/lyric-snapshot
 
