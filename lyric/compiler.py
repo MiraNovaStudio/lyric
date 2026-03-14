@@ -738,6 +738,21 @@ class LyricCompiler:
         # Handle dotted function names (obj.method())
         if '.' in node.func_name:
             parts = node.func_name.split('.')
+            method_name = parts[-1]
+
+            # .len() → len(obj) — Lyric uses .len() but Python uses len()
+            if method_name == 'len' and len(node.args) == 0:
+                obj = self._name(parts[0], pyast.Load(), line, col)
+                for part in parts[1:-1]:
+                    obj = self._loc(pyast.Attribute(
+                        value=obj, attr=part, ctx=pyast.Load()
+                    ), line, col)
+                return self._loc(pyast.Call(
+                    func=self._name('len', pyast.Load(), line, col),
+                    args=[obj],
+                    keywords=[]
+                ), line, col)
+
             func = self._name(parts[0], pyast.Load(), line, col)
             for part in parts[1:]:
                 func = self._loc(pyast.Attribute(
