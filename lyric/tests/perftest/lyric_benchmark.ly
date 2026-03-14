@@ -30,10 +30,13 @@ def main() {
     # Simple function calls
     print("Performing simple function calls...")
     var total = 0
-    var i = 1
+    var i
+    var result1
+    var result2
+    i = 1
     given i <= 10000000:
-        var result1 = simple_add(i, i)
-        var result2 = simple_multiply(i, 2)
+        result1 = simple_add(i, i)
+        result2 = simple_multiply(i, 2)
         total = total + result1 + result2
         i = i + 1
     done
@@ -47,7 +50,7 @@ def main() {
     # Simple arithmetic loop
     print("Performing arithmetic operations...")
     var arithmetic_sum = 0
-    var i = 1
+    i = 1
     given i <= 10000000:
         arithmetic_sum = arithmetic_sum + i * i
         i = i + 1

@@ -977,8 +977,9 @@ def main() {
 import lyric
 def main() {
     god all_ok = true
+    var r
     for var i in range(20)
-        var r = lyric.randflt()
+        r = lyric.randflt()
         if r < 0.0 or r >= 1.0
             all_ok = false
         end
@@ -1031,8 +1032,9 @@ def main() {
 import lyric
 def main() {
     god all_ok = true
+    var r
     for var i in range(20)
-        var r = lyric.randint(1, 3)
+        r = lyric.randint(1, 3)
         if r < 1 or r > 3
             all_ok = false
         end

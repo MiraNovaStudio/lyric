@@ -1,7 +1,8 @@
 def main() {
 
-	test = "test 1234"
+    str test = "test 1234"
+    str test = "hihihi"
 
-    test = 5
+    print test
 
 }

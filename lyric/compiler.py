@@ -45,6 +45,9 @@ class LyricCompiler:
         self._current_function_return_type = None  # Track return type for current function
         self._module_level_vars = set()  # Variables declared at module level
         self._in_function = False  # Whether we're inside a function body
+        self._type_registry = {}  # var_name -> declared_type (for typed reassignment checks)
+        self._declared_vars = set()  # All declared variable names (var, int, str, etc.)
+        self._in_class_body = False  # Whether we're compiling class member declarations
 
     def compile(self, program: ProgramNode):
         """Compile a ProgramNode to a Python code object.
@@ -220,6 +223,16 @@ class LyricCompiler:
         prev_in_function = self._in_function
         self._in_function = True
 
+        # Save and extend declared vars scope — params are implicitly declared
+        prev_declared = self._declared_vars.copy()
+        prev_type_reg = self._type_registry.copy()
+        self._declared_vars.update(node.params)
+        # Register typed params
+        if node.param_types:
+            for param, ptype in zip(node.params, node.param_types):
+                if ptype and ptype != 'var':
+                    self._type_registry[param] = ptype
+
         # Compile the actual function body
         inner_body = []
 
@@ -280,6 +293,8 @@ class LyricCompiler:
         # Restore previous context
         self._current_function_return_type = prev_return_type
         self._in_function = prev_in_function
+        self._declared_vars = prev_declared
+        self._type_registry = prev_type_reg
 
         func_def = self._loc(pyast.FunctionDef(
             name=node.name,
@@ -350,7 +365,25 @@ class LyricCompiler:
                 value=target, attr=parts[-1], ctx=pyast.Store()
             ), node.line, node.column)
         else:
+            # Check variable is declared (compile-time enforcement)
+            # Class body assignments are exempt (class member declarations)
+            if node.name not in self._declared_vars and not self._in_class_body:
+                from lyric.errors import RuntimeErrorLyric
+                raise RuntimeErrorLyric(
+                    f"Variable '{node.name}' is not declared. "
+                    f"Use a type keyword to declare it first "
+                    f"(e.g., var {node.name} = ..., int {node.name} = ..., str {node.name} = ...).",
+                    node.line, node.column
+                )
             target = self._name(node.name, pyast.Store(), node.line, node.column)
+
+            # Enforce type on reassignment for typed variables (not var)
+            if node.name in self._type_registry:
+                value = self._rt_call('typed_assign', [
+                    self._const(self._type_registry[node.name], node.line, node.column),
+                    value,
+                    self._const(node.name, node.line, node.column),
+                ], node.line, node.column)
 
         return self._loc(pyast.Assign(
             targets=[target],
@@ -363,10 +396,25 @@ class LyricCompiler:
         For 'var' type: no checking, just assign.
         For typed declarations: wrap value in _rt.typed_assign() for enforcement.
         """
+        # Reject redeclaration of an already-declared variable
+        # Class body declarations are exempt (each class has its own namespace)
+        if node.name in self._declared_vars and not self._in_class_body:
+            from lyric.errors import RuntimeErrorLyric
+            raise RuntimeErrorLyric(
+                f"Variable '{node.name}' is already declared. "
+                f"Use '{node.name} = ...' to reassign, not a new declaration.",
+                node.line, node.column
+            )
+
         value = self._compile_expression(node.expr)
         target = self._name(node.name, pyast.Store(), node.line, node.column)
 
+        # Track all declared variables
+        self._declared_vars.add(node.name)
+
         if node.type_name != 'var':
+            # Register type for reassignment enforcement
+            self._type_registry[node.name] = node.type_name
             # Typed declaration: x = _rt.typed_assign('int', expr, 'x')
             value = self._rt_call('typed_assign', [
                 self._const(node.type_name, node.line, node.column),
@@ -389,6 +437,9 @@ class LyricCompiler:
         # Map Lyric types to default value constructors
         _TYPED_DEFAULTS = {'arr': 'make_arr', 'map': 'make_map', 'tup': 'make_tup'}
         for type_name, var_name in node.declarations:
+            self._declared_vars.add(var_name)
+            if type_name != 'var':
+                self._type_registry[var_name] = type_name
             target = self._name(var_name, pyast.Store(), node.line, node.column)
             if type_name in _TYPED_DEFAULTS:
                 # Initialize with empty typed container
@@ -473,8 +524,12 @@ class LyricCompiler:
         if node.loop_kind == 'iterator':
             # given var i in range(10): ... done
             # -> for i in range(10): ...
+            iter_var = node.iterator_var or 'item'
+            self._declared_vars.add(iter_var)
+            if node.iterator_type and node.iterator_type != 'var':
+                self._type_registry[iter_var] = node.iterator_type
             target = self._name(
-                node.iterator_var or 'item',
+                iter_var,
                 pyast.Store(), node.line, node.column
             )
             iter_expr = self._compile_expression(node.condition_or_iter)
@@ -513,7 +568,9 @@ class LyricCompiler:
         """
         if node.names:
             # Selective import: importpy math; sin, cos
-            # _rt.lyric_importpy_selective('math', ['sin', 'cos'], globals())
+            # Names are implicitly declared
+            for n in node.names:
+                self._declared_vars.add(n)
             names_list = self._loc(pyast.List(
                 elts=[self._const(n, node.line, node.column) for n in node.names],
                 ctx=pyast.Load()
@@ -530,6 +587,7 @@ class LyricCompiler:
         else:
             # Whole-module import
             binding_name = node.module_name.split('.')[-1]
+            self._declared_vars.add(binding_name)
             return self._loc(pyast.Assign(
                 targets=[self._name(binding_name, pyast.Store(), node.line, node.column)],
                 value=self._rt_call('lyric_importpy', [
@@ -550,7 +608,9 @@ class LyricCompiler:
         ))
 
         if node.symbols:
-            # Selective import
+            # Selective import — register imported names as declared
+            for name, alias in node.symbols:
+                self._declared_vars.add(alias or name)
             symbols_list = self._loc(pyast.List(
                 elts=[
                     self._loc(pyast.Tuple(
@@ -573,7 +633,8 @@ class LyricCompiler:
                 ], node.line, node.column)
             ), node.line, node.column)
         else:
-            # Whole-module import
+            # Whole-module import — register module name as declared
+            self._declared_vars.add(node.module_name.split('.')[-1])
             return self._loc(pyast.Expr(
                 value=self._rt_call('lyric_import', [
                     self._const(node.module_name, node.line, node.column),
@@ -797,6 +858,7 @@ class LyricCompiler:
         class_body = []
 
         # Compile member variables (TypeDeclarationNode, AssignNode, MultiDeclarationNode)
+        self._in_class_body = True
         for member in node.members_statements:
             if isinstance(member, (AssignNode, TypeDeclarationNode)):
                 compiled = self._compile_statement(member)
@@ -813,6 +875,8 @@ class LyricCompiler:
             elif isinstance(member, FunctionNode):
                 # Compile method — add 'self' as first parameter
                 class_body.append(self._compile_method(member))
+
+        self._in_class_body = False
 
         # Compile constructor if present
         has_constructor = False
@@ -857,6 +921,11 @@ class LyricCompiler:
         Return statements with values are converted to bare returns since
         Python's __init__ cannot return a value.
         """
+        # Save and extend declared vars scope — params are implicitly declared
+        prev_declared = self._declared_vars.copy()
+        prev_type_reg = self._type_registry.copy()
+        self._declared_vars.update(node.params)
+
         body = []
 
         for stmt in node.body_statements:
@@ -885,6 +954,10 @@ class LyricCompiler:
             defaults=[]
         )
 
+        # Restore scope
+        self._declared_vars = prev_declared
+        self._type_registry = prev_type_reg
+
         return self._loc(pyast.FunctionDef(
             name='__init__',
             args=args,
@@ -895,6 +968,11 @@ class LyricCompiler:
 
     def _compile_method(self, node: FunctionNode):
         """Compile a Lyric method to a Python method with 'self' param."""
+        # Save and extend declared vars scope — params are implicitly declared
+        prev_declared = self._declared_vars.copy()
+        prev_type_reg = self._type_registry.copy()
+        self._declared_vars.update(node.params)
+
         body = []
         for stmt in node.body_statements:
             compiled = self._compile_statement(stmt)
@@ -917,6 +995,10 @@ class LyricCompiler:
             kwarg=None,
             defaults=[]
         )
+
+        # Restore scope
+        self._declared_vars = prev_declared
+        self._type_registry = prev_type_reg
 
         return self._loc(pyast.FunctionDef(
             name=node.name,
@@ -995,6 +1077,9 @@ class LyricCompiler:
             else:
                 exc_type = self._name('Exception')
 
+            # Catch variable is implicitly declared
+            if clause.variable_name:
+                self._declared_vars.add(clause.variable_name)
             handlers.append(self._loc(pyast.ExceptHandler(
                 type=exc_type,
                 name=clause.variable_name,

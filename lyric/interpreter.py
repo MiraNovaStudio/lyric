@@ -1475,6 +1475,13 @@ class Interpreter:
         # Fast path for simple variable assignment (no dots or brackets)
         name = node.name
         if '.' not in name and '[' not in name:
+            # Variable must be declared before reassignment
+            if not self._is_variable_declared_in_any_scope(name) and name not in self.global_scope:
+                raise RuntimeErrorLyric(
+                    f"Variable '{name}' is not declared. "
+                    f"Use a type keyword to declare it first (e.g., var {name} = ..., int {name} = ..., str {name} = ...).",
+                    node.line, node.column
+                )
             # Check type enforcement if variable was declared with a strict type
             var_type = self._get_variable_type(name)
             if var_type and var_type != 'var' and not self._is_type_compatible(var_type, value):
@@ -1625,7 +1632,18 @@ class Interpreter:
     
     def _evaluate_type_declaration(self, node: TypeDeclarationNode) -> Any:
         """Evaluate a type declaration statement."""
-        # Redeclaration in the same scope acts as reassignment
+        # Reject redeclaration in the current scope
+        # Check innermost type scope (scope_stack top), or variable_types for top-level
+        if self.scope_stack:
+            is_redecl = node.name in self.scope_stack[-1]
+        else:
+            is_redecl = node.name in self.variable_types
+        if is_redecl:
+            raise RuntimeErrorLyric(
+                f"Variable '{node.name}' is already declared. "
+                f"Use '{node.name} = ...' to reassign, not a new declaration.",
+                node.line, node.column
+            )
 
         value = self._evaluate_expression(node.expr)
         type_name = node.type_name
