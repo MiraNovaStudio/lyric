@@ -1,0 +1,31 @@
+Lyric source → Lexer → Parser → Lyric AST → Compiler → Python AST → CPython bytecode → Execution
+
+  ┌───────────────────┬─────────────────┬────────────────┐
+  │       Mode        │ Small Benchmark │ Full Benchmark │
+  ├───────────────────┼─────────────────┼────────────────┤
+  │ Lyric Compiled    │ 0.055s          │ 5.1s           │
+  ├───────────────────┼─────────────────┼────────────────┤
+  │ Lyric Interpreted │ 0.73s           │ ~74s           │
+  ├───────────────────┼─────────────────┼────────────────┤
+  │ Python native     │ 0.04s           │ 1.2s           │
+  ├───────────────────┼─────────────────┼────────────────┤
+  │ Ruby native       │ 0.04s           │ 1.1s           │
+  ├───────────────────┼─────────────────┼────────────────┤
+  │ Perl native       │ 0.10s           │ 3.0s           │
+  └───────────────────┴─────────────────┴────────────────┘
+
+
+  1. Lyric source → lexer.py tokenizes it
+  2. Lexer → parser.py builds the Lyric AST
+  3. Parser → compiler.py walks the Lyric AST and emits Python ast module nodes
+  4. Compiler → Python's built-in compile() turns the Python AST into CPython bytecode
+  5. CPython bytecode → exec() runs it on CPython's C-level VM
+
+  The only thing worth noting is that step 4 and 5 are handled by CPython itself — we hand it a Python AST and CPython
+  does the rest. We never touch raw bytecode directly. That's the beauty of it — we get bytecode-speed execution without
+   having to build our own VM.
+
+
+- lyric program.ly → compiled (default)                                                                               
+- lyric program.ly --interpret → tree-walking interpreter
+- lyric -i → REPL (interpreted, unchanged) 

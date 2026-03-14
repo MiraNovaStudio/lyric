@@ -31,9 +31,14 @@ pip install pytest flake8 build twine
 
 ## Shell Environment
 
-**Running Git Bash, NOT PowerShell.** Always use Unix/Bash syntax:
+**Running Bash on Debian Linux.** Always use Unix/Bash syntax:
 - `date +"%Y%m%d/%H%M"` — NOT `Get-Date -Format "yyyyMMdd/HHmm"`
 - Forward slashes in paths, Unix shell constructs throughout
+- **Always activate the Python virtual environment before running tests or lyric:**
+  ```bash
+  source /home/aeonath/.venv/bin/activate
+  ```
+  This must be done at the start of every session. The venv contains the editable install of lyric and all dev dependencies (pytest, etc.).
 
 ## Critical Workflow Rules
 
@@ -47,7 +52,7 @@ pip install pytest flake8 build twine
 
 4. **Do not modify `/studio/`.** That directory contains example scripts and must remain unchanged unless explicitly instructed otherwise. Development work goes in `/lyric/`, `/lyric/tests/`, and `/lyric/tests/examples/` only.
 
-5. **Work on `dev-core` branch.** Verify this before starting any task.
+5. **Work on `dev-core` branch by default.** The user may switch to a different branch for specific work (e.g., feature branches, experiments). Do not switch branches without explicit instruction — just work on whatever branch is currently checked out.
 
 6. **Git Commit Toggle = YES, Deployment Toggle = NO.** Lyric is interpreted; there are no build or deployment steps.
 

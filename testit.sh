@@ -19,19 +19,19 @@ if [ "$VERBOSE" = true ]; then
     
     # Run tests from the lyric package with detailed output
     echo "Running lexer tests..."
-    python -m pytest lyric/tests/test_lexer.py -v
+    python3 -m pytest lyric/tests/test_lexer.py -v
     
     echo ""
     echo "Running parser tests..."
-    python -m pytest lyric/tests/test_parser.py -v
+    python3 -m pytest lyric/tests/test_parser.py -v
     
     echo ""
     echo "Running interpreter tests..."
-    python -m pytest lyric/tests/test_interpreter.py -v
+    python3 -m pytest lyric/tests/test_interpreter.py -v
     
     echo ""
     echo "Running all lyric tests..."
-    python -m pytest lyric/tests/ -v
+    python3 -m pytest lyric/tests/ -v
     
     echo ""
     echo "================================================"
@@ -42,7 +42,10 @@ else
     
     # Run all tests and capture summary
     echo "Running all tests..."
-    python -m pytest lyric/tests/ --tb=short -q
+    python3 -m pytest lyric/tests/ --tb=short -q
+
+    echo "Running tests lyric interpreted"
+    LYRIC_INTERPRET=1 python3 -m pytest lyric/tests/ --tb=short -q
     
     echo ""
     echo "=================================="
@@ -52,6 +55,10 @@ else
 fi
 
 
-lyric run ./studio/does_it_work.ly
+echo "Testing core constructs..."
+lyric run ./studio/does_it_work.ly 
+
+echo "Testing core contructs interpreted..."
+lyric run ./studio/does_it_work.ly --interpret
 
 
