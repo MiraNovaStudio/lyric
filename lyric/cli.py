@@ -101,6 +101,7 @@ def main():
         print("  -a, -b, -c, etc.                  Short options (single character)")
         print("  --verbose, --debug, etc.          Long options (multiple characters)")
         print("  --file=myfile                     Long option with value")
+        print("  --compile                         Use bytecode compiler (transpiler) for faster execution")
         print("  --unsafe                          Allow importpy of non-whitelisted modules")
         print("                                    (blacklisted modules are still blocked)")
         print("")
@@ -146,7 +147,7 @@ def main():
             from lyric.pyproxy import set_unsafe_mode
             set_unsafe_mode(True)
 
-        _execute_file(file_path, arguments)
+        _execute_file(file_path, arguments, use_compiler='compile' in options)
     elif command.endswith('.ly'):
         # Treat as shorthand for "lyric run <file.ly>"
         # Parse options from remaining args
@@ -163,7 +164,7 @@ def main():
             from lyric.pyproxy import set_unsafe_mode
             set_unsafe_mode(True)
 
-        _execute_file(file_path, arguments)
+        _execute_file(file_path, arguments, use_compiler='compile' in options)
     else:
         print(f"Unknown command: {command}")
         print("Usage: lyric --version | lyric --help | lyric run <file.ly> | lyric <file.ly> | lyric -i [code]")
@@ -253,45 +254,51 @@ def _check_for_auto_help(source: str, file_path: str):
     return True
 
 
-def _execute_file(file_path: str, arguments: list = None):
+def _execute_file(file_path: str, arguments: list = None, use_compiler: bool = False):
     """Execute a Lyric source file.
-    
+
     Args:
         file_path: Path to the .ly file to execute
         arguments: List of command-line arguments to pass to main()
+        use_compiler: If True, use the bytecode compiler instead of tree-walking
     """
     if arguments is None:
         arguments = []
-    
+
     # Check if file exists
     if not os.path.exists(file_path):
         print(f"Error: File '{file_path}' not found")
         sys.exit(1)
-    
+
     # Check file extension
     if not file_path.endswith('.ly'):
         print(f"Error: File '{file_path}' is not a .ly file")
         sys.exit(1)
-    
+
     try:
         # Read and execute the file
         with open(file_path, 'r', encoding='utf-8') as f:
             source = f.read()
-        
+
         # Remove shebang line if present
         source = _remove_shebang(source)
-        
+
         # Check for auto-help before parsing/executing
         if _check_for_auto_help(source, file_path):
             sys.exit(0)
-        
+
         # Parse the source code
-        ast = parse(source)
-        
-        # Execute the program, passing the source file path for relative imports
-        # and the command-line arguments
-        evaluate(ast, source_file=file_path, cli_args=arguments)
-        
+        lyric_ast = parse(source)
+
+        if use_compiler:
+            # Compiled path: transpile to Python AST and execute
+            from lyric.compiler import compile_lyric
+            code_obj = compile_lyric(lyric_ast, source_file=file_path)
+            exec(code_obj, {'__name__': '__main__', '__file__': file_path})
+        else:
+            # Interpreted path: tree-walking interpreter
+            evaluate(lyric_ast, source_file=file_path, cli_args=arguments)
+
     except (LexError, ParseError, SyntaxErrorLyric) as e:
         # Syntax/lexical errors
         if hasattr(e, 'line') and e.line > 0:
