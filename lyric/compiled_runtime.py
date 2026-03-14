@@ -404,6 +404,140 @@ class _ModuleNamespace:
         return f"<lyric module '{self._name}'>"
 
 
+# ── Phase 6: Try/Catch/Raise, File Ops, Exec Chains ──────────────
+
+def get_exception_type(type_name):
+    """Map a Lyric exception type name to a Python exception class."""
+    from lyric.errors import EXCEPTION_TYPES
+    cls = EXCEPTION_TYPES.get(type_name)
+    if cls is not None:
+        return cls
+    # Fallback: try standard Python exception names
+    builtin_map = {
+        'RuntimeError': RuntimeError,
+        'IndexError': IndexError,
+        'TypeError': TypeError,
+        'ValueError': ValueError,
+        'KeyError': KeyError,
+        'AttributeError': AttributeError,
+        'ZeroDivisionError': ZeroDivisionError,
+    }
+    return builtin_map.get(type_name, Exception)
+
+
+def lyric_raise(exception_name):
+    """Raise a Lyric exception by name."""
+    from lyric.errors import RuntimeErrorLyric
+    exception_map = {
+        'RuntimeErrorLyric': RuntimeErrorLyric,
+        'RuntimeError': RuntimeErrorLyric,
+        'IndexError': IndexError,
+        'TypeError': TypeError,
+        'ValueError': ValueError,
+        'KeyError': KeyError,
+        'AttributeError': AttributeError,
+        'ZeroDivisionError': ZeroDivisionError,
+    }
+    exc_class = exception_map.get(exception_name)
+    if exc_class:
+        raise exc_class(f"{exception_name} raised")
+    else:
+        raise RuntimeErrorLyric(f"Unknown exception type: {exception_name}")
+
+
+def lyric_file_op(operator, left, right):
+    """Execute a file I/O operation: ->, ->>, <-."""
+    from lyric.interpreter import DskObject
+    from lyric.errors import RuntimeErrorLyric
+
+    if operator in ('->', '->>'):
+        # Write/append: left is data, right is DskObject
+        if isinstance(right, DskObject):
+            if isinstance(left, str):
+                content = left
+            else:
+                content = str(left) + '\n'
+            if operator == '->>':
+                right.append(content)
+            else:
+                right.overwrite(content)
+        else:
+            raise RuntimeErrorLyric(
+                f"File write operators ({operator}) require dsk type on right side, "
+                f"got {type(right).__name__}"
+            )
+    elif operator == '<-':
+        # Read: left is target variable (handled differently at compile level)
+        if isinstance(right, DskObject):
+            return right.read()
+        else:
+            raise RuntimeErrorLyric(
+                f"File read operator (<-) requires dsk type on right side, "
+                f"got {type(right).__name__}"
+            )
+
+
+def lyric_exec_chain(elements, operators, input_source, output_target):
+    """Execute an exec chain with pipe operators (|, &&, ||).
+
+    This is a simplified version for compiled code — delegates to the
+    interpreter's exec chain logic for full semantics.
+    """
+    import subprocess
+    from lyric.runtime import get_shell_args
+    from lyric.errors import RuntimeErrorLyric
+
+    current_output = ""
+    if input_source is not None:
+        current_output = str(input_source)
+
+    exit_code = 0
+    for i, element in enumerate(elements):
+        # Check short-circuit from previous operator
+        if i > 0:
+            prev_op = operators[i - 1]
+            if prev_op == '&&' and exit_code != 0:
+                break
+            elif prev_op == '||' and exit_code == 0:
+                break
+
+        has_input = i > 0 or input_source is not None
+
+        # element should be the result of evaluating the exec() CallNode
+        # In compiled code, exec('cmd') returns the exit code via exec_builtin
+        # But in chains, we need to capture output — so we handle it here
+        if isinstance(element, str):
+            # Direct command string
+            command = element
+        elif isinstance(element, int):
+            # Already-executed exec() returned an exit code
+            exit_code = element
+            continue
+        else:
+            # Fallback
+            command = str(element)
+
+        try:
+            sh = get_shell_args(command)
+            result = subprocess.run(
+                sh['args'],
+                shell=sh['shell'],
+                input=current_output if has_input else None,
+                capture_output=True,
+                text=True
+            )
+            exit_code = result.returncode
+            current_output = result.stdout + result.stderr
+        except Exception as e:
+            raise RuntimeErrorLyric(f"exec() error in chain: {e}")
+
+    # Handle output target
+    if output_target is not None:
+        return current_output
+
+    return exit_code
+
+
 def register_builtins(env):
     """Register all Lyric builtin functions into the compiled code's namespace."""
     from lyric.runtime import (

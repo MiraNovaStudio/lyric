@@ -47,7 +47,7 @@ pip install pytest flake8 build twine
 
 4. **Do not modify `/studio/`.** That directory contains example scripts and must remain unchanged unless explicitly instructed otherwise. Development work goes in `/lyric/`, `/lyric/tests/`, and `/lyric/tests/examples/` only.
 
-5. **Work on `dev-core` branch.** Verify this before starting any task.
+5. **Work on `dev-core` branch by default.** The user may switch to a different branch for specific work (e.g., feature branches, experiments). Do not switch branches without explicit instruction — just work on whatever branch is currently checked out.
 
 6. **Git Commit Toggle = YES, Deployment Toggle = NO.** Lyric is interpreted; there are no build or deployment steps.
 

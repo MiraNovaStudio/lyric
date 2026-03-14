@@ -21,6 +21,8 @@ constructor mapping, method compilation with self, extends/super support.
 
 Phase 5: Module system and imports — Lyric module imports, selective importpy,
 module namespace binding, stdlib loading.
+
+Phase 6: I/O, exec, and edge cases — file operators, exec chains, try/catch/raise.
 """
 
 import ast as pyast
@@ -30,6 +32,7 @@ from lyric.ast_nodes import (
     BreakNode, ContinueNode, TypeDeclarationNode, MultiDeclarationNode,
     ImportPyNode, ImportNode, ListLiteralNode, DictLiteralNode, TupleLiteralNode,
     IndexNode, SliceNode, RexNode, ClassNode,
+    TryNode, CatchClauseNode, RaiseNode, FileOpNode, ExecChainNode,
 )
 
 
@@ -161,6 +164,14 @@ class LyricCompiler:
             return self._compile_importpy(node)
         elif isinstance(node, ImportNode):
             return self._compile_import(node)
+        elif isinstance(node, TryNode):
+            return self._compile_try(node)
+        elif isinstance(node, RaiseNode):
+            return self._compile_raise(node)
+        elif isinstance(node, FileOpNode):
+            return self._compile_file_op(node)
+        elif isinstance(node, ExecChainNode):
+            return self._compile_exec_chain(node)
         elif isinstance(node, CallNode):
             return self._loc(pyast.Expr(
                 value=self._compile_call(node)
@@ -520,6 +531,9 @@ class LyricCompiler:
         elif isinstance(node, RexNode):
             return self._compile_rex(node)
 
+        elif isinstance(node, ExecChainNode):
+            return self._compile_exec_chain_expr(node)
+
         else:
             raise NotImplementedError(
                 f"Compiler does not yet support expression node: "
@@ -829,6 +843,105 @@ class LyricCompiler:
             ctx=pyast.Load()
         ), node.line, node.column)
 
+
+    # ── Phase 6: Try/Catch/Raise, File Ops, Exec Chains ───────────
+
+    def _compile_try(self, node: TryNode):
+        """Compile try/catch/finally to Python try/except/finally."""
+        # Compile try body
+        try_body = self._compile_body(node.try_body)
+
+        # Compile catch clauses -> except handlers
+        handlers = []
+        for clause in node.catch_clauses:
+            handler_body = self._compile_body(clause.body)
+
+            # Map Lyric exception type to Python exception type
+            if clause.exception_type:
+                exc_type = self._rt_call('get_exception_type', [
+                    self._const(clause.exception_type, clause.line, clause.column)
+                ], clause.line, clause.column)
+            else:
+                exc_type = self._name('Exception')
+
+            handlers.append(self._loc(pyast.ExceptHandler(
+                type=exc_type,
+                name=clause.variable_name,
+                body=handler_body
+            ), clause.line, clause.column))
+
+        # Compile finally body
+        finalbody = []
+        if node.finally_body:
+            finalbody = self._compile_body(node.finally_body)
+
+        return self._loc(pyast.Try(
+            body=try_body,
+            handlers=handlers,
+            orelse=[],
+            finalbody=finalbody
+        ), node.line, node.column)
+
+    def _compile_raise(self, node: RaiseNode):
+        """Compile raise statement to Python raise."""
+        # _rt.lyric_raise('ExceptionName')
+        return self._loc(pyast.Expr(
+            value=self._rt_call('lyric_raise', [
+                self._const(node.exception_name, node.line, node.column)
+            ], node.line, node.column)
+        ), node.line, node.column)
+
+    def _compile_file_op(self, node: FileOpNode):
+        """Compile file operators (->>, ->, <-) to runtime calls."""
+        left = self._compile_expression(node.left)
+        right = self._compile_expression(node.right)
+
+        return self._loc(pyast.Expr(
+            value=self._rt_call('lyric_file_op', [
+                self._const(node.operator, node.line, node.column),
+                left,
+                right,
+            ], node.line, node.column)
+        ), node.line, node.column)
+
+    def _compile_exec_chain(self, node: ExecChainNode):
+        """Compile exec chain as a statement."""
+        return self._loc(pyast.Expr(
+            value=self._compile_exec_chain_expr(node)
+        ), getattr(node, 'line', 0), getattr(node, 'column', 0))
+
+    def _compile_exec_chain_expr(self, node: ExecChainNode):
+        """Compile exec chain (exec('a') | exec('b')) to runtime call."""
+        # Build list of element expressions
+        elements = self._loc(pyast.List(
+            elts=[self._compile_expression(e) for e in node.elements],
+            ctx=pyast.Load()
+        ))
+        operators = self._loc(pyast.List(
+            elts=[self._const(op) for op in node.operators],
+            ctx=pyast.Load()
+        ))
+
+        # Optional input/output
+        input_src = self._compile_expression(node.input_source) if node.input_source else self._const(None)
+        output_tgt = self._compile_expression(node.output_target) if node.output_target else self._const(None)
+
+        return self._rt_call('lyric_exec_chain', [
+            elements, operators, input_src, output_tgt
+        ], node.line, node.column)
+
+    def _compile_body(self, stmts):
+        """Helper to compile a list of statements into a body."""
+        body = []
+        for stmt in stmts:
+            compiled = self._compile_statement(stmt)
+            if isinstance(compiled, list):
+                body.extend(compiled)
+            else:
+                body.append(compiled)
+        if not body:
+            body = [self._loc(pyast.Pass())]
+        return body
 
     # ── Phase 3: Regex Literal ────────────────────────────────────
 
