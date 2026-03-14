@@ -1,8 +1,8 @@
 # Lyric
 
-Lyric is an experimental programming language built in Python, designed for clarity and expressive syntax. As of version 1.1.0, Lyric is a **transpiler** — source code is compiled to Python AST and executed as CPython bytecode, delivering near-native Python performance. Type declarations are optional and enforced at runtime — variables declared with a type (`int`, `str`, `flt`, etc.) are strongly checked on assignment, while `var` opts into dynamic typing. It is developed and maintained by **MiraNova Studios**.
+Lyric is an experimental programming language built in Python, designed for clarity and expressive syntax. As of version 1.1.1, Lyric is a **transpiler** — source code is compiled to Python AST and executed as CPython bytecode, delivering near-native Python performance. Type declarations are optional and enforced at runtime — variables declared with a type (`int`, `str`, `flt`, etc.) are strongly checked on assignment, while `var` opts into dynamic typing. It is developed and maintained by **MiraNova Studios**.
 
-**Current version:** 1.1.0 (Alpha)
+**Current version:** 1.1.1 (Alpha)
 **Website:** [lyric-lang.org](https://lyric-lang.org)
 
 ## Install
@@ -13,7 +13,7 @@ From PyPI:
 
 ```bash
 ./build-deb.sh
-sudo dpkg -i dist/lyric-lang_1.1.0_all.deb
+sudo dpkg -i dist/lyric-lang_1.1.1_all.deb
 ```
 
 ### pip
@@ -226,7 +226,7 @@ Lyric supports two import mechanisms. Native Lyric modules (`import name`) are r
 
 ## Performance
 
-Lyric 1.1.0 compiles to CPython bytecode, achieving near-native Python performance:
+Lyric 1.1.1 compiles to CPython bytecode, achieving near-native Python performance:
 
 | Mode | Benchmark Time | vs Interpreted |
 |------|---------------|----------------|
@@ -264,7 +264,7 @@ Tests are organized under `lyric/tests/` by version milestone (e.g. `core-0.8.0/
 
 ```bash
 ./build-deb.sh
-sudo dpkg -i dist/lyric-lang_1.1.0_all.deb
+sudo dpkg -i dist/lyric-lang_1.1.1_all.deb
 ```
 
 ## Contributing
