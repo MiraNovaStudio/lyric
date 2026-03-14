@@ -115,6 +115,11 @@ def _is_type_compatible(expected_type, value):
         return isinstance(value, (dict, MapObject))
     elif expected_type == 'tup':
         return isinstance(value, (tuple, TupObject))
+    elif expected_type == 'obj':
+        # obj accepts class instances only — not basic types or containers
+        return (not isinstance(value, (int, float, str, bool, list, tuple, dict,
+                                       ArrObject, MapObject, TupObject, DskObject))
+                and hasattr(value, '__class__'))
     elif expected_type == 'dsk':
         return isinstance(value, DskObject)
     elif expected_type == 'rex':
@@ -477,11 +482,100 @@ def lyric_file_op(operator, left, right):
             )
 
 
+def lyric_file_read(dsk_obj, current_value):
+    """Read from a file. If current_value is an ArrObject, read as lines."""
+    from lyric.interpreter import DskObject, ArrObject
+    from lyric.errors import RuntimeErrorLyric
+
+    if not isinstance(dsk_obj, DskObject):
+        raise RuntimeErrorLyric(
+            f"File read operator (<-) requires dsk type on right side, got {type(dsk_obj).__name__}"
+        )
+    content = dsk_obj.read()
+    # If the target variable is an arr type, split into lines
+    if isinstance(current_value, ArrObject) or isinstance(current_value, list):
+        lines = content.splitlines()
+        return ArrObject(lines)
+    return content
+
+
+def lyric_print_to_file(operator, args, dsk_obj):
+    """Handle print -> file or print ->> file (write print output to file, not stdout)."""
+    from lyric.interpreter import DskObject
+    from lyric.errors import RuntimeErrorLyric
+
+    if not isinstance(dsk_obj, DskObject):
+        raise RuntimeErrorLyric(
+            f"File write operators ({operator}) require dsk type on right side, "
+            f"got {type(dsk_obj).__name__}"
+        )
+    content = ' '.join(str(a) for a in args) + '\n'
+    if operator == '->>':
+        dsk_obj.append(content)
+    else:
+        dsk_obj.overwrite(content)
+
+
+def lyric_exec_capture(command):
+    """Execute a command and return its stdout+stderr as a string."""
+    import subprocess
+    from lyric.runtime import get_shell_args
+    from lyric.errors import RuntimeErrorLyric
+
+    if not isinstance(command, str):
+        raise RuntimeErrorLyric(f"exec() expects a string command, got {type(command).__name__}")
+
+    try:
+        sh = get_shell_args(command)
+        result = subprocess.run(
+            sh['args'], shell=sh['shell'],
+            capture_output=True, text=True
+        )
+        return result.stdout + result.stderr
+    except Exception as e:
+        raise RuntimeErrorLyric(f"exec() error: {e}")
+
+
+def lyric_exec_to_file(operator, command, dsk_obj):
+    """Execute a command and write/append output to a file."""
+    from lyric.interpreter import DskObject
+    from lyric.errors import RuntimeErrorLyric
+
+    output = lyric_exec_capture(command)
+    if not isinstance(dsk_obj, DskObject):
+        raise RuntimeErrorLyric(
+            f"File write operators ({operator}) require dsk type on right side"
+        )
+    if operator == '->>':
+        dsk_obj.append(output)
+    else:
+        dsk_obj.overwrite(output)
+
+
+def lyric_exec_with_input(command, input_data):
+    """Execute a command with input piped as stdin."""
+    import subprocess
+    from lyric.runtime import get_shell_args
+
+    sh = get_shell_args(command)
+    result = subprocess.run(
+        sh['args'], shell=sh['shell'],
+        input=str(input_data),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True
+    )
+    # Print output to stdout (like the interpreter does)
+    if result.stdout:
+        print(result.stdout, end='')
+    return result.returncode
+
+
 def lyric_exec_chain(elements, operators, input_source, output_target):
     """Execute an exec chain with pipe operators (|, &&, ||).
 
-    This is a simplified version for compiled code — delegates to the
-    interpreter's exec chain logic for full semantics.
+    Elements are command strings (extracted from exec() calls by the compiler).
+    stderr is merged with stdout for each command in the chain.
     """
     import subprocess
     from lyric.runtime import get_shell_args
@@ -503,19 +597,13 @@ def lyric_exec_chain(elements, operators, input_source, output_target):
 
         has_input = i > 0 or input_source is not None
 
-        # element should be the result of evaluating the exec() CallNode
-        # In compiled code, exec('cmd') returns the exit code via exec_builtin
-        # But in chains, we need to capture output — so we handle it here
-        if isinstance(element, str):
-            # Direct command string
-            command = element
-        elif isinstance(element, int):
-            # Already-executed exec() returned an exit code
-            exit_code = element
+        # Handle print in chain — print the piped input
+        if element == '__print__':
+            if has_input and current_output:
+                print(current_output, end='')
             continue
-        else:
-            # Fallback
-            command = str(element)
+
+        command = str(element)
 
         try:
             sh = get_shell_args(command)
@@ -523,19 +611,88 @@ def lyric_exec_chain(elements, operators, input_source, output_target):
                 sh['args'],
                 shell=sh['shell'],
                 input=current_output if has_input else None,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
                 text=True
             )
             exit_code = result.returncode
-            current_output = result.stdout + result.stderr
+            current_output = result.stdout
         except Exception as e:
             raise RuntimeErrorLyric(f"exec() error in chain: {e}")
 
     # Handle output target
-    if output_target is not None:
+    if output_target is not None and output_target is not False:
         return current_output
 
     return exit_code
+
+
+def lyric_exec_chain_to_file(operator, chain_output, dsk_obj):
+    """Write exec chain output to a file."""
+    from lyric.interpreter import DskObject
+    from lyric.errors import RuntimeErrorLyric
+
+    # chain_output is the string result from lyric_exec_chain
+    if not isinstance(dsk_obj, DskObject):
+        raise RuntimeErrorLyric(
+            f"File write operators ({operator}) require dsk type on right side"
+        )
+    content = str(chain_output)
+    if operator == '->>':
+        dsk_obj.append(content)
+    else:
+        dsk_obj.overwrite(content)
+
+
+def call_main(main_func):
+    """Call main() with argc/argv from sys.argv, matching interpreter behavior.
+
+    Uses the same option parsing as the CLI to separate options from arguments.
+    Options (starting with - or --) are filtered out; only positional args remain.
+    """
+    import sys
+    import inspect
+    from lyric.interpreter import ArrObject
+
+    params = inspect.signature(main_func).parameters
+    param_count = len(params)
+
+    # Collect CLI args (everything after the .ly file)
+    cli_args = []
+    argv = sys.argv
+    found_ly = False
+    for i, arg in enumerate(argv):
+        if arg.endswith('.ly'):
+            found_ly = True
+            # Parse remaining args — filter out options
+            for a in argv[i+1:]:
+                if a.startswith('-'):
+                    continue  # Skip options
+                cli_args.append(a)
+            break
+
+    if param_count >= 2:
+        main_func(len(cli_args), ArrObject(cli_args))
+    elif param_count == 1:
+        main_func(len(cli_args))
+    else:
+        main_func()
+
+
+def resolve_index_key(key_str, local_vars, global_vars):
+    """Resolve an index key from an AssignNode name.
+
+    The parser strips quotes from keys, so 'person[name]' could mean
+    person["name"] (string key) or person[name] (variable key).
+    Check if key_str is a variable name in scope; if so, use its value.
+    Otherwise, treat it as a string literal.
+    """
+    if key_str in local_vars:
+        return local_vars[key_str]
+    if key_str in global_vars:
+        return global_vars[key_str]
+    # Not a variable — treat as string key
+    return key_str
 
 
 def register_builtins(env):

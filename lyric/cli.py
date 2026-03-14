@@ -148,8 +148,9 @@ def main():
             from lyric.pyproxy import set_unsafe_mode
             set_unsafe_mode(True)
 
+        use_compiler = 'interpret' not in options and not os.environ.get('LYRIC_INTERPRET')
         _execute_file(file_path, arguments,
-                      use_compiler='interpret' not in options,
+                      use_compiler=use_compiler,
                       dump_ast='dump-ast' in options)
     elif command.endswith('.ly'):
         # Treat as shorthand for "lyric run <file.ly>"
@@ -167,8 +168,9 @@ def main():
             from lyric.pyproxy import set_unsafe_mode
             set_unsafe_mode(True)
 
+        use_compiler = 'interpret' not in options and not os.environ.get('LYRIC_INTERPRET')
         _execute_file(file_path, arguments,
-                      use_compiler='interpret' not in options,
+                      use_compiler=use_compiler,
                       dump_ast='dump-ast' in options)
     else:
         print(f"Unknown command: {command}")
@@ -327,6 +329,10 @@ def _execute_file(file_path: str, arguments: list = None, use_compiler: bool = F
             print(f"Runtime error [line {e.line}]: {e.args[0] if e.args else str(e)}")
         else:
             print(f"Runtime error: {e}")
+        sys.exit(1)
+    except (NameError, TypeError, AttributeError, IndexError, KeyError, ZeroDivisionError) as e:
+        # Python runtime errors from compiled code — format as Lyric errors
+        print(f"Runtime error: {e}")
         sys.exit(1)
     except KeyboardInterrupt:
         print()

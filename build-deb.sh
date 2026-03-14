@@ -4,19 +4,44 @@
 # All rights reserved.
 #
 # Build a Debian package for Lyric.
-# Usage: ./build-deb.sh [version]
-#   version defaults to the value in lyric/__init__.py
+# Usage: ./build-deb.sh [-i] [-h] [version]
+#   -i          Build and install the package
+#   -h          Show this help message
+#   version     Override version (defaults to lyric/__init__.py)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
+INSTALL=false
+
+# Parse flags
+while getopts "ih" opt; do
+    case "$opt" in
+        i) INSTALL=true ;;
+        h)
+            echo "Usage: ./build-deb.sh [-i] [-h] [version]"
+            echo ""
+            echo "Options:"
+            echo "  -i    Build and install the package (runs sudo dpkg -i)"
+            echo "  -h    Show this help message"
+            echo ""
+            echo "Arguments:"
+            echo "  version   Override version (defaults to value in lyric/__init__.py)"
+            exit 0
+            ;;
+        *) exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
 # Extract version from source if not provided
 VERSION="${1:-$(grep -oP '__version__\s*=\s*"\K[^"]+' lyric/__init__.py)}"
-PKGNAME="lyric-lang"
+PKGNAME="python3-lyric-lang"
 ARCH="all"  # pure Python, architecture-independent
 PKG_DIR="build/${PKGNAME}_${VERSION}_${ARCH}"
+DEB_FILE="dist/${PKGNAME}_${VERSION}_${ARCH}.deb"
 
 echo "Building ${PKGNAME} ${VERSION} for ${ARCH}..."
 
@@ -71,21 +96,32 @@ Architecture: ${ARCH}
 Depends: ${PYTHON_DEP}
 Maintainer: MiraNova Studios <aeonath@miranova.studio>
 Homepage: https://lyric-lang.org
-Description: Lyric programming language interpreter
- Lyric is an experimental interpreted programming language
- developed by MiraNova Studios. This package provides the
- lyric interpreter and standard library.
+Description: Lyric programming language transpiler and interpreter
+ Lyric is an experimental programming language that transpiles to
+ Python bytecode, developed by MiraNova Studios. This package
+ provides the lyric transpiler, interpreter, and standard library.
 EOF
 
 # --- Build the .deb ---
 mkdir -p dist/
-dpkg-deb --build "$PKG_DIR" "dist/${PKGNAME}_${VERSION}_${ARCH}.deb"
+dpkg-deb --build "$PKG_DIR" "$DEB_FILE"
 
 echo ""
-echo "Package built: dist/${PKGNAME}_${VERSION}_${ARCH}.deb"
-echo ""
-echo "Install with:"
-echo "  sudo dpkg -i dist/${PKGNAME}_${VERSION}_${ARCH}.deb"
-echo ""
-echo "Uninstall with:"
-echo "  sudo dpkg -r ${PKGNAME}"
+echo "Package built: ${DEB_FILE}"
+
+if [ "$INSTALL" = true ]; then
+    echo ""
+    echo "Installing..."
+    sudo dpkg -i "$DEB_FILE"
+    echo ""
+    echo "Installed. Run 'lyric --version' to verify."
+    lyric --version
+else
+    echo ""
+    echo "Install with:"
+    echo "  sudo dpkg -i ${DEB_FILE}"
+    echo "  or: ./build-deb.sh -i"
+    echo ""
+    echo "Uninstall with:"
+    echo "  sudo dpkg -r ${PKGNAME}"
+fi

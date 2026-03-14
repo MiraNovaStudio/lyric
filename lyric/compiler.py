@@ -41,8 +41,10 @@ class LyricCompiler:
 
     def __init__(self, source_file='<lyric>'):
         self.source_file = source_file
-        self._functions_defined = set()
+        self._functions_defined = {}  # name -> param count
         self._current_function_return_type = None  # Track return type for current function
+        self._module_level_vars = set()  # Variables declared at module level
+        self._in_function = False  # Whether we're inside a function body
 
     def compile(self, program: ProgramNode):
         """Compile a ProgramNode to a Python code object.
@@ -63,6 +65,17 @@ class LyricCompiler:
         else:
             body.append(preamble)
 
+        # First pass: collect module-level variable names
+        for stmt in program.statements:
+            if isinstance(stmt, (AssignNode, TypeDeclarationNode)):
+                name = stmt.name
+                if '.' not in name:
+                    self._module_level_vars.add(name)
+            elif isinstance(stmt, MultiDeclarationNode):
+                for _, var_name in stmt.declarations:
+                    self._module_level_vars.add(var_name)
+
+        # Second pass: compile
         for stmt in program.statements:
             compiled = self._compile_statement(stmt)
             if isinstance(compiled, list):
@@ -105,14 +118,25 @@ class LyricCompiler:
         ]
 
     def _emit_main_call(self):
-        """Emit: main()"""
-        return self._loc(pyast.Expr(
-            value=self._loc(pyast.Call(
-                func=self._loc(pyast.Name(id='main', ctx=pyast.Load())),
-                args=[],
-                keywords=[]
+        """Emit main() call, passing argc/argv if main accepts parameters."""
+        param_count = self._functions_defined.get('main', 0)
+        if param_count >= 2:
+            # main(argc, argv) — pass CLI args
+            # _rt.call_main(main)
+            return self._loc(pyast.Expr(
+                value=self._rt_call('call_main', [
+                    self._name('main'),
+                ])
             ))
-        ))
+        else:
+            # main() — no parameters
+            return self._loc(pyast.Expr(
+                value=self._loc(pyast.Call(
+                    func=self._name('main'),
+                    args=[],
+                    keywords=[]
+                ))
+            ))
 
     def _name(self, name, ctx=None, line=0, col=0):
         """Create an ast.Name node."""
@@ -188,14 +212,30 @@ class LyricCompiler:
         The function body is wrapped in try/except TypeError to catch
         type mismatches and translate them into Lyric error messages.
         """
-        self._functions_defined.add(node.name)
+        self._functions_defined[node.name] = len(node.params)
 
         # Track return type for this function
         prev_return_type = self._current_function_return_type
         self._current_function_return_type = node.return_type
+        prev_in_function = self._in_function
+        self._in_function = True
 
         # Compile the actual function body
         inner_body = []
+
+        # Inject global declarations for module-level variables used in this function
+        # This ensures Python's scoping matches Lyric's flat scope model
+        if self._module_level_vars:
+            # Collect vars that are assigned in this function's body
+            assigned_vars = self._collect_assigned_vars(node.body_statements)
+            global_vars = assigned_vars & self._module_level_vars
+            # Exclude function parameters
+            global_vars -= set(node.params)
+            if global_vars:
+                inner_body.append(self._loc(pyast.Global(
+                    names=sorted(global_vars)
+                ), node.line, node.column))
+
         for stmt in node.body_statements:
             compiled = self._compile_statement(stmt)
             if isinstance(compiled, list):
@@ -237,8 +277,9 @@ class LyricCompiler:
             defaults=[]
         )
 
-        # Restore previous return type context
+        # Restore previous context
         self._current_function_return_type = prev_return_type
+        self._in_function = prev_in_function
 
         func_def = self._loc(pyast.FunctionDef(
             name=node.name,
@@ -254,8 +295,50 @@ class LyricCompiler:
         """Compile an AssignNode to a Python assignment."""
         value = self._compile_expression(node.expr)
 
+        # Handle indexed assignment: obj[key] = val
+        if '[' in node.name and ']' in node.name:
+            bracket_start = node.name.index('[')
+            bracket_end = node.name.index(']')
+            obj_name = node.name[:bracket_start]
+            key_str = node.name[bracket_start+1:bracket_end]
+
+            # Build the object reference (may be dotted: self.items[k])
+            if '.' in obj_name:
+                parts = obj_name.split('.')
+                obj = self._name(parts[0], pyast.Load(), node.line, node.column)
+                for part in parts[1:]:
+                    obj = self._loc(pyast.Attribute(
+                        value=obj, attr=part, ctx=pyast.Load()
+                    ), node.line, node.column)
+            else:
+                obj = self._name(obj_name, pyast.Load(), node.line, node.column)
+
+            # Parse the key — could be int literal, variable name, or string key
+            # The parser strips quotes, so we need to figure out what it is.
+            # Use _rt.resolve_index_key() at runtime to check variable vs string.
+            try:
+                index_expr = self._const(int(key_str), node.line, node.column)
+            except ValueError:
+                # Could be a variable name or a bare string key.
+                # Emit runtime resolution: tries variable lookup, falls back to string.
+                index_expr = self._rt_call('resolve_index_key', [
+                    self._const(key_str, node.line, node.column),
+                    self._loc(pyast.Call(
+                        func=self._name('locals'), args=[], keywords=[]
+                    )),
+                    self._loc(pyast.Call(
+                        func=self._name('globals'), args=[], keywords=[]
+                    )),
+                ], node.line, node.column)
+
+            target = self._loc(pyast.Subscript(
+                value=obj,
+                slice=index_expr,
+                ctx=pyast.Store()
+            ), node.line, node.column)
+
         # Handle dotted names (obj.attr = val)
-        if '.' in node.name:
+        elif '.' in node.name:
             parts = node.name.split('.')
             # Build the attribute chain
             target = self._name(parts[0], pyast.Load(), node.line, node.column)
@@ -297,13 +380,27 @@ class LyricCompiler:
         ), node.line, node.column)
 
     def _compile_multi_decl(self, node: MultiDeclarationNode):
-        """Compile a MultiDeclarationNode to multiple assignments to None."""
+        """Compile a MultiDeclarationNode to multiple assignments.
+
+        Typed declarations get appropriate default values so that type
+        detection works correctly (e.g., arr variables start as empty ArrObject).
+        """
         stmts = []
+        # Map Lyric types to default value constructors
+        _TYPED_DEFAULTS = {'arr': 'make_arr', 'map': 'make_map', 'tup': 'make_tup'}
         for type_name, var_name in node.declarations:
             target = self._name(var_name, pyast.Store(), node.line, node.column)
+            if type_name in _TYPED_DEFAULTS:
+                # Initialize with empty typed container
+                default_val = self._rt_call(_TYPED_DEFAULTS[type_name], [
+                    self._loc(pyast.List(elts=[], ctx=pyast.Load()) if type_name != 'map'
+                              else pyast.Dict(keys=[], values=[]))
+                ], node.line, node.column)
+            else:
+                default_val = self._const(None, node.line, node.column)
             stmts.append(self._loc(pyast.Assign(
                 targets=[target],
-                value=self._const(None, node.line, node.column)
+                value=default_val
             ), node.line, node.column))
         return stmts
 
@@ -703,8 +800,21 @@ class LyricCompiler:
                 class_body.append(self._compile_method(member))
 
         # Compile constructor if present
+        has_constructor = False
         if node.constructor_method:
             class_body.append(self._compile_constructor(node.constructor_method, node.base_class))
+            has_constructor = True
+
+        if not has_constructor:
+            # Check for init() method as fallback constructor
+            # Remove the init method from class_body (it was compiled as a regular method)
+            # and recompile it as __init__
+            for member in node.members_statements:
+                if isinstance(member, FunctionNode) and member.name == 'init':
+                    class_body = [m for m in class_body
+                                  if not (isinstance(m, pyast.FunctionDef) and m.name == 'init')]
+                    class_body.append(self._compile_constructor(member, node.base_class))
+                    break
 
         if not class_body:
             class_body = [self._loc(pyast.Pass())]
@@ -729,10 +839,16 @@ class LyricCompiler:
 
         Adds 'self' as first param. Does NOT auto-call super().__init__()
         because Lyric constructors typically set all fields directly.
+        Return statements with values are converted to bare returns since
+        Python's __init__ cannot return a value.
         """
         body = []
 
         for stmt in node.body_statements:
+            # Convert return-with-value to bare return in constructors
+            if isinstance(stmt, ReturnNode) and stmt.value is not None:
+                body.append(self._loc(pyast.Return(value=None), stmt.line, stmt.column))
+                continue
             compiled = self._compile_statement(stmt)
             if isinstance(compiled, list):
                 body.extend(compiled)
@@ -893,6 +1009,94 @@ class LyricCompiler:
 
     def _compile_file_op(self, node: FileOpNode):
         """Compile file operators (->>, ->, <-) to runtime calls."""
+        if node.operator == '<-':
+            # Check for exec("cmd") <- input_data
+            if isinstance(node.left, CallNode) and node.left.func_name == 'exec':
+                cmd = self._compile_expression(node.left.args[0])
+                input_data = self._compile_expression(node.right)
+                return self._loc(pyast.Expr(
+                    value=self._rt_call('lyric_exec_with_input', [
+                        cmd, input_data,
+                    ], node.line, node.column)
+                ), node.line, node.column)
+
+            # Read: variable <- dsk  →  variable = _rt.lyric_file_read(dsk, variable)
+            # Pass current value of variable so runtime can detect arr type
+            right = self._compile_expression(node.right)
+            if isinstance(node.left, IdentifierNode):
+                target = self._name(node.left.name, pyast.Store(), node.line, node.column)
+                current_val = self._name(node.left.name, pyast.Load(), node.line, node.column)
+                return self._loc(pyast.Assign(
+                    targets=[target],
+                    value=self._rt_call('lyric_file_read', [
+                        right,
+                        current_val,
+                    ], node.line, node.column)
+                ), node.line, node.column)
+
+        # Check for print -> file or print ->> file
+        if isinstance(node.left, CallNode) and node.left.func_name == 'print':
+            # print "text" -> file: write print output to file instead of stdout
+            args = [self._compile_expression(arg) for arg in node.left.args]
+            right = self._compile_expression(node.right)
+            args_list = self._loc(pyast.List(elts=args, ctx=pyast.Load()))
+            return self._loc(pyast.Expr(
+                value=self._rt_call('lyric_print_to_file', [
+                    self._const(node.operator, node.line, node.column),
+                    args_list,
+                    right,
+                ], node.line, node.column)
+            ), node.line, node.column)
+
+        # Check for exec() -> var or exec() ->> file
+        if isinstance(node.left, CallNode) and node.left.func_name == 'exec':
+            left = self._compile_expression(node.left)
+            right = self._compile_expression(node.right)
+            if node.operator == '->' and isinstance(node.right, IdentifierNode):
+                # exec("cmd") -> var: capture output to variable
+                target = self._name(node.right.name, pyast.Store(), node.line, node.column)
+                return self._loc(pyast.Assign(
+                    targets=[target],
+                    value=self._rt_call('lyric_exec_capture', [
+                        self._compile_expression(node.left.args[0]),
+                    ], node.line, node.column)
+                ), node.line, node.column)
+            else:
+                # exec("cmd") ->> file
+                return self._loc(pyast.Expr(
+                    value=self._rt_call('lyric_exec_to_file', [
+                        self._const(node.operator),
+                        self._compile_expression(node.left.args[0]),
+                        right,
+                    ], node.line, node.column)
+                ), node.line, node.column)
+
+        # Check for exec chain -> var or exec chain ->> file
+        if isinstance(node.left, ExecChainNode):
+            # Build a temporary ExecChainNode expression to reuse _compile_exec_chain_expr
+            chain_expr = self._compile_exec_chain_expr(node.left)
+            if node.operator == '->' and isinstance(node.right, IdentifierNode):
+                # exec chain -> var: capture final output to variable
+                target = self._name(node.right.name, pyast.Store(), node.line, node.column)
+                # Override output_target to True to signal "return output"
+                chain_expr.args[3] = self._const(True)
+                return self._loc(pyast.Assign(
+                    targets=[target],
+                    value=chain_expr
+                ), node.line, node.column)
+            else:
+                # exec chain ->> file: set output_target=True to get output string
+                chain_expr.args[3] = self._const(True)
+                right = self._compile_expression(node.right)
+                return self._loc(pyast.Expr(
+                    value=self._rt_call('lyric_exec_chain_to_file', [
+                        self._const(node.operator),
+                        chain_expr,
+                        right,
+                    ], node.line, node.column)
+                ), node.line, node.column)
+
+        # Write/append: expr -> dsk or expr ->> dsk
         left = self._compile_expression(node.left)
         right = self._compile_expression(node.right)
 
@@ -911,24 +1115,63 @@ class LyricCompiler:
         ), getattr(node, 'line', 0), getattr(node, 'column', 0))
 
     def _compile_exec_chain_expr(self, node: ExecChainNode):
-        """Compile exec chain (exec('a') | exec('b')) to runtime call."""
-        # Build list of element expressions
-        elements = self._loc(pyast.List(
-            elts=[self._compile_expression(e) for e in node.elements],
-            ctx=pyast.Load()
-        ))
+        """Compile exec chain (exec('a') | exec('b')) to runtime call.
+
+        Extract command strings from exec() CallNodes instead of evaluating them,
+        since the chain runtime needs to manage subprocess piping itself.
+        """
+        # Extract command strings from exec() calls
+        cmd_elts = []
+        for e in node.elements:
+            if isinstance(e, CallNode) and e.func_name == 'exec' and e.args:
+                # Extract the command argument string
+                cmd_elts.append(self._compile_expression(e.args[0]))
+            elif isinstance(e, CallNode) and e.func_name == 'print':
+                # print in chain — pass as special marker
+                cmd_elts.append(self._const('__print__'))
+            else:
+                cmd_elts.append(self._compile_expression(e))
+
+        elements = self._loc(pyast.List(elts=cmd_elts, ctx=pyast.Load()))
         operators = self._loc(pyast.List(
             elts=[self._const(op) for op in node.operators],
             ctx=pyast.Load()
         ))
 
-        # Optional input/output
         input_src = self._compile_expression(node.input_source) if node.input_source else self._const(None)
         output_tgt = self._compile_expression(node.output_target) if node.output_target else self._const(None)
 
         return self._rt_call('lyric_exec_chain', [
             elements, operators, input_src, output_tgt
         ], node.line, node.column)
+
+    def _collect_assigned_vars(self, stmts):
+        """Recursively collect all variable names that are assigned in a list of statements."""
+        assigned = set()
+        for stmt in stmts:
+            if isinstance(stmt, AssignNode):
+                name = stmt.name.split('.')[0]  # Get base name for dotted assigns
+                if '.' not in stmt.name:  # Only track simple assigns, not self.x
+                    assigned.add(name)
+            elif isinstance(stmt, TypeDeclarationNode):
+                assigned.add(stmt.name)
+            elif isinstance(stmt, IfNode):
+                assigned |= self._collect_assigned_vars(stmt.then_body)
+                for _, elif_body in stmt.elifs:
+                    assigned |= self._collect_assigned_vars(elif_body)
+                if stmt.else_body:
+                    assigned |= self._collect_assigned_vars(stmt.else_body)
+            elif isinstance(stmt, LoopNode):
+                assigned |= self._collect_assigned_vars(stmt.body)
+                if stmt.iterator_var:
+                    assigned.add(stmt.iterator_var)
+            elif isinstance(stmt, TryNode):
+                assigned |= self._collect_assigned_vars(stmt.try_body)
+                for clause in stmt.catch_clauses:
+                    assigned |= self._collect_assigned_vars(clause.body)
+                if stmt.finally_body:
+                    assigned |= self._collect_assigned_vars(stmt.finally_body)
+        return assigned
 
     def _compile_body(self, stmts):
         """Helper to compile a list of statements into a body."""

@@ -43,6 +43,9 @@ else
     # Run all tests and capture summary
     echo "Running all tests..."
     python3 -m pytest lyric/tests/ --tb=short -q
+
+    echo "Running tests lyric interpreted"
+    LYRIC_INTERPRET=1 python3 -m pytest lyric/tests/ --tb=short -q
     
     echo ""
     echo "=================================="
@@ -52,6 +55,10 @@ else
 fi
 
 
+echo "Testing core constructs..."
 lyric run ./studio/does_it_work.ly 
+
+echo "Testing core contructs interpreted..."
+lyric run ./studio/does_it_work.ly --interpret
 
 

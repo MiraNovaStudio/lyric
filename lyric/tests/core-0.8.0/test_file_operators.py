@@ -156,13 +156,13 @@ def test_array_read_from_file():
     """Test arr <- dsk (read file lines to array)."""
     code = """
 def main() {
-    dsk myfile = disk("test_arr_read.txt")
+    dsk myfile = disk("/tmp/test_arr_read.txt")
     str data = "line1\\nline2\\nline3"
     data -> myfile
     myfile.close()
     
     arr lines
-    dsk readfile = disk("test_arr_read.txt")
+    dsk readfile = disk("/tmp/test_arr_read.txt")
     lines <- readfile
     print(lines.len())
     print(lines[0])
