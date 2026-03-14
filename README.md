@@ -1,13 +1,22 @@
 # Lyric
 
-Lyric is a experimental interpreted programming language built in Python, designed for clarity and expressive syntax. Type declarations are optional and enforced at runtime — variables declared with a type (`int`, `str`, `flt`, etc.) are strongly checked on assignment, while `var` opts into dynamic typing. It is developed and maintained by **MiraNova Studios**.
+Lyric is an experimental programming language built in Python, designed for clarity and expressive syntax. As of version 1.1.0, Lyric is a **transpiler** — source code is compiled to Python AST and executed as CPython bytecode, delivering near-native Python performance. Type declarations are optional and enforced at runtime — variables declared with a type (`int`, `str`, `flt`, etc.) are strongly checked on assignment, while `var` opts into dynamic typing. It is developed and maintained by **MiraNova Studios**.
 
-**Current version:** 1.0.0 (Alpha)
+**Current version:** 1.1.0 (Alpha)
 **Website:** [lyric-lang.org](https://lyric-lang.org)
 
 ---
 
 ## Installation
+
+### Debian/Ubuntu
+
+```bash
+./build-deb.sh
+sudo dpkg -i dist/lyric-lang_1.1.0_all.deb
+```
+
+### pip
 
 ```bash
 pip install lyric-lang
@@ -27,19 +36,31 @@ Lyric programs use the `.ly` file extension. Shebang lines (`#!/usr/bin/env lyri
 
 ## Architecture
 
-The interpreter is implemented as a classical pipeline: source text flows through the lexer, parser, and interpreter in sequence. All stages are implemented from scratch in pure Python with no parser-generator dependencies.
+Lyric uses a transpiler pipeline: source text flows through the lexer and parser to produce a Lyric AST, which is then compiled to a Python AST and executed as CPython bytecode. A tree-walking interpreter is preserved as a fallback via `--interpret`. All stages are implemented from scratch in pure Python with no parser-generator dependencies.
+
+```
+Source (.ly) → Lexer → Parser → Lyric AST → Compiler → Python AST → CPython bytecode → Execution
+```
 
 ```
 lyric/
-├── lexer.py          # Tokenizer — converts source text into a token stream
-├── parser.py         # Recursive descent parser — produces an AST
-├── ast_nodes.py      # AST node definitions
-├── interpreter.py    # Tree-walking interpreter with lexical scoping
-├── runtime.py        # Built-in functions and type coercions
-├── pyproxy.py        # Python interoperability layer (importpy bridge)
-├── errors.py         # Lexer, parser, and runtime error types
-└── cli.py            # Command-line interface
+├── lexer.py              # Tokenizer — converts source text into a token stream
+├── parser.py             # Recursive descent parser — produces a Lyric AST
+├── ast_nodes.py          # AST node definitions
+├── compiler.py           # Transpiler — compiles Lyric AST to Python AST
+├── compiled_runtime.py   # Runtime support library for compiled code
+├── interpreter.py        # Tree-walking interpreter (fallback via --interpret)
+├── runtime.py            # Built-in functions and type coercions
+├── pyproxy.py            # Python interoperability layer (importpy bridge)
+├── errors.py             # Lexer, parser, and runtime error types
+└── cli.py                # Command-line interface
 ```
+
+### Compiler (Transpiler)
+
+The compiler walks the Lyric AST and emits Python `ast` module nodes. Python's built-in `compile()` converts these to bytecode, and `exec()` runs them on CPython's C-level VM. This gives Lyric near-native Python performance — the full benchmark runs in ~5 seconds compiled vs ~74 seconds interpreted (14x speedup).
+
+The compiler handles all Lyric constructs: expressions, control flow, functions, classes with inheritance, module imports, file I/O, exec chains, try/catch/finally, and the full type system. Type errors in compiled functions are caught by a zero-overhead try/except wrapper that translates Python TypeErrors into Lyric error messages.
 
 ### Lexer
 
@@ -49,9 +70,9 @@ The lexer performs single-pass tokenization with support for string literals (si
 
 The parser is a hand-written recursive descent parser that produces a typed AST. It handles operator precedence, optional colon syntax across all control structures, and both `given`/`done` and `for`/`end` loop forms. The parser enforces top-level restrictions (e.g. bare expressions outside functions are rejected).
 
-### Interpreter
+### Interpreter (Fallback)
 
-The interpreter walks the AST directly. Scope is managed via a linked chain of environment frames — each function call and block pushes a new frame, and variable resolution walks the chain outward. Class instances are represented as environment frames with a `self` reference. Method resolution follows the inheritance chain at dispatch time.
+The tree-walking interpreter is preserved as a fallback via `--interpret`. It walks the AST directly with scope managed via a linked chain of environment frames. This is primarily useful for the REPL (`lyric -i`) and debugging.
 
 ### Type System
 
@@ -63,19 +84,43 @@ Lyric uses optional type declarations enforced at runtime. Variables declared wi
 | `flt` | Float |
 | `str` | String |
 | `var` | Dynamic (no enforcement) |
-| `god` | Boolean (honoring Kurt Gödel) |
+| `god` | Boolean (honoring Kurt Godel) |
 | `bin` | Boolean (alternative form) |
 | `rex` | Regular expression literal (`/pattern/`) |
 | `arr` | Array (ordered collection) |
 | `map` | Dictionary / key-value map |
+| `tup` | Tuple (immutable) |
 | `obj` | Generic object reference |
 | `dsk` | Disk / file handle type |
 
-Type coercion is available via casting functions (`int()`, `str()`, `flt()`, etc.) and explicit cast operators. The `var` type opts out of enforcement for dynamic use cases.
+Type coercion is available via casting functions (`int()`, `str()`, `flt()`, etc.). The `var` type opts out of enforcement for dynamic use cases.
 
 ### Classes and Inheritance
 
-Classes are defined with `class Name(Parent):` syntax. Constructors use `init()`. Constructor chaining (`super`) and single inheritance are supported. Access control is enforced via naming conventions. Method resolution walks the inheritance chain.
+Classes are defined with `class Name` syntax (terminated by `+++`). Constructors are methods named after the class. Single inheritance uses `based on`. Method resolution follows the inheritance chain.
+
+```
+class Animal
+    var name
+    def Animal(str name) {
+        self.name = name
+    }
+    def speak() {
+        return self.name + " speaks"
+    }
++++
+
+class Dog based on Animal
+    var breed
+    def Dog(str name, str breed) {
+        self.name = name
+        self.breed = breed
+    }
+    def speak() {
+        return self.name + " barks"
+    }
++++
+```
 
 ### Python Interoperability
 
@@ -83,7 +128,18 @@ The `importpy` keyword loads any installed Python package through `pyproxy.py`, 
 
 ### Error Reporting
 
-All errors (lexer, parser, runtime) carry source position information. Error messages include file name, line number, and a formatted excerpt of the offending line.
+All errors (lexer, parser, runtime) carry source position information. Error messages include file name, line number, and a description of the issue.
+
+---
+
+## Execution Modes
+
+| Mode | Command | Description |
+|------|---------|-------------|
+| **Compiled** (default) | `lyric program.ly` | Transpiles to Python AST, executes as CPython bytecode |
+| **Interpreted** | `lyric program.ly --interpret` | Tree-walking interpreter (slower, full compatibility) |
+| **REPL** | `lyric -i` | Interactive mode (uses interpreter) |
+| **AST Dump** | `lyric program.ly --dump-ast` | Print generated Python AST and exit (debugging) |
 
 ---
 
@@ -91,14 +147,15 @@ All errors (lexer, parser, runtime) carry source position information. Error mes
 
 - Typed variable declarations: `int x = 5`, `str name = "lyric"`, `var x = anything`
 - Functions with typed parameters: `def greet(str name, int age) { ... }`
-- Classes with `init()` constructors, inheritance, and access control
-- Control flow: `if`/`elif`/`else`, `given`/`done` and `for`/`end` loops, `break`/`continue`, `case`
+- Classes with constructors, inheritance (`based on`), and method dispatch
+- Control flow: `if`/`elif`/`else`, `given`/`done` loops, `break`/`continue`
 - Exception handling: `try`/`catch`/`finally`/`fade` with typed exception binding
 - Regular expressions as first-class values with `rex` type and `/pattern/` literals
 - `importpy` for Python library access; native `import` for Lyric modules
-- `exec()` with I/O redirection via file operators
+- `exec()` with I/O redirection and pipe chains (`|`, `&&`, `||`)
+- File I/O via `dsk` type with `->` (write), `->>` (append), `<-` (read) operators
 - `getopts` for CLI argument parsing within scripts
-- Dual print syntax, mixed quote strings, multi-variable declarations
+- Standard library (`import lyric`) with filesystem, datetime, and random utilities
 
 See the [language specification](https://lyric-lang.org) for full syntax reference.
 
@@ -106,20 +163,43 @@ See the [language specification](https://lyric-lang.org) for full syntax referen
 
 ## Module System
 
-Lyric supports two import mechanisms. Native Lyric modules (`import name`) are resolved by a `ModuleLoader` that searches the runtime module path and caches loaded modules. Python packages (`importpy name`) are loaded through the `pyproxy` bridge as a secondary mechanism. Resolution order is: native Lyric module → built-in standard library → Python bridge → `ModuleNotFoundError`.
+Lyric supports two import mechanisms. Native Lyric modules (`import name`) are resolved by searching the current directory, source file directory, and `LYRIC_PATH`. The standard library (`import lyric`, `import lyric.math`) resolves from the built-in `lib/` directory. Python packages (`importpy name`) are loaded through the `pyproxy` bridge. Resolution order is: native Lyric module → built-in standard library → Python bridge → `ModuleNotFoundError`.
+
+---
+
+## Performance
+
+Lyric 1.1.0 compiles to CPython bytecode, achieving near-native Python performance:
+
+| Mode | Benchmark Time | vs Interpreted |
+|------|---------------|----------------|
+| Compiled (default) | ~5s | 14x faster |
+| Interpreted | ~74s | baseline |
+| Python (native) | ~1.2s | reference |
+| Ruby (native) | ~1.1s | reference |
+| Perl (native) | ~3.0s | reference |
+
+Benchmark: 10M function calls + 1M counting loop + 10M arithmetic operations.
 
 ---
 
 ## Development
 
-Requires Python 3.8 or newer.
+Requires Python 3.10 or newer.
 
 ```bash
 pip install pytest flake8 build twine
 pytest lyric/tests/
 ```
 
-Tests are organized under `lyric/tests/` by version milestone (e.g. `core-0.8.0/`). Run the full suite with `pytest` from the project root.
+Tests are organized under `lyric/tests/` by version milestone (e.g. `core-0.8.0/`, `core-1.1.x/`). Run the full suite with `pytest` from the project root.
+
+### Building the Debian Package
+
+```bash
+./build-deb.sh
+sudo dpkg -i dist/lyric-lang_1.1.0_all.deb
+```
 
 ---
 
@@ -127,4 +207,4 @@ Tests are organized under `lyric/tests/` by version milestone (e.g. `core-0.8.0/
 
 Lyric is developed by **MiraNova Studios**.
 
-Licensed under the MiraNova Software License. See the `LICENSE` file for full terms. All rights reserved — © 2025–2026 MiraNova Studios.
+Licensed under the MiraNova Software License. See the `LICENSE` file for full terms. All rights reserved — 2025-2026 MiraNova Studios.

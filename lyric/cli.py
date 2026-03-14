@@ -101,7 +101,8 @@ def main():
         print("  -a, -b, -c, etc.                  Short options (single character)")
         print("  --verbose, --debug, etc.          Long options (multiple characters)")
         print("  --file=myfile                     Long option with value")
-        print("  --compile                         Use bytecode compiler (transpiler) for faster execution")
+        print("  --interpret                       Use tree-walking interpreter instead of compiler")
+        print("  --dump-ast                        Print the generated Python AST and exit")
         print("  --unsafe                          Allow importpy of non-whitelisted modules")
         print("                                    (blacklisted modules are still blocked)")
         print("")
@@ -147,7 +148,9 @@ def main():
             from lyric.pyproxy import set_unsafe_mode
             set_unsafe_mode(True)
 
-        _execute_file(file_path, arguments, use_compiler='compile' in options)
+        _execute_file(file_path, arguments,
+                      use_compiler='interpret' not in options,
+                      dump_ast='dump-ast' in options)
     elif command.endswith('.ly'):
         # Treat as shorthand for "lyric run <file.ly>"
         # Parse options from remaining args
@@ -164,7 +167,9 @@ def main():
             from lyric.pyproxy import set_unsafe_mode
             set_unsafe_mode(True)
 
-        _execute_file(file_path, arguments, use_compiler='compile' in options)
+        _execute_file(file_path, arguments,
+                      use_compiler='interpret' not in options,
+                      dump_ast='dump-ast' in options)
     else:
         print(f"Unknown command: {command}")
         print("Usage: lyric --version | lyric --help | lyric run <file.ly> | lyric <file.ly> | lyric -i [code]")
@@ -254,13 +259,14 @@ def _check_for_auto_help(source: str, file_path: str):
     return True
 
 
-def _execute_file(file_path: str, arguments: list = None, use_compiler: bool = False):
+def _execute_file(file_path: str, arguments: list = None, use_compiler: bool = False, dump_ast: bool = False):
     """Execute a Lyric source file.
 
     Args:
         file_path: Path to the .ly file to execute
         arguments: List of command-line arguments to pass to main()
         use_compiler: If True, use the bytecode compiler instead of tree-walking
+        dump_ast: If True, print the generated Python AST and exit
     """
     if arguments is None:
         arguments = []
@@ -289,6 +295,15 @@ def _execute_file(file_path: str, arguments: list = None, use_compiler: bool = F
 
         # Parse the source code
         lyric_ast = parse(source)
+
+        if dump_ast:
+            # Dump the generated Python AST and exit
+            import ast as pyast
+            from lyric.compiler import LyricCompiler
+            compiler = LyricCompiler(source_file=file_path)
+            py_ast = compiler.compile_to_ast(lyric_ast)
+            print(pyast.dump(py_ast, indent=2))
+            sys.exit(0)
 
         if use_compiler:
             # Compiled path: transpile to Python AST and execute
