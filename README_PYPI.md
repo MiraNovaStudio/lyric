@@ -2,7 +2,7 @@
 
 Lyric is an experimental interpreted programming language built in Python, featuring strict type declarations, classes with inheritance, Python interoperability, and exception handling.
 
-**Version:** 1.0.3 (Alpha)  
+**Version:** 1.1.1 (Alpha)  
 **Docs:** [lyric-lang.org](https://lyric-lang.org)  
 **Source:** [GitHub](https://github.com/aeonath/lyric-lang)  
 
