@@ -273,4 +273,4 @@ Contributions are welcome. Please open an issue before submitting large changes 
 
 ## License
 
-Licensed under the MiraNova Software License. See the `LICENSE` file for full terms. All rights reserved — 2025-2026 MiraNova Studios.
+Licensed under the GNU General Public License v3.0 (GPLv3). See the `LICENSE` file for full terms. Copyright (c) 2026 MiraNova Studios.
