@@ -500,7 +500,7 @@ class DskObject:
             self for method chaining
         """
         try:
-            self.file_handle = open(self.filepath, mode)
+            self.file_handle = open(self.filepath, mode, encoding='utf-8') if 'b' not in mode else open(self.filepath, mode)
             return self
         except FileNotFoundError:
             from lyric.errors import RuntimeErrorLyric
@@ -576,7 +576,7 @@ class DskObject:
         
         try:
             # Open in append mode
-            with open(self.filepath, 'a') as f:
+            with open(self.filepath, 'a', encoding='utf-8') as f:
                 f.write(str(content))
         except Exception as e:
             from lyric.errors import RuntimeErrorLyric
@@ -596,7 +596,7 @@ class DskObject:
         
         try:
             # Always open in write mode to overwrite
-            with open(self.filepath, 'w') as f:
+            with open(self.filepath, 'w', encoding='utf-8') as f:
                 f.write(str(content))
         except Exception as e:
             from lyric.errors import RuntimeErrorLyric
