@@ -3,7 +3,6 @@
 Lyric is an experimental programming language built in Python, designed for clarity and expressive syntax. As of version 1.1.1, Lyric is a **transpiler** — source code is compiled to Python AST and executed as CPython bytecode. Type declarations are optional and enforced at runtime — variables declared with a type (`int`, `str`, `flt`, etc.) are strongly checked on assignment, while `var` opts into dynamic typing. It is developed and maintained by **MiraNova Studios**.
 
 **Current version:** 1.1.2 (Alpha)
-**Website:** [lyric-lang.org](https://lyric-lang.org)
 
 ## Install
 
@@ -82,10 +81,6 @@ def main() {
     fade
 }
 ```
-
-See the [tutorial](https://lyric-lang.org/tutorial.html) for getting started.
-
-See the [language specification](https://lyric-lang.org/specification.html) for the full syntax reference.
 
 ## Architecture
 
@@ -209,8 +204,6 @@ All errors (lexer, parser, runtime) carry source position information. Error mes
 - File I/O via `dsk` type with `->` (write), `->>` (append), `<-` (read) operators
 - `getopts` for CLI argument parsing within scripts
 - Standard library (`import lyric`) with filesystem, datetime, and random utilities
-
-See the [language specification](https://lyric-lang.org) for full syntax reference.
 
 ---
 

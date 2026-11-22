@@ -95,7 +95,7 @@ Priority: optional
 Architecture: ${ARCH}
 Depends: ${PYTHON_DEP}
 Maintainer: MiraNova Studios <aeonath@miranova.studio>
-Homepage: https://lyric-lang.org
+Homepage: https://github.com/MiraNovaStudio/lyric
 Description: Lyric programming language transpiler and interpreter
  Lyric is an experimental programming language that transpiles to
  Python bytecode, developed by MiraNova Studios. This package

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**Lyric** is an experimental interpreted programming language written in Python, developed by MiraNova Studios. Website: https://lyric-lang.org
+**Lyric** is an experimental interpreted programming language written in Python, developed by MiraNova Studios.
 
 ## Commands
 
@@ -217,4 +217,4 @@ Implement only tasks listed in the active sprint plan, and only the specific tas
 
 ## Language Specification
 
-The Lyric language specification is maintained manually at the external `lyric-lang.org` repository. Do not update the specification here.
+The language specification is not part of this repository. Do not add or update a specification here.

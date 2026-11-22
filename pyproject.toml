@@ -31,7 +31,7 @@ dev = [
 lyric = "lyric.cli:main"
 
 [project.urls]
-Homepage = "https://lyric-lang.org"
+Homepage = "https://github.com/MiraNovaStudio/lyric"
 
 [tool.setuptools.packages.find]
 where = ["."]
