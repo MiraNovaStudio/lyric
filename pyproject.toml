@@ -9,7 +9,7 @@ description = "Lyric is an experimental programming language that transpiles to 
 authors = [
     {name = "MiraNova Studios", email = "aeonath@miranova.studio"}
 ]
-readme = { file = "README_PYPI.md", content-type = "text/markdown" }
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 3 - Alpha",
