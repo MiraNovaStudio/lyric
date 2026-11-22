@@ -233,15 +233,6 @@ flake8 lyric/
 
 Tests are organized under `lyric/tests/` by version milestone (e.g. `core-0.8.0/`, `core-1.1.x/`). Run the full suite with `pytest` from the project root.
 
-### Debian package (build from source)
-
-On Debian or Ubuntu, from a source checkout. Requires `dpkg-deb` (from the `dpkg` package) and Python 3.10+. `./build-deb.sh` writes `dist/python3-lyric-lang_<version>_all.deb`.
-
-```bash
-./build-deb.sh
-sudo dpkg -i dist/python3-lyric-lang_1.1.2_all.deb
-```
-
 ## Contributing
 
 Contributions are welcome. Please open an issue before submitting large changes so we can discuss the approach.
