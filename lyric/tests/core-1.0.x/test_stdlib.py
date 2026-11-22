@@ -17,6 +17,15 @@ import tempfile
 import os
 
 
+def _ly_path(path: str) -> str:
+    """Render a filesystem path for a Lyric string.
+
+    Lyric treats backslash as an escape, so Windows paths must use slashes.
+    Both os.path and open() accept those slashes on Windows.
+    """
+    return path.replace('\\', '/')
+
+
 # ---------------------------------------------------------------------------
 # Helper: write Lyric code to a temp .ly file, run it, return CompletedProcess
 # ---------------------------------------------------------------------------
@@ -90,8 +99,7 @@ def main() {
 """
         result = _run_lyric(code)
         assert result.returncode == 0
-        # Absolute paths start with / on Unix
-        assert result.stdout.strip().startswith('/')
+        assert os.path.isabs(result.stdout.strip())
 
     def test_pwd_interpreter_matches_compiled(self):
         code = """
@@ -144,7 +152,7 @@ def main() {
         code = f"""
 import lyric
 def main() {{
-    print(lyric.exists("{tmp_path}"))
+    print(lyric.exists("{_ly_path(tmp_path)}"))
 }}
 """
         try:
@@ -212,7 +220,7 @@ def main() {
         code = f"""
 import lyric
 def main() {{
-    print(lyric.isfile("{tmp_path}"))
+    print(lyric.isfile("{_ly_path(tmp_path)}"))
 }}
 """
         try:
@@ -223,11 +231,12 @@ def main() {{
             os.unlink(tmp_path)
 
     def test_isdir_tmp(self):
-        code = """
+        tmp = _ly_path(tempfile.gettempdir())
+        code = f"""
 import lyric
-def main() {
-    print(lyric.isdir("/tmp"))
-}
+def main() {{
+    print(lyric.isdir("{tmp}"))
+}}
 """
         result = _run_lyric(code)
         assert result.returncode == 0
@@ -249,8 +258,8 @@ class TestMkdirRmdir:
         code = f"""
 import lyric
 def main() {{
-    lyric.mkdir("{test_dir}")
-    print(lyric.isdir("{test_dir}"))
+    lyric.mkdir("{_ly_path(test_dir)}")
+    print(lyric.isdir("{_ly_path(test_dir)}"))
 }}
 """
         try:
@@ -268,8 +277,8 @@ def main() {{
         code = f"""
 import lyric
 def main() {{
-    lyric.rmdir("{test_dir}")
-    print(lyric.exists("{test_dir}"))
+    lyric.rmdir("{_ly_path(test_dir)}")
+    print(lyric.exists("{_ly_path(test_dir)}"))
 }}
 """
         result = _run_lyric(code)
@@ -284,10 +293,10 @@ def main() {{
         code = f"""
 import lyric
 def main() {{
-    lyric.mkdir("{test_dir}")
-    print(lyric.isdir("{test_dir}"))
-    lyric.rmdir("{test_dir}")
-    print(lyric.exists("{test_dir}"))
+    lyric.mkdir("{_ly_path(test_dir)}")
+    print(lyric.isdir("{_ly_path(test_dir)}"))
+    lyric.rmdir("{_ly_path(test_dir)}")
+    print(lyric.exists("{_ly_path(test_dir)}"))
 }}
 """
         try:
@@ -315,7 +324,7 @@ class TestCd:
 import lyric
 def main() {{
     var original = lyric.pwd()
-    lyric.cd("{test_dir}")
+    lyric.cd("{_ly_path(test_dir)}")
     var newdir = lyric.pwd()
     print(original != newdir)
     lyric.cd(original)
@@ -337,7 +346,7 @@ def main() {{
 import lyric
 def main() {{
     var original = lyric.pwd()
-    lyric.cd("{test_dir}")
+    lyric.cd("{_ly_path(test_dir)}")
     lyric.cd(original)
     print(lyric.pwd() == original)
 }}
@@ -392,7 +401,7 @@ def main() {
         code = f"""
 import lyric
 def main() {{
-    arr entries = lyric.ls("{test_dir}/*.txt")
+    arr entries = lyric.ls("{_ly_path(test_dir)}/*.txt")
     print(int(entries))
 }}
 """
@@ -418,7 +427,7 @@ def main() {{
         code = f"""
 import lyric
 def main() {{
-    arr entries = lyric.ls("{test_dir}")
+    arr entries = lyric.ls("{_ly_path(test_dir)}")
     print(int(entries))
 }}
 """
@@ -449,9 +458,9 @@ class TestRm:
         code = f"""
 import lyric
 def main() {{
-    print(lyric.exists("{tmp_path}"))
-    lyric.rm("{tmp_path}")
-    print(lyric.exists("{tmp_path}"))
+    print(lyric.exists("{_ly_path(tmp_path)}"))
+    lyric.rm("{_ly_path(tmp_path)}")
+    print(lyric.exists("{_ly_path(tmp_path)}"))
 }}
 """
         result = _run_lyric(code)
@@ -467,12 +476,12 @@ def main() {{
         code = f"""
 import lyric
 def main() {{
-    dsk f = disk("{tmp_path}")
+    dsk f = disk("{_ly_path(tmp_path)}")
     f.write("hello")
     f.close()
-    print(lyric.isfile("{tmp_path}"))
-    lyric.rm("{tmp_path}")
-    print(lyric.exists("{tmp_path}"))
+    print(lyric.isfile("{_ly_path(tmp_path)}"))
+    lyric.rm("{_ly_path(tmp_path)}")
+    print(lyric.exists("{_ly_path(tmp_path)}"))
 }}
 """
         try:
@@ -757,7 +766,7 @@ def main() {
 """
         result = _run_lyric(code)
         assert result.returncode == 0
-        assert result.stdout.strip() == "usr/local"
+        assert result.stdout.strip() == os.path.join("usr", "local")
 
     def test_join_with_slash(self):
         code = """
@@ -769,7 +778,7 @@ def main() {
 """
         result = _run_lyric(code)
         assert result.returncode == 0
-        assert result.stdout.strip() == "/home/user"
+        assert result.stdout.strip() == os.path.join("/home", "user")
 
     def test_join_absolute_second(self):
         """If second arg is absolute, it overrides first (os.path.join behavior)."""
@@ -802,7 +811,7 @@ def main() {
         result = _run_lyric(code)
         assert result.returncode == 0
         output = result.stdout.strip()
-        assert output.startswith('/')
+        assert os.path.isabs(output)
         assert len(output) > 1
 
     def test_path_makes_absolute(self):
@@ -816,20 +825,21 @@ def main() {
         result = _run_lyric(code)
         assert result.returncode == 0
         output = result.stdout.strip()
-        assert output.startswith('/')
-        assert output.endswith('somefile.txt')
+        assert os.path.isabs(output)
+        assert os.path.basename(output) == 'somefile.txt'
 
     def test_path_already_absolute(self):
-        code = """
+        sample = os.path.join(tempfile.gettempdir(), "lyric_abs_path_test.txt")
+        code = f"""
 import lyric
-def main() {
-    var p = lyric.path("/tmp/test.txt")
+def main() {{
+    var p = lyric.path("{_ly_path(sample)}")
     print(p)
-}
+}}
 """
         result = _run_lyric(code)
         assert result.returncode == 0
-        assert result.stdout.strip() == "/tmp/test.txt"
+        assert os.path.normcase(os.path.normpath(result.stdout.strip())) == os.path.normcase(os.path.normpath(sample))
 
 
 # ===================================================================
@@ -1132,24 +1142,24 @@ class TestIntegration:
         code = f"""
 import lyric
 def main() {{
-    lyric.mkdir("{test_dir}")
-    print(lyric.isdir("{test_dir}"))
+    lyric.mkdir("{_ly_path(test_dir)}")
+    print(lyric.isdir("{_ly_path(test_dir)}"))
 
-    dsk f = disk("{test_file}")
+    dsk f = disk("{_ly_path(test_file)}")
     f.write("integration test")
     f.close()
-    print(lyric.isfile("{test_file}"))
+    print(lyric.isfile("{_ly_path(test_file)}"))
 
-    str b = lyric.base("{test_file}")
+    str b = lyric.base("{_ly_path(test_file)}")
     print(b)
 
-    str d = lyric.dir("{test_file}")
+    str d = lyric.dir("{_ly_path(test_file)}")
     print(d)
 
-    lyric.rm("{test_file}")
-    print(lyric.exists("{test_file}"))
-    lyric.rmdir("{test_dir}")
-    print(lyric.exists("{test_dir}"))
+    lyric.rm("{_ly_path(test_file)}")
+    print(lyric.exists("{_ly_path(test_file)}"))
+    lyric.rmdir("{_ly_path(test_dir)}")
+    print(lyric.exists("{_ly_path(test_dir)}"))
 }}
 """
         try:
@@ -1159,7 +1169,7 @@ def main() {{
             assert "True" in lines[0]   # isdir
             assert "True" in lines[1]   # isfile
             assert lines[2].strip() == "data.txt"  # base
-            assert test_dir in lines[3]  # dir
+            assert os.path.normcase(os.path.normpath(lines[3].strip())) == os.path.normcase(os.path.normpath(test_dir))
             assert "False" in lines[4]  # file removed
             assert "False" in lines[5]  # dir removed
         finally:
@@ -1187,7 +1197,7 @@ def main() {
         assert result.returncode == 0
         lines = result.stdout.strip().split('\n')
         assert "works" in lines[0]
-        assert lines[1].strip() == "/usr/local"
+        assert lines[1].strip() == os.path.join("/usr", "local")
         assert "True" in lines[2]
 
     def test_date_now_together(self):

@@ -14,6 +14,18 @@ import tempfile
 _CWD = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+def _python_cmd() -> str:
+    """Python running this suite, safe to place in a shell command.
+
+    Git Bash on Windows puts a non-functional python3 store alias on PATH.
+    sys.executable is the interpreter that is actually running the tests.
+    """
+    exe = sys.executable.replace('\\', '/')
+    if any(ch in exe for ch in ' \t'):
+        return "'" + exe + "'"
+    return exe
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -75,7 +87,7 @@ def test_exec_redirect_captures_stderr_only(py_script):
     result = _run_lyric(f"""
 def main() {{
     str out
-    exec("python3 {py}") -> out
+    exec("{_python_cmd()} {py}") -> out
     print(out)
 }}
 """)
@@ -89,7 +101,7 @@ def test_exec_redirect_captures_stdout_and_stderr(py_script):
     result = _run_lyric(f"""
 def main() {{
     str out
-    exec("python3 {py}") -> out
+    exec("{_python_cmd()} {py}") -> out
     print(out)
 }}
 """)
@@ -104,7 +116,7 @@ def test_exec_redirect_captures_stderr_from_failing_command(py_script):
     result = _run_lyric(f"""
 def main() {{
     str out
-    exec("python3 {py}") -> out
+    exec("{_python_cmd()} {py}") -> out
     print(out)
 }}
 """)
@@ -118,7 +130,7 @@ def test_exec_redirect_stderr_multiline(py_script):
     result = _run_lyric(f"""
 def main() {{
     str out
-    exec("python3 {py}") -> out
+    exec("{_python_cmd()} {py}") -> out
     print(out)
 }}
 """)
@@ -138,7 +150,7 @@ def test_pipeline_stderr_from_first_command_is_piped(py_script):
     result = _run_lyric(f"""
 def main() {{
     str out
-    exec("python3 {py}") | exec("cat") -> out
+    exec("{_python_cmd()} {py}") | exec("cat") -> out
     print(out)
 }}
 """)
@@ -152,7 +164,7 @@ def test_pipeline_stdout_and_stderr_from_first_command_are_piped(py_script):
     result = _run_lyric(f"""
 def main() {{
     str out
-    exec("python3 {py}") | exec("cat") -> out
+    exec("{_python_cmd()} {py}") | exec("cat") -> out
     print(out)
 }}
 """)
@@ -168,7 +180,7 @@ def test_pipeline_stderr_from_last_command_captured(py_script):
     result = _run_lyric(f"""
 def main() {{
     str out
-    exec("python3 {py_first}") | exec("python3 {py_last}") -> out
+    exec("{_python_cmd()} {py_first}") | exec("{_python_cmd()} {py_last}") -> out
     print(out)
 }}
 """)
@@ -182,7 +194,7 @@ def test_pipeline_stderr_propagates_through_cat_stages(py_script):
     result = _run_lyric(f"""
 def main() {{
     str out
-    exec("python3 {py1}") | exec("cat") | exec("cat") -> out
+    exec("{_python_cmd()} {py1}") | exec("cat") | exec("cat") -> out
     print(out)
 }}
 """)
@@ -201,7 +213,7 @@ def test_append_to_file_captures_stderr(py_script, tmp_path):
     result = _run_lyric(f"""
 def main() {{
     dsk f = disk("{out_file}")
-    exec("python3 {py}") ->> f
+    exec("{_python_cmd()} {py}") ->> f
     f.close()
     dsk r = disk("{out_file}")
     str content = r.read()
@@ -220,7 +232,7 @@ def test_append_to_file_captures_stdout_and_stderr(py_script, tmp_path):
     result = _run_lyric(f"""
 def main() {{
     dsk f = disk("{out_file}")
-    exec("python3 {py}") ->> f
+    exec("{_python_cmd()} {py}") ->> f
     f.close()
     dsk r = disk("{out_file}")
     str content = r.read()

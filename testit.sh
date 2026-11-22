@@ -13,25 +13,33 @@ if [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
     VERBOSE=true
 fi
 
+# Prefer python3 when it is on PATH and can actually start.
+# The Windows Store alias is on PATH but exits without running Python.
+if command -v python3 >/dev/null 2>&1 && python3 -c "import sys" >/dev/null 2>&1; then
+    PYTHON=python3
+else
+    PYTHON=python
+fi
+
 if [ "$VERBOSE" = true ]; then
     echo "Running Lyric interpreter tests (VERBOSE MODE)..."
     echo "================================================"
     
     # Run tests from the lyric package with detailed output
     echo "Running lexer tests..."
-    python3 -m pytest lyric/tests/test_lexer.py -v
+    "$PYTHON" -m pytest lyric/tests/test_lexer.py -v
     
     echo ""
     echo "Running parser tests..."
-    python3 -m pytest lyric/tests/test_parser.py -v
+    "$PYTHON" -m pytest lyric/tests/test_parser.py -v
     
     echo ""
     echo "Running interpreter tests..."
-    python3 -m pytest lyric/tests/test_interpreter.py -v
+    "$PYTHON" -m pytest lyric/tests/test_interpreter.py -v
     
     echo ""
     echo "Running all lyric tests..."
-    python3 -m pytest lyric/tests/ -v
+    "$PYTHON" -m pytest lyric/tests/ -v
     
     echo ""
     echo "================================================"
@@ -42,10 +50,10 @@ else
     
     # Run all tests and capture summary
     echo "Running all tests..."
-    python3 -m pytest lyric/tests/ --tb=short -q
+    "$PYTHON" -m pytest lyric/tests/ --tb=short -q
 
     echo "Running tests lyric interpreted"
-    LYRIC_INTERPRET=1 python3 -m pytest lyric/tests/ --tb=short -q
+    LYRIC_INTERPRET=1 "$PYTHON" -m pytest lyric/tests/ --tb=short -q
     
     echo ""
     echo "=================================="

@@ -610,12 +610,13 @@ def main() {
         assert '1' in out
 
     def test_lyric_stdlib_import(self):
-        out = _run_compiled('''
+        tmp = tempfile.gettempdir().replace('\\', '/')
+        out = _run_compiled(f'''
 import lyric
-def main() {
-    var e = lyric.exists("/tmp")
+def main() {{
+    var e = lyric.exists("{tmp}")
     print(e)
-}''')
+}}''')
         assert 'True' in out
 
     def test_user_module_import(self):
@@ -696,32 +697,40 @@ def main() {
 
 class TestPhase6FileOps:
     def test_write_and_read(self):
-        out = _run_compiled('''
-def main() {
-    var f = disk("/tmp/lyric_compiler_test.txt")
+        path = os.path.join(tempfile.gettempdir(), "lyric_compiler_test.txt").replace("\\", "/")
+        try:
+            out = _run_compiled(f'''
+def main() {{
+    var f = disk("{path}")
     "hello" -> f
     f.close()
-    var r = disk("/tmp/lyric_compiler_test.txt")
+    var r = disk("{path}")
     print(r.read())
     r.close()
-}''')
-        assert 'hello' in out
-        os.unlink('/tmp/lyric_compiler_test.txt')
+}}''')
+            assert 'hello' in out
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
 
     def test_append(self):
-        out = _run_compiled('''
-def main() {
-    var f = disk("/tmp/lyric_compiler_test2.txt")
+        path = os.path.join(tempfile.gettempdir(), "lyric_compiler_test2.txt").replace("\\", "/")
+        try:
+            out = _run_compiled(f'''
+def main() {{
+    var f = disk("{path}")
     "line1" -> f
     "line2" ->> f
     f.close()
-    var r = disk("/tmp/lyric_compiler_test2.txt")
+    var r = disk("{path}")
     print(r.read())
     r.close()
-}''')
-        assert 'line1' in out
-        assert 'line2' in out
-        os.unlink('/tmp/lyric_compiler_test2.txt')
+}}''')
+            assert 'line1' in out
+            assert 'line2' in out
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
 
 
 # ═══════════════════════════════════════════════════════════════════

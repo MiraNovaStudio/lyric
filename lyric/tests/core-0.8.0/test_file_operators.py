@@ -154,15 +154,16 @@ def main() {
 
 def test_array_read_from_file():
     """Test arr <- dsk (read file lines to array)."""
-    code = """
-def main() {
-    dsk myfile = disk("/tmp/test_arr_read.txt")
+    data_path = os.path.join(tempfile.gettempdir(), "lyric_test_arr_read.txt").replace("\\", "/")
+    code = f"""
+def main() {{
+    dsk myfile = disk("{data_path}")
     str data = "line1\\nline2\\nline3"
     data -> myfile
     myfile.close()
     
     arr lines
-    dsk readfile = disk("/tmp/test_arr_read.txt")
+    dsk readfile = disk("{data_path}")
     lines <- readfile
     print(lines.len())
     print(lines[0])
@@ -170,7 +171,7 @@ def main() {
     print(lines[2])
     readfile.close()
     readfile.delete()
-}
+}}
 """
     with tempfile.NamedTemporaryFile(mode='w', suffix='.ly', delete=False) as f:
         f.write(code)
@@ -190,6 +191,8 @@ def main() {
         assert result.returncode == 0
     finally:
         os.unlink(temp_file)
+        if os.path.exists(data_path):
+            os.unlink(data_path)
 
 
 def test_array_overwrite_file():
