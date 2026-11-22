@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**Lyric** is an experimental interpreted programming language written in Python, developed by MiraNova Studios.
+**Lyric** is an experimental interpreted programming language written in Python, developed by MiraNova Studio.
 
 ## Commands
 
@@ -177,7 +177,7 @@ Every Python source file in `/lyric/` and every test file in `/lyric/tests/` mus
 
 ```python
 # Lyric Programming Language
-# Copyright (c) 2025-2026 MiraNova Studios
+# Copyright (c) 2025-2026 MiraNova Studio
 # All rights reserved.
 ```
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Lyric Programming Language
-# Copyright (c) 2025-2026 MiraNova Studios
+# Copyright (c) 2025-2026 MiraNova Studio
 # All rights reserved.
 #
 # Build a Debian package for Lyric.
@@ -94,11 +94,11 @@ Section: devel
 Priority: optional
 Architecture: ${ARCH}
 Depends: ${PYTHON_DEP}
-Maintainer: MiraNova Studios <aeonath@miranova.studio>
+Maintainer: MiraNova Studio <aeonath@miranova.studio>
 Homepage: https://github.com/MiraNovaStudio/lyric
 Description: Lyric programming language transpiler and interpreter
  Lyric is an experimental programming language that transpiles to
- Python bytecode, developed by MiraNova Studios. This package
+ Python bytecode, developed by MiraNova Studio. This package
  provides the lyric transpiler, interpreter, and standard library.
 EOF
 

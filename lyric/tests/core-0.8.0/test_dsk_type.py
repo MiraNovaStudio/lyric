@@ -1,5 +1,5 @@
 # Lyric Programming Language
-# Copyright (c) 2025-2026 MiraNova Studios
+# Copyright (c) 2025-2026 MiraNova Studio
 # All rights reserved.
 
 """Tests for dsk type and file I/O (Sprint 9 Task 7)."""

@@ -1,5 +1,5 @@
 # Lyric Programming Language
-# Copyright (c) 2025-2026 MiraNova Studios
+# Copyright (c) 2025-2026 MiraNova Studio
 # All rights reserved.
 
 """Test suite for list_dict_tests.ly - Sprint 3 list and dictionary functionality tests."""
