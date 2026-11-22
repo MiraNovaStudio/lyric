@@ -1,32 +1,17 @@
 # Lyric
 
-Lyric is an experimental programming language built in Python, designed for clarity and expressive syntax. As of version 1.1.1, Lyric is a **transpiler** — source code is compiled to Python AST and executed as CPython bytecode, delivering near-native Python performance. Type declarations are optional and enforced at runtime — variables declared with a type (`int`, `str`, `flt`, etc.) are strongly checked on assignment, while `var` opts into dynamic typing. It is developed and maintained by **MiraNova Studios**.
+Lyric is an experimental programming language built in Python, designed for clarity and expressive syntax. As of version 1.1.1, Lyric is a **transpiler** — source code is compiled to Python AST and executed as CPython bytecode. Type declarations are optional and enforced at runtime — variables declared with a type (`int`, `str`, `flt`, etc.) are strongly checked on assignment, while `var` opts into dynamic typing. It is developed and maintained by **MiraNova Studios**.
 
-**Current version:** 1.1.1 (Alpha)
+**Current version:** 1.1.2 (Alpha)
 **Website:** [lyric-lang.org](https://lyric-lang.org)
 
 ## Install
 
-From PyPI:
-
-### Debian/Ubuntu
+Clone the repository and install from source:
 
 ```bash
-./build-deb.sh
-sudo dpkg -i dist/lyric-lang_1.1.1_all.deb
-```
-
-### pip
-
-```bash
-pip install lyric-lang
-```
-
-From source:
-
-```bash
-git clone https://github.com/miranova-studios/lyric-lang.git
-cd lyric-lang
+git clone https://github.com/MiraNovaStudio/lyric.git
+cd lyric
 pip install -e .
 ```
 
@@ -115,9 +100,9 @@ lyric/
 
 ### Compiler (Transpiler)
 
-The compiler walks the Lyric AST and emits Python `ast` module nodes. Python's built-in `compile()` converts these to bytecode, and `exec()` runs them on CPython's C-level VM. This gives Lyric near-native Python performance — the full benchmark runs in ~5 seconds compiled vs ~74 seconds interpreted (14x speedup).
+The compiler walks the Lyric AST and emits Python `ast` module nodes. Python's built-in `compile()` converts these to bytecode, and `exec()` runs them on CPython's C-level VM.
 
-The compiler handles all Lyric constructs: expressions, control flow, functions, classes with inheritance, module imports, file I/O, exec chains, try/catch/finally, and the full type system. Type errors in compiled functions are caught by a zero-overhead try/except wrapper that translates Python TypeErrors into Lyric error messages.
+The compiler handles all Lyric constructs: expressions, control flow, functions, classes with inheritance, module imports, file I/O, exec chains, try/catch/finally, and the full type system. Type errors in compiled functions are caught by a try/except wrapper that translates Python TypeErrors into Lyric error messages.
 
 ### Lexer
 
@@ -141,7 +126,7 @@ Lyric uses optional type declarations enforced at runtime. Variables declared wi
 | `flt` | Float |
 | `str` | String |
 | `var` | Dynamic (no enforcement) |
-| `god` | Boolean (honoring Kurt Godel) |
+| `god` | Boolean (honoring Kurt Gödel) |
 | `bin` | Boolean (alternative form) |
 | `rex` | Regular expression literal (`/pattern/`) |
 | `arr` | Array (ordered collection) |
@@ -194,7 +179,7 @@ All errors (lexer, parser, runtime) carry source position information. Error mes
 | Mode | Command | Description |
 |------|---------|-------------|
 | **Compiled** (default) | `lyric program.ly` | Transpiles to Python AST, executes as CPython bytecode |
-| **Interpreted** | `lyric program.ly --interpret` | Tree-walking interpreter (slower, full compatibility) |
+| **Interpreted** | `lyric program.ly --interpret` | Tree-walking interpreter (fallback) |
 | **REPL** | `lyric -i` | Interactive mode (uses interpreter) |
 | **AST Dump** | `lyric program.ly --dump-ast` | Print generated Python AST and exit (debugging) |
 
@@ -224,22 +209,6 @@ Lyric supports two import mechanisms. Native Lyric modules (`import name`) are r
 
 ---
 
-## Performance
-
-Lyric 1.1.1 compiles to CPython bytecode, achieving near-native Python performance:
-
-| Mode | Benchmark Time | vs Interpreted |
-|------|---------------|----------------|
-| Compiled (default) | ~5s | 14x faster |
-| Interpreted | ~74s | baseline |
-| Python (native) | ~1.2s | reference |
-| Ruby (native) | ~1.1s | reference |
-| Perl (native) | ~3.0s | reference |
-
-Benchmark: 10M function calls + 1M counting loop + 10M arithmetic operations.
-
----
-
 ## Development
 
 Requires Python 3.10 or newer.
@@ -260,11 +229,13 @@ flake8 lyric/
 
 Tests are organized under `lyric/tests/` by version milestone (e.g. `core-0.8.0/`, `core-1.1.x/`). Run the full suite with `pytest` from the project root.
 
-### Building the Debian Package
+### Debian package (build from source)
+
+On Debian or Ubuntu, from a source checkout. Requires `dpkg-deb` (from the `dpkg` package) and Python 3.10+. `./build-deb.sh` writes `dist/python3-lyric-lang_<version>_all.deb`.
 
 ```bash
 ./build-deb.sh
-sudo dpkg -i dist/lyric-lang_1.1.1_all.deb
+sudo dpkg -i dist/python3-lyric-lang_1.1.2_all.deb
 ```
 
 ## Contributing
