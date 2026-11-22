@@ -19,6 +19,15 @@ cd lyric
 
 Requires **Python 3.10+** and pip.
 
+### Debian/Ubuntu package
+
+From the same source checkout, on Debian or Ubuntu. Requires `dpkg-deb` (from the `dpkg` package) and Python 3.10+. `./build-deb.sh` writes `dist/python3-lyric-lang_<version>_all.deb`.
+
+```bash
+./build-deb.sh
+sudo dpkg -i dist/python3-lyric-lang_1.1.2_all.deb
+```
+
 ## Usage
 
 ```bash
