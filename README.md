@@ -7,15 +7,17 @@ Lyric is an experimental programming language built in Python, designed for clar
 
 ## Install
 
-Clone the repository and install from source:
+Clone the repository and install this checkout into the current Python environment:
 
 ```bash
 git clone https://github.com/MiraNovaStudio/lyric.git
 cd lyric
-pip install -e .
+./install.sh
 ```
 
-Requires **Python 3.10+**.
+`./install.sh` installs this checkout with pip. Use `./install.sh -e` for an editable install while working on Lyric.
+
+Requires **Python 3.10+** and pip.
 
 ## Usage
 
