@@ -8,6 +8,7 @@ using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -22,6 +23,9 @@ class PythonCmd
 class LyricSetup
 {
     static Label _status;
+    static ProgressBar _meter;
+    static System.Windows.Forms.Timer _meterTimer;
+    static int _meterTarget;
 
     [STAThread]
     static void Main(string[] args)
@@ -55,9 +59,21 @@ class LyricSetup
             return;
         InstallBundled();
 #else
-        if (!Confirm("Install Lyric into the Python already on this PC?\r\n\r\nPython 3.10 or newer is required."))
+        PythonCmd python = FindPython();
+        if (python == null)
+        {
+            MessageBox.Show(
+                "Python 3.10 or newer is not installed.\r\n\r\nInstall Python, then run this setup again.",
+                "Lyric Setup",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error,
+                MessageBoxDefaultButton.Button1,
+                MessageBoxOptions.DefaultDesktopOnly);
             return;
-        InstallIntoExistingPython();
+        }
+        if (!Confirm("Install Lyric into the Python already on this PC?"))
+            return;
+        InstallIntoExistingPython(python);
 #endif
     }
 
@@ -75,9 +91,14 @@ class LyricSetup
         using (Form owner = new Form())
         {
             owner.ShowInTaskbar = false;
-            if (owner.Handle == IntPtr.Zero)
-                return DialogResult.None;
-            owner.Icon = AppIcon();
+            try
+            {
+                if (owner.Handle != IntPtr.Zero)
+                    owner.Icon = AppIcon();
+            }
+            catch (Exception)
+            {
+            }
             return MessageBox.Show(owner, text, "Lyric Setup", buttons, icon);
         }
     }
@@ -87,23 +108,15 @@ class LyricSetup
         return ShowMessage(text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
     }
 
-    static void InstallIntoExistingPython()
+    static void InstallIntoExistingPython(PythonCmd python)
     {
-        PythonCmd python = FindPython();
-        if (python == null)
-        {
-            ShowMessage(
-                "Python 3.10 or newer was not found.\r\n\r\nInstall Python, then run this setup again.",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
-            return;
-        }
-
         ShowStatus("Installing Lyric into\r\n" + python.Display);
+        SetProgress("Installing Lyric into\r\n" + python.Display, 92);
         string wheel = ExtractResource("lyric.whl", WheelInfo.FileName);
         string output;
         int code = Run(python.File, Join(python.Prefix, "-m pip install --upgrade --no-deps \"" + wheel + "\""), null, out output);
         TryDelete(wheel);
+        if (code == 0) FillProgress();
         CloseStatus();
         if (code == 0)
             RegisterInstalled(python.Display, python.File, python.Prefix);
@@ -132,7 +145,9 @@ class LyricSetup
         if (!string.IsNullOrEmpty(pythonFile))
         {
             ShowStatus("Removing Lyric...");
+            SetProgress("Removing Lyric...", 90);
             code = Run(pythonFile, Join(pythonPrefix, "-m pip uninstall -y lyric-lang"), null, out output);
+            if (code == 0) FillProgress();
             CloseStatus();
         }
 
@@ -143,7 +158,6 @@ class LyricSetup
             return;
         }
 
-        RemoveRegistration();
         ScheduleDelete(UninstallerDir());
         if (!quiet)
             ShowMessage("Lyric is removed.", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -166,7 +180,7 @@ class LyricSetup
         try
         {
             Directory.CreateDirectory(installDir);
-            SetStatus("Extracting Python...");
+            SetProgress("Extracting Python...", 32);
             code = Run(Path.Combine(Environment.SystemDirectory, "tar.exe"), "-xf \"" + zip + "\" -C \"" + installDir + "\"", null, out output);
             if (code != 0)
             {
@@ -177,7 +191,7 @@ class LyricSetup
             EnableSitePackages(installDir);
             string pythonExe = Path.Combine(installDir, "python.exe");
 
-            SetStatus("Installing pip...");
+            SetProgress("Installing pip...", 68);
             code = Run(pythonExe, "\"" + getPip + "\" --no-warn-script-location", installDir, out output);
             if (code != 0)
             {
@@ -185,7 +199,7 @@ class LyricSetup
                 return;
             }
 
-            SetStatus("Installing Lyric...");
+            SetProgress("Installing Lyric...", 96);
             code = Run(pythonExe, "-m pip install --upgrade --no-deps --no-warn-script-location \"" + wheel + "\"", installDir, out output);
             if (code != 0)
             {
@@ -194,6 +208,7 @@ class LyricSetup
             }
 
             AddToUserPath(Path.Combine(installDir, "Scripts"));
+            if (code == 0) FillProgress();
         }
         finally
         {
@@ -224,7 +239,6 @@ class LyricSetup
         }
 
         RemoveFromUserPath(Path.Combine(installDir, "Scripts"));
-        RemoveRegistration();
         ScheduleDelete(installDir);
         if (!quiet)
             ShowMessage("Lyric is removed.", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -322,18 +336,54 @@ class LyricSetup
 
     static PythonCmd Probe(string file, string prefix)
     {
+        string resolved = ResolveCommand(file);
+        if (resolved == null) return null;
         string output;
         int code;
         try
         {
-            code = Run(file, Join(prefix, "-c \"import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)\""), null, out output);
+            code = Run(resolved, Join(prefix, "-c \"import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)\""), null, out output);
         }
         catch (Exception)
         {
             return null;
         }
         if (code != 0) return null;
-        return new PythonCmd { File = file, Prefix = prefix, Display = file };
+        return new PythonCmd { File = resolved, Prefix = prefix, Display = resolved };
+    }
+
+    static string ResolveCommand(string file)
+    {
+        if (file.IndexOf('\\') >= 0 || file.IndexOf('/') >= 0 || file.IndexOf(':') >= 0)
+        {
+            if (IsStoreAlias(file) || !File.Exists(file)) return null;
+            return file;
+        }
+
+        string pathEnv = Environment.GetEnvironmentVariable("PATH");
+        if (string.IsNullOrEmpty(pathEnv)) return null;
+        string pathext = Environment.GetEnvironmentVariable("PATHEXT");
+        if (string.IsNullOrEmpty(pathext)) pathext = ".EXE;.CMD;.BAT";
+        string[] dirs = pathEnv.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] exts = pathext.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (string dir in dirs)
+        {
+            string trimmed = dir.Trim();
+            if (trimmed.Length == 0 || IsStoreAlias(trimmed)) continue;
+            string direct = Path.Combine(trimmed, file);
+            if (File.Exists(direct) && !IsStoreAlias(direct)) return direct;
+            foreach (string ext in exts)
+            {
+                string candidate = direct + ext;
+                if (File.Exists(candidate) && !IsStoreAlias(candidate)) return candidate;
+            }
+        }
+        return null;
+    }
+
+    static bool IsStoreAlias(string path)
+    {
+        return path.IndexOf("\\WindowsApps\\", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     static int Run(string file, string args, string workingDir, out string output)
@@ -350,13 +400,24 @@ class LyricSetup
 
         using (Process process = Process.Start(info))
         {
-            string stderr = "";
-            Thread errThread = new Thread(delegate() { stderr = process.StandardError.ReadToEnd(); });
-            errThread.Start();
-            string stdout = process.StandardOutput.ReadToEnd();
-            errThread.Join();
+            StringBuilder stdout = new StringBuilder();
+            StringBuilder stderr = new StringBuilder();
+            process.OutputDataReceived += delegate(object sender, DataReceivedEventArgs e)
+            {
+                if (e.Data == null) return;
+                lock (stdout) stdout.AppendLine(e.Data);
+            };
+            process.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs e)
+            {
+                if (e.Data == null) return;
+                lock (stderr) stderr.AppendLine(e.Data);
+            };
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            while (!process.WaitForExit(50))
+                Application.DoEvents();
             process.WaitForExit();
-            output = stdout + stderr;
+            output = stdout.ToString() + stderr.ToString();
             return process.ExitCode;
         }
     }
@@ -385,17 +446,71 @@ class LyricSetup
         form.MaximizeBox = false;
         form.MinimizeBox = false;
         form.Width = 480;
-        form.Height = 150;
+        form.Height = 190;
         form.Icon = AppIcon();
         _status = new Label();
         _status.AutoSize = true;
         _status.Left = 16;
-        _status.Top = 28;
+        _status.Top = 24;
         _status.MaximumSize = new System.Drawing.Size(440, 0);
         _status.Text = text;
         form.Controls.Add(_status);
+        _meter = new ProgressBar();
+        _meter.Left = 16;
+        _meter.Top = 100;
+        _meter.Width = 440;
+        _meter.Height = 18;
+        _meter.Minimum = 0;
+        _meter.Maximum = 100;
+        _meter.Style = ProgressBarStyle.Continuous;
+        form.Controls.Add(_meter);
+        _meterTarget = 8;
+        _meterTimer = new System.Windows.Forms.Timer();
+        _meterTimer.Interval = 80;
+        _meterTimer.Tick += MeterTick;
+        _meterTimer.Start();
         form.Show();
         Application.DoEvents();
+    }
+
+    static void MeterTick(object sender, EventArgs e)
+    {
+        if (_meter == null || _meter.Value >= _meterTarget) return;
+        int gap = _meterTarget - _meter.Value;
+        int step = 1;
+        if (gap > 40) step = 3;
+        else if (gap > 15) step = 2;
+        int next = _meter.Value + step;
+        if (next > _meterTarget) next = _meterTarget;
+        SetMeterValue(next);
+    }
+
+    static void SetProgress(string text, int target)
+    {
+        if (target < 0) target = 0;
+        if (target > 100) target = 100;
+        _meterTarget = target;
+        SetStatus(text);
+    }
+
+    static void FillProgress()
+    {
+        _meterTarget = 100;
+        SetMeterValue(100);
+        Application.DoEvents();
+    }
+
+    static void SetMeterValue(int value)
+    {
+        if (_meter == null) return;
+        if (value < 0) value = 0;
+        if (value > 100) value = 100;
+        if (value > 0)
+        {
+            _meter.Value = value;
+            _meter.Value = value - 1;
+        }
+        _meter.Value = value;
     }
 
     static void SetStatus(string text)
@@ -407,6 +522,14 @@ class LyricSetup
 
     static void CloseStatus()
     {
+        if (_meterTimer != null)
+        {
+            _meterTimer.Stop();
+            _meterTimer.Tick -= MeterTick;
+            _meterTimer.Dispose();
+            _meterTimer = null;
+        }
+        _meter = null;
         if (_status == null) return;
         Form form = _status.FindForm();
         _status = null;
@@ -472,10 +595,18 @@ class LyricSetup
     static void RegisterInstalled(string installLocation, string pythonFile, string pythonPrefix)
     {
         string uninstallExe = Path.Combine(UninstallerDir(), "Uninstall.exe");
-        Directory.CreateDirectory(UninstallerDir());
-        string source = Application.ExecutablePath;
-        if (!string.Equals(Path.GetFullPath(source), Path.GetFullPath(uninstallExe), StringComparison.OrdinalIgnoreCase))
-            File.Copy(source, uninstallExe, true);
+        try
+        {
+            Directory.CreateDirectory(UninstallerDir());
+            string source = Application.ExecutablePath;
+            if (!string.Equals(Path.GetFullPath(source), Path.GetFullPath(uninstallExe), StringComparison.OrdinalIgnoreCase))
+                File.Copy(source, uninstallExe, true);
+        }
+        catch (Exception)
+        {
+            if (!File.Exists(uninstallExe))
+                uninstallExe = Application.ExecutablePath;
+        }
 
         Version version = Assembly.GetExecutingAssembly().GetName().Version;
         string displayVersion = version.Major + "." + version.Minor + "." + version.Build;
@@ -490,6 +621,7 @@ class LyricSetup
             key.SetValue("QuietUninstallString", "\"" + uninstallExe + "\" /uninstall /quiet");
             key.SetValue("NoModify", 1, RegistryValueKind.DWord);
             key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
+            key.SetValue("EstimatedSize", FolderSizeKb(installLocation), RegistryValueKind.DWord);
             key.SetValue("InstallDate", DateTime.Now.ToString("yyyyMMdd"));
             key.SetValue("URLInfoAbout", "https://github.com/MiraNovaStudio/lyric");
             if (!string.IsNullOrEmpty(pythonFile))
@@ -497,6 +629,25 @@ class LyricSetup
             if (!string.IsNullOrEmpty(pythonPrefix))
                 key.SetValue("PythonPrefix", pythonPrefix);
         }
+    }
+
+    static int FolderSizeKb(string directory)
+    {
+        long bytes = 0;
+        try
+        {
+            foreach (string file in Directory.GetFiles(directory, "*", SearchOption.AllDirectories))
+            {
+                try { bytes += new FileInfo(file).Length; }
+                catch (Exception) { }
+            }
+        }
+        catch (Exception)
+        {
+        }
+        int kb = (int)(bytes / 1024);
+        if (kb < 1) kb = 1;
+        return kb;
     }
 
     static string ReadUninstallValue(string name)
@@ -530,9 +681,16 @@ class LyricSetup
 
     static void ScheduleDelete(string directory)
     {
+        if (!Directory.Exists(directory))
+        {
+            RemoveRegistration();
+            return;
+        }
+
+        string key = "HKCU\\" + UninstallKeyPath();
         ProcessStartInfo info = new ProcessStartInfo();
         info.FileName = "cmd.exe";
-        info.Arguments = "/c ping 127.0.0.1 -n 3 >nul & rmdir /s /q \"" + directory + "\"";
+        info.Arguments = "/c ping 127.0.0.1 -n 3 >nul & rmdir /s /q \"" + directory + "\" && reg delete \"" + key + "\" /f";
         info.UseShellExecute = false;
         info.CreateNoWindow = true;
         Process.Start(info);
