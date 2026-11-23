@@ -9,6 +9,11 @@ __pycache__/
 build/
 dist/
 
+# Debian and Windows packages
+*.deb
+*.whl
+LyricSetup*.exe
+
 # OS / Editor junk
 .DS_Store
 Thumbs.db

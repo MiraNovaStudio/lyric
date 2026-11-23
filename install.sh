@@ -32,17 +32,20 @@ while getopts "eh" opt; do
     esac
 done
 
-if python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
-    PYTHON=python3
+# Git Bash may expose Python as py, python, or python3.
+if py -3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
+    PYTHON=(py -3)
 elif python -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
-    PYTHON=python
+    PYTHON=(python)
+elif python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
+    PYTHON=(python3)
 else
-    echo "Python 3.10+ is required." >&2
+    echo "Python 3.10+ is required. Looked for py -3, python, and python3." >&2
     exit 1
 fi
 
 if [ "$EDITABLE" = true ]; then
-    "$PYTHON" -m pip install -e .
+    "${PYTHON[@]}" -m pip install -e .
 else
-    "$PYTHON" -m pip install .
+    "${PYTHON[@]}" -m pip install .
 fi

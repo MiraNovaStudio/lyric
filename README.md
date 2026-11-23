@@ -27,6 +27,21 @@ From the same source checkout, on Debian or Ubuntu. Requires `dpkg-deb` (from th
 sudo dpkg -i dist/python3-lyric-lang_1.1.2_all.deb
 ```
 
+### Windows
+
+From Git Bash, in a source checkout:
+
+```bash
+./build-win.sh -u
+./build-win.sh -b
+```
+
+`-u` writes `dist/LyricSetup-1.1.2.exe`. Double-click it to install Lyric into a Python 3.10 or newer that is already on the PC. The setup program looks for `py -3`, then `python`, then `python3`. Lyric then appears in Installed apps, and Uninstall there removes it.
+
+`-b` writes `dist/LyricSetup-1.1.2-bundled.exe`. That installer contains Python 3.14.6 and installs it for Lyric under the user account. A Python already on the PC is left as it is. The first run needs a network connection so pip can be set up. Uninstall from Installed apps removes Lyric and that copy of Python.
+
+With no options, `./build-win.sh` builds the unbundled installer. The version in the file name comes from `lyric/__init__.py`.
+
 ## Usage
 
 ```bash
