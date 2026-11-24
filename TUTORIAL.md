@@ -2993,8 +2993,3 @@ You've now seen the full scope of Lyric's core features. Here are some direction
 
 Thank you for exploring Lyric. We hope this tutorial gives you a solid foundation to get started programming with Lyric.
 
-Lyric is still evolving, and your interest and [feedback](https://miranova.studio/contact.html) help shape its future.
-
-<p style="text-align: left; margin-top: 40px;">
-  <a href="/index.html">← Back</a>
-</p>
