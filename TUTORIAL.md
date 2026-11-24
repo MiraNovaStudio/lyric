@@ -1,6 +1,6 @@
 # The Lyric Tutorial
 
-Lyric is a modern interpreted programming language designed for clarity and expressiveness.
+Lyric is a experimental interpreted programming language designed for clarity and expressiveness.
 This tutorial walks you through the language from the ground up — starting with your first program,
 moving through types, control flow, functions, classes, and finishing with Lyric's unique
 system integration features.
