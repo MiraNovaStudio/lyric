@@ -3,8 +3,6 @@ title: Lyric Tutorial
 ---
 # The Lyric Tutorial
 
-<a href="/index.html"><img src="/images/lyric_logo.png" alt="Lyric Language Logo" class="logo"></a>
-
 Lyric is a modern interpreted programming language designed for clarity and expressiveness.
 This tutorial walks you through the language from the ground up — starting with your first program,
 moving through types, control flow, functions, classes, and finishing with Lyric's unique
