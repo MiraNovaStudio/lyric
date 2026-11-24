@@ -1,6 +1,3 @@
----
-title: Lyric Tutorial
----
 # The Lyric Tutorial
 
 Lyric is a modern interpreted programming language designed for clarity and expressiveness.
