@@ -469,9 +469,46 @@ class LyricSetup
         _meterTimer.Interval = 80;
         _meterTimer.Tick += MeterTick;
         _meterTimer.Start();
+        form.TopMost = true;
         form.Show();
+        BringProgressToFront(form);
         Application.DoEvents();
     }
+
+    static void BringProgressToFront(Form form)
+    {
+        form.BringToFront();
+        IntPtr foreground = GetForegroundWindow();
+        uint foregroundThread = GetWindowThreadProcessId(foreground, IntPtr.Zero);
+        uint thisThread = GetCurrentThreadId();
+        if (foregroundThread != 0 && foregroundThread != thisThread)
+        {
+            AttachThreadInput(foregroundThread, thisThread, true);
+            SetForegroundWindow(form.Handle);
+            AttachThreadInput(foregroundThread, thisThread, false);
+        }
+        else
+        {
+            SetForegroundWindow(form.Handle);
+        }
+        form.Activate();
+        form.Focus();
+    }
+
+    [DllImport("user32.dll")]
+    static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr processId);
+
+    [DllImport("kernel32.dll")]
+    static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
 
     static void MeterTick(object sender, EventArgs e)
     {
