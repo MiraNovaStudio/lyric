@@ -119,7 +119,16 @@ class LyricSetup
         if (code == 0) FillProgress();
         CloseStatus();
         if (code == 0)
-            RegisterInstalled(python.Display, python.File, python.Prefix);
+        {
+            string location;
+            int sizeKb;
+            if (!MeasureLyricInstall(python, out location, out sizeKb))
+            {
+                location = python.Display;
+                sizeKb = 0;
+            }
+            RegisterInstalled(location, python.File, python.Prefix, sizeKb);
+        }
         Finish(code, output, "Lyric is installed.\r\n\r\nOpen a new terminal and run:\r\nlyric --version\r\n\r\nRemove it later from Installed apps.");
     }
 
@@ -219,7 +228,7 @@ class LyricSetup
         }
 
         if (code == 0)
-            RegisterInstalled(installDir, "", "");
+            RegisterInstalled(installDir, "", "", FolderSizeKb(installDir));
         Finish(code, output, "Lyric is installed with its own Python.\r\n\r\nOpen a new terminal and run:\r\nlyric --version\r\n\r\nRemove it later from Installed apps.");
     }
 
@@ -629,7 +638,67 @@ class LyricSetup
 #endif
     }
 
-    static void RegisterInstalled(string installLocation, string pythonFile, string pythonPrefix)
+    static bool MeasureLyricInstall(PythonCmd python, out string location, out int sizeKb)
+    {
+        location = "";
+        sizeKb = 0;
+        string output;
+        int code;
+        string script =
+            "import glob,os,sys,lyric; " +
+            "pkg=os.path.dirname(os.path.abspath(lyric.__file__)); " +
+            "print(pkg); " +
+            "print(os.path.join(sys.prefix, 'Scripts')); " +
+            "parent=os.path.dirname(pkg); " +
+            "[print(p) for p in glob.glob(os.path.join(parent, 'lyric_lang-*.dist-info'))]";
+        try
+        {
+            code = Run(python.File, Join(python.Prefix, "-c \"" + script + "\""), Path.GetTempPath(), out output);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+        if (code != 0 || string.IsNullOrEmpty(output)) return false;
+
+        string[] lines = output.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        if (lines.Length == 0) return false;
+        location = lines[0].Trim();
+        long bytes = PathBytes(location);
+        if (lines.Length > 1)
+        {
+            string launcher = Path.Combine(lines[1].Trim(), "lyric.exe");
+            bytes += PathBytes(launcher);
+        }
+        for (int i = 2; i < lines.Length; i++)
+            bytes += PathBytes(lines[i].Trim());
+        sizeKb = (int)((bytes + 1023) / 1024);
+        return Directory.Exists(location) && sizeKb > 0;
+    }
+
+    static long PathBytes(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return 0;
+        try
+        {
+            if (File.Exists(path) && !Directory.Exists(path))
+                return new FileInfo(path).Length;
+            if (!Directory.Exists(path)) return 0;
+            long bytes = 0;
+            foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+            {
+                try { bytes += new FileInfo(file).Length; }
+                catch (Exception) { }
+            }
+            return bytes;
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+    }
+
+    static void RegisterInstalled(string installLocation, string pythonFile, string pythonPrefix, int sizeKb)
     {
         string uninstallExe = Path.Combine(UninstallerDir(), "Uninstall.exe");
         try
@@ -658,7 +727,8 @@ class LyricSetup
             key.SetValue("QuietUninstallString", "\"" + uninstallExe + "\" /uninstall /quiet");
             key.SetValue("NoModify", 1, RegistryValueKind.DWord);
             key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
-            key.SetValue("EstimatedSize", FolderSizeKb(installLocation), RegistryValueKind.DWord);
+            if (sizeKb > 0)
+                key.SetValue("EstimatedSize", sizeKb, RegistryValueKind.DWord);
             key.SetValue("InstallDate", DateTime.Now.ToString("yyyyMMdd"));
             key.SetValue("URLInfoAbout", "https://github.com/MiraNovaStudio/lyric");
             if (!string.IsNullOrEmpty(pythonFile))
@@ -682,9 +752,7 @@ class LyricSetup
         catch (Exception)
         {
         }
-        int kb = (int)(bytes / 1024);
-        if (kb < 1) kb = 1;
-        return kb;
+        return (int)((bytes + 1023) / 1024);
     }
 
     static string ReadUninstallValue(string name)
