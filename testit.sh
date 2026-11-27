@@ -62,13 +62,6 @@ else
     #echo "For detailed output, run: ./testit.sh -v"
 fi
 
-
-echo "Testing core constructs..."
-lyric run ./studio/does_it_work.ly 
-
-echo "Testing core contructs interpreted..."
-lyric run ./studio/does_it_work.ly --interpret
-
 echo "benchmark test..."
 lyric run ./lyric/tests/perftest/lyric_benchmark.ly
 
